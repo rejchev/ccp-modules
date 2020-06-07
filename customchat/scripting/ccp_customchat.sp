@@ -506,6 +506,7 @@ public void cc_proc_RebuildString(int iClient, int &pLevel, const char[] szBind,
     if(!clMessage[iClient].IsUse(i))
         return;
     
+    pLevel = PLEVEL[i];
     FormatEx(szBuffer, iSize, "%s", clMessage[iClient].GetValue(i));
 }
 
