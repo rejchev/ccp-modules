@@ -72,6 +72,12 @@
         "en"            "{G}Please write ur custom value now:"
     }
 
+    "ccp_custom_success"
+    {
+        "ru"            "{G}Значение обновлено успешно."
+        "en"            "{G}Value updated successfully."
+    }
+
     "ccp_vip_valueupdated"
     {
         "ru"            "{G}Значение обновлено!"

@@ -1,4 +1,3 @@
-[![Build Status](https://travis-ci.org/Nullent/CCProcessor.svg?branch=master)](https://github.com/Nullent/CCProcessor)
 CCP VIPChat 
 ============
 Requirements:
