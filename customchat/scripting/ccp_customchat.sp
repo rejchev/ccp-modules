@@ -7,7 +7,7 @@ public Plugin myinfo =
 	name = "[CCP] CCMessage",
 	author = "nullent?",
 	description = "Custom client message",
-	version = "2.2.0",
+	version = "2.2.1",
 	url = "discord.gg/ChTyPUG"
 };
 
