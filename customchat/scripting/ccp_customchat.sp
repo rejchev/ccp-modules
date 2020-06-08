@@ -107,10 +107,13 @@ enum struct ClientMessage
 
     char GetValue(int iPart)
     {
-        return  (iPart == CPREFIX)  ?   this.m_EMessage.m_szCPrefix :
-                (iPart == VPREFIX)  ?   this.m_EMessage.m_szPrefix  :
-                (iPart == CNAME)    ?   this.m_EMessage.m_szCName   :
-                                        this.m_EMessage.m_szCMessage;
+        // In this case, the size of the first variable is absolute.
+        // Another feature in the piggy bank SP
+
+        return      (iPart == VPREFIX)  ?   this.m_EMessage.m_szPrefix  :
+                    (iPart == CPREFIX)  ?   this.m_EMessage.m_szCPrefix : 
+                    (iPart == CNAME)    ?   this.m_EMessage.m_szCName   :
+                                            this.m_EMessage.m_szCMessage;
     }
 
 
