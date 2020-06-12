@@ -1,0 +1,58 @@
+"Phrases"
+{
+    "ccp_cprefix"
+    {
+        "ru"            "Цвет префикса"
+        "en"            "Prefix color"
+    }
+
+    "ccp_lprefix"
+    {
+        "ru"            "Список префиксов"
+        "en"            "List of prefix"
+    }
+
+
+    "ccp_cname"
+    {
+        "ru"            "Цвет ника"
+        "en"            "Username color"
+    }
+
+
+    "ccp_cmessage"
+    {
+        "ru"            "Цвет сообщения"
+        "en"            "Message color"
+    }
+
+    "color_r"
+    {
+        "ru"            "Красный цвет"
+        "en"            "Red color"
+    }
+
+
+    "color_g"
+    {
+        "ru"            "Зеленый цвет"
+        "en"            "Green color"
+    }
+
+    "prefix_lol"
+    {
+        "ru"            "Префикс: [LOL]"
+        "en"            "Prefix: [LOL]"
+    }
+
+
+    "prefix_null"
+    {
+        "ru"            "Префикс: [NULL]"
+        "en"            "Prefix: [NULL]"
+    }
+
+
+    
+
+}
