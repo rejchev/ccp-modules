@@ -1,0 +1,8 @@
+"Phrases"
+{
+    "advanced_message"
+    {
+        "ru"            "Продвинутые сообщения"
+        "en"            "Advanced messages"
+    }
+}
