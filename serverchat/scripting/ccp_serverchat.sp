@@ -7,7 +7,7 @@ public Plugin myinfo =
 	name = "[CCP] ServerChat",
 	author = "nullent?",
 	description = "Create ur server message template",
-	version = "1.0",
+	version = "1.1",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -25,10 +25,12 @@ enum
 };
 
 ArrayList ServerChat;
+ArrayList Stash;
 
 public void OnPluginStart()
 {
     ServerChat = new ArrayList(NAME_LENGTH, EMAX);
+    Stash = new ArrayList(NAME_LENGTH, 0);
 
     RegAdminCmd("ccp_sc_check", CmdUse, ADMFLAG_ROOT);
 }
@@ -45,6 +47,8 @@ SMCParser smParser;
 
 public void OnMapStart()
 {
+    MakeNestEgg();
+
 #define PATH "configs/c_var/serverchat/serverchat.ini"
     static char szConfig[MESSAGE_LENGTH];
 
@@ -81,6 +85,11 @@ SMCResult OnValueRead(SMCParser smc, const char[] sKey, const char[] sValue, boo
     }
         
     return SMCParse_Continue;
+}
+
+public Action cc_proc_OnDefMsg(const char[] szMessage, bool IsPhraseExists, bool IsTranslated)
+{
+    return Stash.FindString(szMessage) != -1 ? Plugin_Handled : (IsPhraseExists && IsTranslated) ? Plugin_Changed : Plugin_Continue;
 }
 
 int MessageType;
@@ -145,4 +154,38 @@ void BreakPoint(int part, char[] szBuffer)
 
     if(strlen(szBuffer) >= part)
         szBuffer[part] = 0;
+}
+
+void MakeNestEgg()
+{
+#define STASH "configs/c_var/serverchat/phrases_stash.txt"
+
+    static char szStashPath[MESSAGE_LENGTH];
+
+    if(!szStashPath[0])
+        BuildPath(Path_SM, szStashPath, sizeof(szStashPath), STASH);
+    
+    if(!FileExists(szStashPath))
+        return;
+    
+    Stash.Clear();
+
+    File hFile = OpenFile(szStashPath, "r");
+
+    if(hFile)
+    {
+        char szLine[NAME_LENGTH];
+
+        while(!hFile.EndOfFile() && hFile.ReadLine(szLine, sizeof(szLine)))
+        {
+            TrimString(szLine);
+
+            if(szLine[0] != '#')
+                continue;
+
+            Stash.PushString(szLine);
+        }
+
+        hFile.Close();
+    }
 }

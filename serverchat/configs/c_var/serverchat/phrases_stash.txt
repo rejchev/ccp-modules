@@ -1,0 +1,6 @@
+/*
+    Use this stash for standard engine messages. This phrases will not be sent by the engine.
+    Do not use comments inline after the key: #key // comments
+*/
+
+// #Team_Cash_Award_Hostage_Alive
