@@ -7,7 +7,7 @@ public Plugin myinfo =
 	name = "[CCP] FakeUsername",
 	author = "nullent?",
 	description = "Ability to set a fake username in chat msgs",
-	version = "1.1.1",
+	version = "1.1.2",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -79,9 +79,16 @@ public void OnClientPostAdminCheck(int iClient)
     ClientFlags[iClient] = GetUserFlagBits(iClient);
 }
 
+int MessageType;
+
+public void cc_proc_MsgBroadType(const int iType)
+{
+    MessageType = iType;
+}
+
 public void cc_proc_RebuildString(int iClient, int &plevel, const char[] szBind, char[] szBuffer, int iSize)
 {
-    if(!strcmp(szBind, "{NAME}") && fakename[iClient][0] && plevel < nLevel)
+    if(MessageType < eMsg_SERVER && MessageType != eMsg_CNAME && !strcmp(szBind, "{NAME}") && fakename[iClient][0] && plevel < nLevel)
     {
         plevel = nLevel;
         FormatEx(szBuffer, iSize, fakename[iClient]);

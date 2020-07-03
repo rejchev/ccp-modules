@@ -7,7 +7,7 @@ public Plugin myinfo =
 	name = "[CCP] CCMessage",
 	author = "nullent?",
 	description = "Custom client message",
-	version = "2.2.1",
+	version = "2.2.2",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -494,23 +494,27 @@ public void cc_proc_MsgBroadType(const int typeMsg)
 
 public void cc_proc_RebuildString(int iClient, int &pLevel, const char[] szBind, char[] szBuffer, int iSize)
 {
-    if(!iClient || iType > eMsg_ALL || clMessage[iClient].IsEmpty())
+    if(!iClient || clMessage[iClient].IsEmpty())
         return;
     
-    static int i;
-    i = (!strcmp(szBind, "{NAMECO}")) ? CNAME : (!strcmp(szBind, "{PREFIX}")) ? VPREFIX : (!strcmp(szBind, "{MSGCO}")) ? CMESSAGE : (!strcmp(szBind, "{PREFIXCO}")) ? CPREFIX : -1;
+    if(iType < eMsg_SERVER)
+    {
+        static int i;
+        i = (!strcmp(szBind, "{NAMECO}")) ? CNAME : (!strcmp(szBind, "{PREFIX}")) ? VPREFIX : (!strcmp(szBind, "{MSGCO}")) ? CMESSAGE : (!strcmp(szBind, "{PREFIXCO}")) ? CPREFIX : -1;
 
-    if(i == -1)
-        return;
+        if(i == -1)
+            return;
+        
+        if(PLEVEL[i] < pLevel)
+            return;
+        
+        if(!clMessage[iClient].IsUse(i))
+            return;
+        
+        pLevel = PLEVEL[i];
+        FormatEx(szBuffer, iSize, "%s", clMessage[iClient].GetValue(i));
+    }
     
-    if(PLEVEL[i] < pLevel)
-        return;
-    
-    if(!clMessage[iClient].IsUse(i))
-        return;
-    
-    pLevel = PLEVEL[i];
-    FormatEx(szBuffer, iSize, "%s", clMessage[iClient].GetValue(i));
 }
 
 

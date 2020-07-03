@@ -11,7 +11,7 @@ public Plugin myinfo =
 	name = "[CCP] SHOP Chat",
 	author = "nullent?",
 	description = "Decorates player messages",
-	version = "1.0",
+	version = "1.0.1",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -304,26 +304,26 @@ public void cc_proc_MsgBroadType(const int type)
 
 public void cc_proc_RebuildString(int iClient, int &pLevel, const char[] szBind, char[] szBuffer, int size)
 {
-    if(MsgType > eMsg_ALL)
-        return;
-    
-    static int i;
-    i = GetItemByBind(szBind);
+    if(MsgType < eMsg_SERVER)
+    {
+        static int i;
+        i = GetItemByBind(szBind);
 
-    if(i == -1)
-        return;
-    
-    if(pLevel > Levels[i])
-        return;
-    
-    char szItem[PREFIX_LENGTH];
-    aClientTemplate[iClient].GetString(i, SZ(szItem));
+        if(i == -1)
+            return;
+        
+        if(pLevel > Levels[i])
+            return;
+        
+        char szItem[PREFIX_LENGTH];
+        aClientTemplate[iClient].GetString(i, SZ(szItem));
 
-    if(!szItem[0])
-        return;
-    
-    pLevel = Levels[i];
-    FormatEx(szBuffer, size, szItem);
+        if(!szItem[0])
+            return;
+        
+        pLevel = Levels[i];
+        FormatEx(szBuffer, size, szItem);
+    }
 }
 
 int GetItemByBind(const char[] szBind)

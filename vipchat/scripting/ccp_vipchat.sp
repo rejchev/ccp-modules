@@ -11,7 +11,7 @@ public Plugin myinfo =
 	name = "[CCP] VIP Chat",
 	author = "nullent?",
 	description = "Chat features for VIP by user R1KO",
-	version = "1.5.1",
+	version = "1.5.2",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -624,28 +624,31 @@ public void cc_proc_MsgBroadType(const int iType)
 
 public void cc_proc_RebuildString(int iClient, int &plevel, const char[] szBind, char[] szBuffer, int iSize)
 {
-    if(iMsgType > eMsg_ALL || !VIP_IsClientVIP(iClient))
-        return;
-    
-    static int i;
-    i = (!strcmp(szBind, "{NAMECO}")) ? CNAME : (!strcmp(szBind, "{PREFIX}")) ? VPREFIX : (!strcmp(szBind, "{MSGCO}")) ? CMESSAGE : (!strcmp(szBind, "{PREFIXCO}")) ? CPREFIX : -1;
-
-    if(i == -1)
-        return;
-    
-    if(nLevel[i] < plevel)
-        return;
-
-    tempClient[iClient].WorkStEx(i);
-
-    if(tempClient[iClient].IsValidPart())
+    if(iMsgType < eMsg_SERVER)
     {
-        plevel = nLevel[i];
-                
-        FormatEx(szBuffer, iSize, "%s", tempClient[iClient].GetValue());
-    }
-    
-    tempClient[iClient].ResetPart();
+        if(!VIP_IsClientVIP(iClient))
+            return;
+
+        static int i;
+        i = (!strcmp(szBind, "{NAMECO}")) ? CNAME : (!strcmp(szBind, "{PREFIX}")) ? VPREFIX : (!strcmp(szBind, "{MSGCO}")) ? CMESSAGE : (!strcmp(szBind, "{PREFIXCO}")) ? CPREFIX : -1;
+
+        if(i == -1)
+            return;
+        
+        if(nLevel[i] < plevel)
+            return;
+
+        tempClient[iClient].WorkStEx(i);
+
+        if(tempClient[iClient].IsValidPart())
+        {
+            plevel = nLevel[i];
+                    
+            FormatEx(szBuffer, iSize, "%s", tempClient[iClient].GetValue());
+        }
+        
+        tempClient[iClient].ResetPart();
+    } 
 }
 
 void DeleteSafly(Handle &hValue)

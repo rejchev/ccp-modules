@@ -19,7 +19,7 @@ public Plugin myinfo =
     name        = "[CCP, CSGO] CMarker",
     author      = "nullent?",
     description = "Competitive color marker into chat",
-    version     = "1.1.0",
+    version     = "1.1.1",
     url         = "discord.gg/ChTyPUG"
 };
 
@@ -41,18 +41,16 @@ public void OnPluginStart()
 
 public void OnLevelChanged(ConVar cvar, const char[] szOldVal, const char[] szNewVal)
 {
-    Level = (cvar != null) ? cvar.IntValue : 1;
+    Level = cvar.IntValue;
 }
 
 public void OnColorChanged(ConVar cvar, const char[] szOldVal, const char[] szNewVal)
 {
-    EnColor = (cvar != null) ? cvar.BoolValue : true;
+    EnColor = cvar.BoolValue;
 }
 
 public void OnSymbolChanged(ConVar cvar, const char[] szOldVal, const char[] szNewVal)
 {
-    szStatusSmb[0] = 0;
-
     cvar.GetString(szStatusSmb, sizeof(szStatusSmb));
 }
 
@@ -92,10 +90,7 @@ public void cc_proc_MsgBroadType(const int type)
 
 public void cc_proc_RebuildString(int iClient, int &pLevel, const char[] szBind, char[] szBuffer, int iSize)
 {
-    if(!iClient || TemplateType > eMsg_ALL)
-        return;
-
-    if(!strcmp(szBind, "{STATUS}") && pLevel < Level)
+    if(TemplateType < eMsg_SERVER && !strcmp(szBind, "{STATUS}") && pLevel < Level)
     {
         pLevel = Level;
 
@@ -105,7 +100,7 @@ public void cc_proc_RebuildString(int iClient, int &pLevel, const char[] szBind,
         {
             cc_clear_allcolors(szBuffer, iSize);
             
-            Format(szBuffer, iSize, "%s%s", GetColor(iClient), szBuffer);
+            Format(szBuffer, iSize, "%c%s", GetColor(iClient), szBuffer);
         }
             
         
@@ -114,19 +109,9 @@ public void cc_proc_RebuildString(int iClient, int &pLevel, const char[] szBind,
     }
 }
 
-char GetColor(int iClient)
+int GetColor(int iClient)
 {
-    char szColor[4];
-    szColor[0] = 1;
+    static const int colors[] = {9, 14, 4, 11, 16};
 
-    switch(ColorArray[iClient])
-    {
-        case 0: szColor[0] = 9;
-        case 1: szColor[0] = 14;
-        case 2: szColor[0] = 4;
-        case 3: szColor[0] = 11;
-        case 4: szColor[0] = 16;
-    }
-
-    return szColor;
+    return (ColorArray[iClient] >= sizeof(colors) || ColorArray[iClient] < 0) ? 1 : colors[ColorArray[iClient]];
 }

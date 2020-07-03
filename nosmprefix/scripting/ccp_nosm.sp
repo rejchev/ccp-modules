@@ -7,7 +7,7 @@ public Plugin myinfo =
 	name = "[CCP] No SM prefix",
 	author = "nullent?",
 	description = "Allows you to replace the standard Sourcemod prefix",
-	version = "1.1.1",
+	version = "1.1.2",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -28,9 +28,7 @@ public void OnMapStart()
 
 public void OnCvarChanged(ConVar cvar, const char[] oldVal, const char[] newVal)
 {
-    szPrefix[0] = 0;
-
-    if(cvar) cvar.GetString(szPrefix, sizeof(szPrefix));
+    cvar.GetString(szPrefix, sizeof(szPrefix));
 }
 
 int MessageTemplate;
