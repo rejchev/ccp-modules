@@ -7,7 +7,7 @@ public Plugin myinfo =
 	name = "[CCP] ServerChat",
 	author = "nullent?",
 	description = "Create ur server message template",
-	version = "1.1",
+	version = "1.2.0",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -27,8 +27,27 @@ enum
 ArrayList ServerChat;
 ArrayList Stash;
 
+#if defined API_KEY
+
+#define API_KEY_OOD "The plugin module uses an outdated API. You must update it."
+
+public void cc_proc_APIHandShake(const char[] APIKey)
+{
+    if(!StrEqual(APIKey, API_KEY, true))
+        SetFailState(API_KEY_OOD);
+}
+
+#endif
+
 public void OnPluginStart()
 {
+    #if defined API_KEY
+    
+    if(CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "cc_is_APIEqual") == FeatureStatus_Available && !cc_is_APIEqual(API_KEY))
+        cc_proc_APIHandShake(NULL_STRING);
+
+    #endif
+    
     ServerChat = new ArrayList(NAME_LENGTH, EMAX);
     Stash = new ArrayList(NAME_LENGTH, 0);
 

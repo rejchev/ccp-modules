@@ -11,7 +11,7 @@ public Plugin myinfo =
 	name = "[CCP] SHOP Chat",
 	author = "nullent?",
 	description = "Decorates player messages",
-	version = "1.0.1",
+	version = "1.1.0",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -37,8 +37,27 @@ static CategoryId g_CatS[ccp_max];
 
 ArrayList aClientTemplate[MAXPLAYERS+1];
 
+#if defined API_KEY
+
+#define API_KEY_OOD "The plugin module uses an outdated API. You must update it."
+
+public void cc_proc_APIHandShake(const char[] APIKey)
+{
+    if(!StrEqual(APIKey, API_KEY, true))
+        SetFailState(API_KEY_OOD);
+}
+
+#endif
+
 public void OnPluginStart()
 {
+    #if defined API_KEY
+    
+    if(CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "cc_is_APIEqual") == FeatureStatus_Available && !cc_is_APIEqual(API_KEY))
+        cc_proc_APIHandShake(NULL_STRING);
+
+    #endif
+    
     LoadTranslations("ccp_shop.phrases");
 
     CreateConVar("shop_level_cprefix", "1", "Priority for replacing the prefix color", _, true, 0.0).AddChangeHook(CPrefixLevelChanged);

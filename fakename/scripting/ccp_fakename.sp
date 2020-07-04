@@ -7,7 +7,7 @@ public Plugin myinfo =
 	name = "[CCP] FakeUsername",
 	author = "nullent?",
 	description = "Ability to set a fake username in chat msgs",
-	version = "1.1.2",
+	version = "1.2.0",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -25,8 +25,27 @@ int ClientFlags[MPL];
 
 int nLevel;
 
+#if defined API_KEY
+
+#define API_KEY_OOD "The plugin module uses an outdated API. You must update it."
+
+public void cc_proc_APIHandShake(const char[] APIKey)
+{
+    if(!StrEqual(APIKey, API_KEY, true))
+        SetFailState(API_KEY_OOD);
+}
+
+#endif
+
 public void OnPluginStart()
 {
+    #if defined API_KEY
+    
+    if(CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "cc_is_APIEqual") == FeatureStatus_Available && !cc_is_APIEqual(API_KEY))
+        cc_proc_APIHandShake(NULL_STRING);
+
+    #endif
+    
     ROOT = ReadFlagString("z");
 
     RegConsoleCmd("sm_fakename", OnCmdUse);

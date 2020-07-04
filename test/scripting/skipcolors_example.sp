@@ -13,7 +13,7 @@ public Plugin myinfo =
 	name = "[CCP] Skip color tags",
 	author = "nullent?",
 	description = "example",
-	version = "1.0",
+	version = "1.1.0",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -21,8 +21,27 @@ public Plugin myinfo =
 
 bool EnableSkipping[MPL];
 
+#if defined API_KEY
+
+#define API_KEY_OOD "The plugin module uses an outdated API. You must update it."
+
+public void cc_proc_APIHandShake(const char[] APIKey)
+{
+    if(!StrEqual(APIKey, API_KEY, true))
+        SetFailState(API_KEY_OOD);
+}
+
+#endif
+
 public void OnPluginStart()
 {
+    #if defined API_KEY
+    
+    if(CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "cc_is_APIEqual") == FeatureStatus_Available && !cc_is_APIEqual(API_KEY))
+        cc_proc_APIHandShake(NULL_STRING);
+
+    #endif
+
     RegConsoleCmd("sm_skipcolortag", CmdUse);
 }
 
