@@ -53,7 +53,7 @@ public void cc_proc_MsgBroadType(const int typeMsg)
 
 public void cc_proc_RebuildString(int iClient, int &pLevel, const char[] szBind, char[] szBuffer, int iSize)
 {
-    if(iType < eMsg_SERVER && plevel > pLevel && szPrefix[iClient][0])
+    if(iType < eMsg_SERVER && plevel > pLevel && szPrefix[iClient][0] && !strcmp(szBind, "{PREFIX}"))
     {
         pLevel = plevel;
         FormatEx(szBuffer, iSize, szPrefix[iClient]);
