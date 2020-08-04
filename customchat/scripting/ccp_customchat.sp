@@ -1,25 +1,15 @@
 #pragma newdecls required
 
-#include ccprocessor
+#include <ccprocessor>
 
 public Plugin myinfo = 
 {
 	name = "[CCP] CCMessage",
 	author = "nullent?",
 	description = "Custom client message",
-	version = "2.3.0",
+	version = "3.0.0",
 	url = "discord.gg/ChTyPUG"
 };
-
-#define SZ(%0)	%0, sizeof(%0)
-#define BUILD(%0,%1) BuildPath(Path_SM, SZ(%0), %1)
-#define _CVAR_INIT_CHANGE(%0,%1) %0(FindConVar(%1), NULL_STRING, NULL_STRING)
-#define _CVAR_ON_CHANGE(%0) public void %0(ConVar cvar, const char[] szOldVal, const char[] szNewVal)
-
-#define PMP PLATFORM_MAX_PATH
-#define MPL MAXPLAYERS+1
-
-#define PATH  "configs/c_var/customchat/customchat.ini"
 
 enum eAccess
 {
@@ -30,234 +20,160 @@ enum eAccess
     eGroup
 };
 
-enum
-{
-    CPREFIX = 0,
-    VPREFIX,
-    CNAME,
-    CMESSAGE,
-
-    CMAX
-};
-
+// Now it can work with all binds ;;;
 enum struct MessageEnv
 {
-    eAccess m_AType;
+    eAccess     m_AType;
 
-    char m_szCPrefix[STATUS_LENGTH];
-    char m_szPrefix[PREFIX_LENGTH];
-    char m_szCName[STATUS_LENGTH];
-    char m_szCMessage[STATUS_LENGTH];
+    StringMap   m_smTemplate;
 
-    char m_szAccess[64];
+    char        m_szBuffer[64];
 
-    bool IsHasAccess(const char[] szAuth, AdminId aId, int flagBits)
-    {
-        if(this.m_AType == eDefault)
-            return true;
-        
-        else if(this.m_AType == eAuth && !strcmp(this.m_szAccess, szAuth))
-            return true;
-        
-        else if(this.m_AType == eFlag && flagBits && (flagBits & ReadFlagString(this.m_szAccess)))
-            return true;
-        
-        else if(this.m_AType == eGroup && aId != INVALID_ADMIN_ID)
-        {
-            char szGroup[64];
-
-            for(int i; i < aId.GroupCount; i++)
-            {
-                aId.GetGroup(i, SZ(szGroup));
-                if(StrEqual(this.m_szAccess, szGroup))
-                    return true;
-            }
-        }
-
-        return false;
-    }
-
-    void ClearEnv()
+    void Destroy()
     {
         this.m_AType = eNone;
-        this.m_szCPrefix[0] = 0;
-        this.m_szPrefix[0] = 0;
-        this.m_szCName[0] = 0;
-        this.m_szAccess[0] = 0;
-        this.m_szCMessage[0] = 0;
+        this.m_szBuffer[0] = 0;
+        this.m_smTemplate = null;
+    }
+
+    bool IsValid()
+    {
+        return this.m_AType != eNone && this.m_smTemplate && this.m_smTemplate != INVALID_HANDLE;
+    }
+
+    void InitMap()
+    {
+        this.Destroy();
+        this.m_smTemplate = new StringMap();
     }
 }
 
-enum struct ClientMessage
+enum struct ClientEnv
 {
-    MessageEnv m_EMessage;
+    MessageEnv  m_EMessage;
 
-    AdminId m_aId;
-    int m_iFlags;
+    AdminId     m_aId;
+    int         m_iFlags;
 
-    char m_szAuth[64];
+    char        m_szAuth[64];
 
-    bool IsUse(int iPart)
+    bool IsTeamplateEqual(MessageEnv nMEMessage)
     {
-        return  (iPart == CPREFIX)  ?   this.m_EMessage.m_szCPrefix[0]  :
-                (iPart == VPREFIX)  ?   this.m_EMessage.m_szPrefix[0]   :  
-                (iPart == CNAME)    ?   this.m_EMessage.m_szCName[0]    :
-                                        this.m_EMessage.m_szCMessage[0] ;
+        return this.m_EMessage.m_smTemplate == nMEMessage.m_smTemplate;
     }
 
-    char GetValue(int iPart)
+    void SetTemplate(MessageEnv nMEMessage)
     {
-        // In this case, the size of the first variable is absolute.
-        // Another feature in the piggy bank SP
-
-        return      (iPart == VPREFIX)  ?   this.m_EMessage.m_szPrefix  :
-                    (iPart == CPREFIX)  ?   this.m_EMessage.m_szCPrefix : 
-                    (iPart == CNAME)    ?   this.m_EMessage.m_szCName   :
-                                            this.m_EMessage.m_szCMessage;
+        this.m_EMessage = nMEMessage;
     }
 
-
-    void SetMessageProto(MessageEnv newProto)
+    bool GetValue(const char[] szBind, char[] szBuffer, int size)
     {
-        this.m_EMessage = newProto;
+        return this.m_EMessage.m_smTemplate.GetString(szBind, szBuffer, size);
     }
 
-    eAccess GetCurrentAccess()
+    bool IsValidMap()
+    {
+        return this.m_EMessage.IsValid();
+    }
+
+    eAccess GetTemplateAccess()
     {
         return this.m_EMessage.m_AType;
     }
 
     void Clear()
     {
-        this.m_EMessage.ClearEnv();
+        this.m_EMessage.Destroy();
         this.m_aId = INVALID_ADMIN_ID;
-        this.m_szAuth[0] = 0;
         this.m_iFlags = 0;
-    }
-
-    bool IsEmpty()
-    {
-        return this.m_EMessage.m_AType == eNone;
-    }
-
-    bool IsProtoEqual(MessageEnv MessageProto)
-    {
-        return (
-            this.m_EMessage.m_AType == MessageProto.m_AType &&
-            StrEqual(this.m_EMessage.m_szCPrefix, MessageProto.m_szCPrefix) &&
-            StrEqual(this.m_EMessage.m_szPrefix, MessageProto.m_szPrefix) &&
-            StrEqual(this.m_EMessage.m_szCName, MessageProto.m_szCName) &&
-            StrEqual(this.m_EMessage.m_szCMessage, MessageProto.m_szCMessage) &&
-            StrEqual(this.m_EMessage.m_szAccess, MessageProto.m_szAccess)
-        );
-    }
-
-    void ClearEnv()
-    {
-        this.m_EMessage.ClearEnv();
+        this.m_szAuth[0] = 0;
     }
 }
 
+ClientEnv clMessage[MAXPLAYERS+1];
+
 ArrayList aProtoBase;
 
-ClientMessage clMessage[MAXPLAYERS+1];
+int PLEVEL[BIND_MAX];
 
-int PLEVEL[CMAX];
+ConVar cvPriority[BIND_MAX];
 
 bool
     IsMenuDisabled,
     DisableToDef;
 
-#if defined API_KEY
-
-#define API_KEY_OOD "The plugin module uses an outdated API. You must update it."
-
-public void cc_proc_APIHandShake(const char[] APIKey)
-{
-    if(!StrEqual(APIKey, API_KEY, true))
-        SetFailState(API_KEY_OOD);
-}
-
-#endif
-
 public void OnPluginStart()
 {
-    #if defined API_KEY
-    
-    if(CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "cc_is_APIEqual") == FeatureStatus_Available && !cc_is_APIEqual(API_KEY))
-        cc_proc_APIHandShake(NULL_STRING);
-
-    #endif
-    
     LoadTranslations("ccp_customchat.phrases");
 
-    aProtoBase = new ArrayList(MAX_NAME_LENGTH, 0);
+    aProtoBase = new ArrayList(NAME_LENGTH, 0);
 
-    CreateConVar("ccm_prefix_priority", "1", "Priority for replacing the prefix", _, true, 0.0).AddChangeHook(ChangePrefixPrior);
-    CreateConVar("ccm_cname_priority", "1", "Priority for replacing the username color", _, true, 0.0).AddChangeHook(ChangeCNamePrior);
-    CreateConVar("ccm_cprefix_priority", "1", "Priority for replacing the prefix color", _, true, 0.0).AddChangeHook(ChangeCPrefixPrior);
-    CreateConVar("ccm_cmessage_priority", "1", "Priority for replacing the message color", _, true, 0.0).AddChangeHook(ChangeCMessagePrior);
+    CreateConVars();
 
-    CreateConVar("ccm_disable_todefault", "1", "Set the default value when turning off the template", _, true, 0.0, true, 1.0).AddChangeHook(DisableToDefault);
-    CreateConVar("ccm_disable_menu", "0", "Disable the menu when entering a command", _, true, 0.0, true, 1.0).AddChangeHook(DisableMenu);
-    AutoExecConfig(true, "ccp_ccmessage", "ccprocessor");
-    
     RegConsoleCmd("sm_prefix", Cmd_Prefix);
 }
 
-_CVAR_ON_CHANGE(ChangePrefixPrior)
+void CreateConVars()
 {
-    PLEVEL[VPREFIX] = cvar.IntValue;
+    char szBuffer[NAME_LENGTH];
+
+    for(int i; i < BIND_MAX; i++)
+    {
+        FormatEx(szBuffer, sizeof(szBuffer), "ccm_priority_%s", szBinds[i]);
+
+        ReplaceString(szBuffer, sizeof(szBuffer), "{", "");
+        ReplaceString(szBuffer, sizeof(szBuffer), "}", "");
+        
+        (cvPriority[i] = CreateConVar(szBuffer, "1", "Value replacement priority", _, true, 0.0)).AddChangeHook(OnLevelChanged); 
+    }
+
+    CreateConVar("ccm_disable_todefault", "1", "Default value as default", _, true, 0.0, true, 1.0).AddChangeHook(OnDefaultChanged);
+    CreateConVar("ccm_disable_menu", "0", "Disable menu", _, true, 0.0, true, 1.0).AddChangeHook(OnMenuStateChanged);
+
+    AutoExecConfig(true, "ccp_ccmessage", "ccprocessor");
 }
 
-_CVAR_ON_CHANGE(ChangeCNamePrior)
+public void OnLevelChanged(ConVar convar, const char[] oldVal, const char[] newVal)
 {
-    PLEVEL[CNAME] = cvar.IntValue;
+    for(int i; i < BIND_MAX; i++)
+        PLEVEL[i] = cvPriority[i].IntValue;
 }
 
-_CVAR_ON_CHANGE(ChangeCPrefixPrior)
+public void OnDefaultChanged(ConVar convar, const char[] oldVal, const char[] newVal)
 {
-    PLEVEL[CPREFIX] = cvar.IntValue;
+    DisableToDef = FindConVar("ccm_disable_todefault").BoolValue;
 }
 
-_CVAR_ON_CHANGE(ChangeCMessagePrior)
+public void OnMenuStateChanged(ConVar convar, const char[] oldVal, const char[] newVal)
 {
-    PLEVEL[CMESSAGE] = cvar.IntValue;
-}
-
-_CVAR_ON_CHANGE(DisableToDefault)
-{
-    DisableToDef = cvar.BoolValue;
-}
-
-_CVAR_ON_CHANGE(DisableMenu)
-{
-    IsMenuDisabled = cvar.BoolValue;
+    IsMenuDisabled = FindConVar("ccm_disable_menu").BoolValue;
 }
 
 public void OnMapStart()
 {
-    _CVAR_INIT_CHANGE(ChangePrefixPrior, "ccm_prefix_priority");
-    _CVAR_INIT_CHANGE(ChangeCNamePrior, "ccm_cname_priority");
-    _CVAR_INIT_CHANGE(ChangeCPrefixPrior, "ccm_cprefix_priority");
-    _CVAR_INIT_CHANGE(ChangeCMessagePrior, "ccm_cmessage_priority");
+    cc_proc_APIHandShake(cc_get_APIKey());
 
-    _CVAR_INIT_CHANGE(DisableToDefault, "ccm_disable_todefault");
-    _CVAR_INIT_CHANGE(DisableMenu, "ccm_disable_menu");
+    OnLevelChanged(null, NULL_STRING, NULL_STRING);
+    OnDefaultChanged(null, NULL_STRING, NULL_STRING);
+    OnMenuStateChanged(null, NULL_STRING, NULL_STRING);
 
-    char szFullPath[PMP];
-    BUILD(szFullPath, PATH);
-
-    if(!FileExists(szFullPath))
-    {
-        LogError("Where is my config: %s ???", szFullPath);
-        return;
-    }
+    static char szFullPath[MESSAGE_LENGTH] = "configs/c_var/customchat/customchat.ini";
+    
+    if(szFullPath[0] == 'c')
+        BuildPath(Path_SM, szFullPath, sizeof(szFullPath), szFullPath);
+    
+    else if(!FileExists(szFullPath))
+        SetFailState("Where is my config: %s", szFullPath);
 
     aProtoBase.Clear();
 
     SMCParser smParser = new SMCParser();
+
+    smParser.OnEnterSection = OnNewSection;
     smParser.OnKeyValue = OnValueRead;
+    smParser.OnLeaveSection = OnLeaveSection;
+    smParser.OnEnd = OnEndRead;
 
     int iLine;
 
@@ -265,87 +181,80 @@ public void OnMapStart()
         LogError("Error On parse: %s | Line: %i", szFullPath, iLine);
 }
 
+MessageEnv g_MEBuffer;
 
-SMCResult OnValueRead(SMCParser smc, const char[] sKey, const char[] sValue, bool bKey_Quotes, bool bValue_quotes)
+SMCResult OnNewSection(SMCParser smc, const char[] name, bool opt_quotes)
 {
-    if(!sKey[0] || !sValue[0])
-        return SMCParse_Continue;
-
-    static MessageEnv EBuffer;
-    static int i;
-
-    if(!strcmp("type", sKey))
+    if(strcmp(name, "CustomChat", false))
     {
-        // // LogMessage("Type; %s", sValue);
-        EBuffer.m_AType = CharToAccessType(sValue);
-        i++;
-    }
-    
-    else if(!strcmp("type_value", sKey))
-    {
-        // LogMessage("type_value; %s", sValue);
-        strcopy(EBuffer.m_szAccess, sizeof(EBuffer.m_szAccess), sValue);
+        g_MEBuffer.InitMap();
 
-        if(!strcmp(EBuffer.m_szAccess, "NULL", false))
-            EBuffer.m_szAccess[0] = 0;
-
-        i++;
-    }
-
-    else if(!strcmp("color_prefix", sKey))
-    {
-        // LogMessage("color_prefix; %s", sValue);
-        strcopy(EBuffer.m_szCPrefix, sizeof(EBuffer.m_szCPrefix), sValue);
-
-        if(!strcmp(EBuffer.m_szCPrefix, "NULL", false))
-            EBuffer.m_szCPrefix[0] = 0;
-
-        i++;
-    }
-
-    else if(!strcmp("value_prefix", sKey))
-    {
-        // LogMessage("value_prefix; %s", sValue);
-        strcopy(EBuffer.m_szPrefix, sizeof(EBuffer.m_szPrefix), sValue);
-
-        if(!strcmp(EBuffer.m_szPrefix, "NULL", false))
-            EBuffer.m_szPrefix[0] = 0;
-
-        i++;
-    }
-
-    else if(!strcmp("color_username", sKey))
-    {
-        // LogMessage("color_username; %s", sValue);
-        strcopy(EBuffer.m_szCName, sizeof(EBuffer.m_szCName), sValue);
-
-        if(!strcmp(EBuffer.m_szCName, "NULL", false))
-            EBuffer.m_szCName[0] = 0;
-
-        i++;
-    }
-
-    else if(!strcmp("color_message", sKey))
-    {
-        // LogMessage("color_username; %s", sValue);
-        strcopy(EBuffer.m_szCMessage, sizeof(EBuffer.m_szCMessage), sValue);
-
-        if(!strcmp(EBuffer.m_szCMessage, "NULL", false))
-            EBuffer.m_szCMessage[0] = 0;
-
-        i++;
-    }
-
-    if(i == 6)
-    {
-        i = 0;
-
-        // // LogMessage("I:%i", i);
-        if(EBuffer.m_AType != eNone)
-            aProtoBase.PushArray(SZ(EBuffer));
+        LogMessage("Section: %s", name);
+        LogMessage("SMap: %x", g_MEBuffer.m_smTemplate);
     }
 
     return SMCParse_Continue;
+}
+
+SMCResult OnLeaveSection(SMCParser smc)
+{
+    if(g_MEBuffer.IsValid())
+    {
+        aProtoBase.PushArray(g_MEBuffer, sizeof(g_MEBuffer));
+
+        g_MEBuffer.Destroy();
+    }
+
+    return SMCParse_Continue;
+}
+
+SMCResult OnValueRead(SMCParser smc, const char[] sKey, const char[] sValue, bool bKey_Quotes, bool bValue_quotes)
+{
+    if(!sKey[0])
+        return SMCParse_Continue;
+
+    if(!strcmp(sKey, "type"))
+        g_MEBuffer.m_AType = CharToAccessType(sValue);
+    
+    else if(!strcmp(sKey, "type_value"))
+        strcopy(g_MEBuffer.m_szBuffer, sizeof(g_MEBuffer.m_szBuffer), sValue);
+    
+    else if(!strcmp(sKey, "type_prototype"))
+        g_MEBuffer.m_smTemplate.SetString(szBinds[BIND_PROTOTYPE], sValue, true);
+    
+    else if(!strcmp(sKey, "type_status"))
+        g_MEBuffer.m_smTemplate.SetString(szBinds[BIND_STATUS], sValue, true);
+    
+    else if(!strcmp(sKey, "type_team"))
+        g_MEBuffer.m_smTemplate.SetString(szBinds[BIND_TEAM], sValue, true);
+    
+    else if(!strcmp(sKey, "type_prefix_color"))
+        g_MEBuffer.m_smTemplate.SetString(szBinds[BIND_PREFIX_CO], sValue, true);
+    
+    else if(!strcmp(sKey, "type_prefix"))
+        g_MEBuffer.m_smTemplate.SetString(szBinds[BIND_PREFIX], sValue, true);
+
+    else if(!strcmp(sKey, "type_name_color"))
+        g_MEBuffer.m_smTemplate.SetString(szBinds[BIND_NAME_CO], sValue, true);
+    
+    else if(!strcmp(sKey, "type_name"))
+        g_MEBuffer.m_smTemplate.SetString(szBinds[BIND_NAME], sValue, true);
+
+    else if(!strcmp(sKey, "type_msg_color"))
+        g_MEBuffer.m_smTemplate.SetString(szBinds[BIND_MSG_CO], sValue, true);
+    
+    else if(!strcmp(sKey, "type_msg"))
+        g_MEBuffer.m_smTemplate.SetString(szBinds[BIND_MSG], sValue, true);
+
+    return SMCParse_Continue;
+}
+
+void OnEndRead(SMCParser smc, bool halted, bool failed)
+{
+    if(smc == INVALID_HANDLE)
+        smc = null;
+    
+    delete smc;
 }
 
 public void OnClientPutInServer(int iClient)
@@ -373,10 +282,10 @@ void GetClientProto(int iClient)
     {
         aProtoBase.GetArray(i, EBuffer, sizeof(EBuffer));
 
-        if(EBuffer.IsHasAccess(clMessage[iClient].m_szAuth, clMessage[iClient].m_aId, clMessage[iClient].m_iFlags))
-            clMessage[iClient].SetMessageProto(EBuffer);
+        if(ClientHasAccess(EBuffer, clMessage[iClient].m_szAuth, clMessage[iClient].m_iFlags, clMessage[iClient].m_aId))
+            clMessage[iClient].SetTemplate(EBuffer);
         
-        EBuffer.ClearEnv();
+        EBuffer.Destroy();
     }
 }
 
@@ -392,7 +301,7 @@ public Action Cmd_Prefix(int iClient, int args)
         }
         else
         {
-            switch(clMessage[iClient].GetCurrentAccess())
+            switch(clMessage[iClient].GetTemplateAccess())
             {
                 case eNone:
                 {
@@ -402,7 +311,7 @@ public Action Cmd_Prefix(int iClient, int args)
                 case eDefault:
                 {
                     if(DisableToDef) GetClientProto(iClient);
-                    else clMessage[iClient].m_EMessage.ClearEnv();
+                    else clMessage[iClient].m_EMessage.Destroy();
                 }
 
                 default:
@@ -420,38 +329,36 @@ Menu GetClientPrototypes(int iClient)
 
     if(aProtoBase.Length)
     {
-        SetGlobalTransTarget(iClient);
-
         hMenu = new Menu(PrefList_CallBack);
-        hMenu.SetTitle("%t \n \n", "ccm_proto_list");
+        hMenu.SetTitle("%T \n \n", "ccm_proto_list", iClient);
 
         char szBuffer[PREFIX_LENGTH], szOpt[8];
         int DRAWTYPE, a;
         MessageEnv EBuffer;
 
-        FormatEx(SZ(szBuffer), "%t \n \n", "ccp_disable");
-        hMenu.AddItem("r", szBuffer, (clMessage[iClient].IsEmpty() || (DisableToDef && clMessage[iClient].GetCurrentAccess() == eDefault)) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
+        FormatEx(szBuffer, sizeof(szBuffer), "%T \n \n", "ccp_disable", iClient);
+        hMenu.AddItem("r", szBuffer, (!clMessage[iClient].IsValidMap() || (DisableToDef && clMessage[iClient].GetTemplateAccess() == eDefault)) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT);
 
         for(int i; i < aProtoBase.Length; i++)
         {
-            EBuffer.ClearEnv();
+            EBuffer.Destroy();
 
-            aProtoBase.GetArray(i, SZ(EBuffer));
+            aProtoBase.GetArray(i, EBuffer, sizeof(EBuffer));
 
-            if(!EBuffer.IsHasAccess(clMessage[iClient].m_szAuth, clMessage[iClient].m_aId, clMessage[iClient].m_iFlags))
+            if(!ClientHasAccess(EBuffer, clMessage[iClient].m_szAuth, clMessage[iClient].m_iFlags, clMessage[iClient].m_aId))
                 continue;
 
-            DRAWTYPE = (clMessage[iClient].IsProtoEqual(EBuffer)) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT;
+            DRAWTYPE = (clMessage[iClient].IsTeamplateEqual(EBuffer)) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT;
             
-            GetTranslationByAccess(iClient, EBuffer.m_AType, EBuffer.m_szAccess, SZ(szBuffer));
+            GetTranslationByAccess(iClient, EBuffer.m_AType, EBuffer.m_szBuffer, szBuffer, sizeof(szBuffer));
 
-            IntToString(i, SZ(szOpt));
+            IntToString(i, szOpt, sizeof(szOpt));
 
             hMenu.AddItem(szOpt, szBuffer, DRAWTYPE);
             a++;
         }
 
-        if(!a) delete hMenu;
+        if(hMenu.ItemCount == 1) delete hMenu;
     }
 
     return hMenu;
@@ -463,7 +370,7 @@ void GetTemplateByAccess(int iClient, eAccess AValue)
 
     if(AValue == eNone)
     {
-        clMessage[iClient].m_EMessage.ClearEnv();
+        clMessage[iClient].m_EMessage.Destroy();
         return;
     }
         
@@ -473,12 +380,12 @@ void GetTemplateByAccess(int iClient, eAccess AValue)
 
         if(EBuffer.m_AType == AValue)
         {
-            clMessage[iClient].SetMessageProto(EBuffer);
+            clMessage[iClient].SetTemplate(EBuffer);
             return;
         }
     }
 
-    EBuffer.ClearEnv();
+    EBuffer.Destroy();
 }
 
 public int PrefList_CallBack(Menu hMenu, MenuAction action, int iClient, int iOpt2)
@@ -489,11 +396,11 @@ public int PrefList_CallBack(Menu hMenu, MenuAction action, int iClient, int iOp
         case MenuAction_Select:
         {
             char szOpt[8];
-            hMenu.GetItem(iOpt2, SZ(szOpt));
+            hMenu.GetItem(iOpt2, szOpt, sizeof(szOpt));
             
             if(szOpt[0] == 'r')
             {
-                if(!DisableToDef) clMessage[iClient].ClearEnv();
+                if(!DisableToDef) clMessage[iClient].m_EMessage.Destroy();
                 else GetTemplateByAccess(iClient, eDefault);
 
                 return;
@@ -513,29 +420,56 @@ public void cc_proc_MsgBroadType(const int typeMsg)
 
 public void cc_proc_RebuildString(int iClient, int &pLevel, const char[] szBind, char[] szBuffer, int iSize)
 {
-    if(!iClient || clMessage[iClient].IsEmpty())
+    // Only for standart client messages;;;
+    if(iType == eMsg_SERVER || iType == eMsg_CNAME || iType == eMsg_RADIO  || !clMessage[iClient].IsValidMap())
         return;
     
-    if(iType < eMsg_SERVER)
-    {
-        static int i;
-        i = (!strcmp(szBind, "{NAMECO}")) ? CNAME : (!strcmp(szBind, "{PREFIX}")) ? VPREFIX : (!strcmp(szBind, "{MSGCO}")) ? CMESSAGE : (!strcmp(szBind, "{PREFIXCO}")) ? CPREFIX : -1;
-
-        if(i == -1)
-            return;
-        
-        if(PLEVEL[i] < pLevel)
-            return;
-        
-        if(!clMessage[iClient].IsUse(i))
-            return;
-        
-        pLevel = PLEVEL[i];
-        FormatEx(szBuffer, iSize, "%s", clMessage[iClient].GetValue(i));
-    }
+    static int i;
+    i = CharToNumBind(szBind);
     
+    if(PLEVEL[i] < pLevel)
+        return;
+    
+    static char szValue[MESSAGE_LENGTH];
+    if(!clMessage[iClient].GetValue(szBind, szValue, sizeof(szValue)))
+        return;
+    
+    pLevel = PLEVEL[i];
+    FormatEx(szBuffer, iSize, "%s", szValue);  
 }
 
+// define
+bool ClientHasAccess(MessageEnv MEMessage, const char[] auth = NULL_STRING, const int flags = 0, const AdminId aid = INVALID_ADMIN_ID)
+{
+    switch(MEMessage.m_AType)
+    {
+        case eDefault:  
+            return true;
+
+        case eAuth:
+            return !strcmp(MEMessage.m_szBuffer, auth);
+
+        case eFlag:
+            return flags && (flags & ReadFlagString(MEMessage.m_szBuffer));
+
+        case eGroup:
+        {
+            if(aid == INVALID_ADMIN_ID)
+                return false;
+            
+            char szBuffer[64];
+            
+            for(int i; i < aid.GroupCount; i++)
+            {
+                aid.GetGroup(i, szBuffer, sizeof(szBuffer));
+                if(StrEqual(MEMessage.m_szBuffer, szBuffer))
+                    return true;
+            }
+        }
+    }
+
+    return false;
+}
 
 // auth, flag, group
 eAccess CharToAccessType(const char[] szAccess)
@@ -554,6 +488,16 @@ void GetTranslationByAccess(int iClient, const eAccess accessType, const char[] 
         case eFlag: FormatEx(szBuffer, size, "%t", "ccm_flag_item", szValue);
         case eGroup: FormatEx(szBuffer, size, "%t", "ccm_group_item", szValue);
     }
+}
+
+int CharToNumBind(const char[] szBind)
+{
+    for(int i; i < BIND_MAX; i++)
+        if(!strcmp(szBinds[i], szBind))
+            return i;
+    
+    // But that will never happen :|
+    return BIND_MAX;
 }
 
 stock char AccessTypeToChar(eAccess eAValue)
