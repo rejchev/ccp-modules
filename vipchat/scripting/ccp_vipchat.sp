@@ -1,3 +1,5 @@
+// Update coming soon
+
 #include UTF-8-string
 
 #pragma newdecls required
@@ -11,11 +13,11 @@ public Plugin myinfo =
 	name = "[CCP] VIP Chat",
 	author = "nullent?",
 	description = "Chat features for VIP by user R1KO",
-	version = "1.6.0",
+	version = "1.7.0",
 	url = "discord.gg/ChTyPUG"
 };
 
-#define _CONFIG_PATH "data\\vip\\modules\\chat.ini"
+#define _CONFIG_PATH "data/vip/modules/chat.ini"
 
 #define SZ(%0)	%0, sizeof(%0)
 #define BUILD(%0,%1) BuildPath(Path_SM, SZ(%0), %1)
@@ -184,17 +186,6 @@ ClientTemplate tempClient[MAXPLAYERS+1];
 #define CNAME_PRIO      "vip_cname_priority"
 #define CMESSAGE_PRIO   "vip_cmessage_priority"
 
-#if defined API_KEY
-
-#define API_KEY_OOD "The plugin module uses an outdated API. You must update it."
-
-public void cc_proc_APIHandShake(const char[] APIKey)
-{
-    if(!StrEqual(APIKey, API_KEY, true))
-        SetFailState(API_KEY_OOD);
-}
-
-#endif
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
@@ -203,14 +194,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 }
 
 public void OnPluginStart()
-{
-    #if defined API_KEY
-    
-    if(CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "cc_is_APIEqual") == FeatureStatus_Available && !cc_is_APIEqual(API_KEY))
-        cc_proc_APIHandShake(NULL_STRING);
-
-    #endif
-    
+{    
     LoadTranslations("ccproc.phrases");
     LoadTranslations("vip_ccpchat.phrases");
     LoadTranslations("vip_modules.phrases");
@@ -255,6 +239,8 @@ SMCParser smParser;
 
 public void OnMapStart()
 {
+    cc_proc_APIHandShake(cc_get_APIKey());
+
     _CVAR_INIT_CHANGE(ChangeCPrefix,    CPREFIX_PRIO);
     _CVAR_INIT_CHANGE(ChangeLPrefix,    LPREFIX_PRIO);
     _CVAR_INIT_CHANGE(ChangeCName,      CNAME_PRIO);

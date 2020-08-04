@@ -1,15 +1,15 @@
 #pragma newdecls required
 
-#include ccprocessor
+#include <ccprocessor>
 
 char szPrefix[MAXPLAYERS+1][PREFIX_LENGTH];
 
 public Plugin myinfo = 
 {
-	name = "[CCP] ClanTag to Prefix",
+	name = "[CCP] ClanTag as Chat Prefix",
 	author = "nullent?",
 	description = "Set ClanTag as chat prefix",
-	version = "1.0.0",
+	version = "1.1.0",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -22,6 +22,8 @@ public void OnPluginStart()
 
 public void OnMapStart()
 {
+    cc_proc_APIHandShake(cc_get_APIKey());
+
     OnConVarChanged(FindConVar("ccp_clantag_priority"), NULL_STRING, NULL_STRING);
 }
 
@@ -53,7 +55,7 @@ public void cc_proc_MsgBroadType(const int typeMsg)
 
 public void cc_proc_RebuildString(int iClient, int &pLevel, const char[] szBind, char[] szBuffer, int iSize)
 {
-    if(iType < eMsg_SERVER && plevel > pLevel && szPrefix[iClient][0] && !strcmp(szBind, "{PREFIX}"))
+    if(iType < eMsg_SERVER && plevel > pLevel && szPrefix[iClient][0] && !strcmp(szBind, szBinds[BIND_PREFIX]))
     {
         pLevel = plevel;
         FormatEx(szBuffer, iSize, szPrefix[iClient]);

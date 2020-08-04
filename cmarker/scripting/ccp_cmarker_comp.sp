@@ -19,20 +19,10 @@ public Plugin myinfo =
     name        = "[CCP, CSGO] CMarker",
     author      = "nullent?",
     description = "Competitive color marker into chat",
-    version     = "1.2.0",
+    version     = "1.3.0",
     url         = "discord.gg/ChTyPUG"
 };
 
-#if defined API_KEY
-
-#define API_KEY_OOD "The plugin module uses an outdated API. You must update it."
-
-public void cc_proc_APIHandShake(const char[] APIKey)
-{
-    if(!StrEqual(APIKey, API_KEY, true))
-        SetFailState(API_KEY_OOD);
-}
-#endif
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 { 
@@ -41,13 +31,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart()
 {
-    #if defined API_KEY
-    
-    if(CanTestFeatures() && GetFeatureStatus(FeatureType_Native, "cc_is_APIEqual") == FeatureStatus_Available && !cc_is_APIEqual(API_KEY))
-        cc_proc_APIHandShake(NULL_STRING);
-
-    #endif
-
     m_iCompTeammateColor = FindSendPropInfo("CCSPlayerResource", "m_iCompTeammateColor");
 
     CreateConVar("cmarker_priority_level", "1", "Replacement Priority", _, true, 0.0).AddChangeHook(OnLevelChanged);
@@ -74,6 +57,8 @@ public void OnSymbolChanged(ConVar cvar, const char[] szOldVal, const char[] szN
 
 public void OnMapStart()
 {
+    cc_proc_APIHandShake(cc_get_APIKey());
+
     OnLevelChanged(FindConVar("cmarker_priority_level"), NULL_STRING, NULL_STRING);
     OnSymbolChanged(FindConVar("cmarker_status_symbol"), NULL_STRING, NULL_STRING);
     OnColorChanged(FindConVar("cmarker_added_color"), NULL_STRING, NULL_STRING);
@@ -108,7 +93,7 @@ public void cc_proc_MsgBroadType(const int type)
 
 public void cc_proc_RebuildString(int iClient, int &pLevel, const char[] szBind, char[] szBuffer, int iSize)
 {
-    if(TemplateType < eMsg_SERVER && !strcmp(szBind, "{STATUS}") && pLevel < Level)
+    if(TemplateType < eMsg_SERVER && !strcmp(szBind, szBinds[BIND_STATUS]) && pLevel < Level)
     {
         pLevel = Level;
 
