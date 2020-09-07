@@ -161,7 +161,7 @@ public void OnPluginStart()
 
     for(int i, a; i < BIND_MAX; i++)
     {
-        if(IsValidPart(i))
+        if(IsValidPart(i) != -1)
         {
             strcopy(szBuffer, sizeof(szBuffer), szBinds[i]);
 
