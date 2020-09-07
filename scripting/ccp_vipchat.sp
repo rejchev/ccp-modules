@@ -1,5 +1,3 @@
-// 
-
 #include UTF-8-string
 
 #pragma newdecls required
@@ -13,7 +11,7 @@ public Plugin myinfo =
 	name = "[CCP] VIP Chat",
 	author = "nullent?",
 	description = "Chat features for VIP by user R1KO",
-	version = "1.8.1",
+	version = "1.8.2",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -151,6 +149,11 @@ enum struct ClientTemplate
         
         return StrEqual(szBuffer, szValue);
     }
+
+    void Remove(const char[] key)
+    {
+        this.m_mTemplate.Remove(key);
+    }
 }
 
 ClientTemplate tempClient[MAXPLAYERS+1];
@@ -183,6 +186,9 @@ public void OnPluginStart()
     }
 
     AutoExecConfig(true, "ccp_vipchat", "ccprocessor");
+
+    if(VIP_IsVIPLoaded())
+        VIP_OnVIPLoaded();
 }
 
 public void OnLevelsChanged(ConVar convar, const char[] oldVal, const char[] newVal)
@@ -230,26 +236,23 @@ public void OnMapStart()
         int expc;
         char szBuffer[1024];
         ArrayList aBuffer;
-        // StringMap mapBuffer;
 
         do
         {
             kv.GetSectionName(szBuffer, OFFSET_GroupName - 1);
             szBuffer[OFFSET_GroupName-1] = 0;
 
-            g_IFeatures.WriteItem(szBuffer[OFFSET_FeatureName], NULL_STRING, new StringMap());
-
             if(kv.GotoFirstSubKey(false))
             {
-                aBuffer = new ArrayList(PREFIX_LENGTH, 0);
-
                 do
                 {
+                    aBuffer = new ArrayList(PREFIX_LENGTH, 0);
+
                     kv.GetSectionName(szBuffer[OFFSET_GroupName], OFFSET_GroupName - 1);
                     szBuffer[OFFSET_Values - 1] = 0;
 
                     kv.GetString("", szBuffer[OFFSET_Values], sizeof(szBuffer));
-                    expc = ReplaceString(szBuffer[OFFSET_Values], sizeof(szBuffer), ";", ";");
+                    expc = ReplaceString(szBuffer[OFFSET_Values], sizeof(szBuffer), ";", ";") + 1;
 
                     char[][] explode = new char[expc][PREFIX_LENGTH];
                     ExplodeString(szBuffer[OFFSET_Values], ";", explode, expc, PREFIX_LENGTH);
@@ -257,9 +260,10 @@ public void OnMapStart()
                     for(int i; i < expc; i++)
                         aBuffer.PushString(explode[i]);
 
-                    g_IFeatures.WriteItem(szBuffer[OFFSET_FeatureName], szBuffer[OFFSET_GroupName], aBuffer); 
                 }
                 while(kv.GotoNextKey(false));
+
+                kv.GoBack();
             }
         }
         while(kv.GotoNextKey());
@@ -274,13 +278,16 @@ public void OnMapStart()
 public void VIP_OnVIPLoaded()
 {
     char szFeature[64];
+    int part;
 
     for(int i; i < BIND_MAX; i++)
     {
-        if(IsValidPart(i) == -1)
+        if((part = IsValidPart(i)) == -1)
             continue;
         
         BindAsFeature(szBinds[i], szFeature, sizeof(szFeature));
+
+        coFeatures[part] = new Cookie(szFeature, NULL_STRING, CookieAccess_Private);
 
         VIP_RegisterFeature(szFeature, INT, SELECTABLE, OnSelected_Feature, OnDisplay_Feature);
     }
@@ -322,13 +329,10 @@ public bool OnDisplay_Feature(int iClient, const char[] szFeature, char[] szDisp
 
     if(tempClient[iClient].GetValue(szBinds[iBind], szDisplay, iMaxLength))
     {
-        if(!tempClient[iClient].GetTranslation(iClient, szBinds[iBind], szDisplay, iMaxLength))
-        {
-            if(iBind != BIND_PREFIX)
-                SetFailState("Unknown color value: %s", szDisplay);
-            
-            else cc_clear_allcolors(szDisplay, iMaxLength);
-        }
+        if(!tempClient[iClient].GetTranslation(iClient, szBinds[iBind], szDisplay, iMaxLength) && iBind != BIND_PREFIX)
+            SetFailState("Unknown color value: %s", szDisplay);
+
+        cc_clear_allcolors(szDisplay, iMaxLength);
 
         Format(szDisplay, iMaxLength, "%T [%s]", szFeature, iClient, szDisplay);
     }
@@ -420,7 +424,7 @@ Menu FeatureMenu(int iClient, const char[] szFeature)
     if(aValues.FindString("custom") != -1)
     {
         FormatEx(szBuffer, sizeof(szBuffer), "%c%T \n \n", 'c', "custom", iClient);
-        hMenu.AddItem(szBuffer, szBuffer);
+        hMenu.AddItem(szBuffer, szBuffer[1]);
     }
 
     for(int i; i < aValues.Length; i++)
@@ -434,8 +438,7 @@ Menu FeatureMenu(int iClient, const char[] szFeature)
 
         Format(szBuffer, sizeof(szBuffer), "%c%T", i, szBuffer, iClient);
 
-        if(iBind == BIND_PREFIX)
-            cc_clear_allcolors(szBuffer[1], sizeof(szBuffer));
+        cc_clear_allcolors(szBuffer[1], sizeof(szBuffer));
         
         hMenu.AddItem(szBuffer, szBuffer[1], iDrawType);
     } 
@@ -492,8 +495,13 @@ public int FeatureMenu_CallBack(Menu hMenu, MenuAction action, int iClient, int 
             if(idx != 'r')
                 view_as<ArrayList>(g_IFeatures.GetChildMap(szOption, tempClient[iClient].m_szVIPGroup)).GetString(idx, szValue, sizeof(szValue));
 
-            tempClient[iClient].SetValue(szBinds[iBind], szValue);
+            if(idx != 'r')
+                tempClient[iClient].SetValue(szBinds[iBind], szValue);
+            else tempClient[iClient].Remove(szBinds[iBind]);
+
             UpdateCookie(iClient, iBind, szValue);
+
+            VIP_SendClientVIPMenu(iClient, false);
         }
     }
 }
@@ -565,9 +573,9 @@ stock void BindAsFeature(const char[] szBind, char[] szFeature, int size)
     ReplaceString(szFeature, size, "}", "", true);
 
     for(int i; i < strlen(szFeature); i++)
-        CharToLower(szFeature[i]);
-    
-    Format(szFeature, size, "vip_chat_%s", szFeature);
+        szFeature[i] = CharToLower(szFeature[i]);
+
+    Format(szFeature, size, "vip_chat_%s", szFeature);    
 }
 
 stock int FeatureAsBind(const char[] szFeature, char[] szBind, int size)
@@ -575,7 +583,7 @@ stock int FeatureAsBind(const char[] szFeature, char[] szBind, int size)
     strcopy(szBind, size, szFeature[9]);
 
     for(int i; i < strlen(szBind); i++)
-        CharToUpper(szBind[i]);
+        szBind[i] = CharToUpper(szBind[i]);
     
     Format(szBind, size, "{%s}", szBind);
 
