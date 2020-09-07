@@ -1,1 +1,0 @@
-#pragma deprecated "No longer supported"

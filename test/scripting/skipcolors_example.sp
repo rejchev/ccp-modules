@@ -1,1 +1,0 @@
-#pragma deprecated "Use ccp_test.sp"
