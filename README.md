@@ -1,5 +1,8 @@
 <h1 align="center">CCProcessor kernal modules</h1>
 <p align="center">
+    <a href = "https://travis-ci.org/github/Nullent/CCP-Modules/builds" title = "Build Status">
+        <img src="https://travis-ci.org/Nullent/CCP-Modules.svg?branch=master" />
+    </a>
     <a href = "https://discord.gg/ChTyPUG" title = "Online support">
         <img src="https://img.shields.io/discord/494942123548868609" />
     </a>
