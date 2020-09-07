@@ -27,7 +27,7 @@ Action CmdSkip(int Client, int args)
     return Plugin_Handled;
 }
 
-public bool cc_proc_SkipColorsInMsg(int Client)
+public bool cc_proc_SkipColorsInMsg(const int mType, int iClient)
 {
     return EnableSkip;
 }
@@ -49,16 +49,10 @@ Action CmdTestPrefix(int Client, int Args)
     return Plugin_Handled;
 }
 
-int iType;
 
-public void cc_proc_MsgBroadType(const int typeMsg)
+public void cc_proc_RebuildString(const int mType, int iClient, int &pLevel, const char[] szBind, char[] szBuffer, int iSize)
 {
-    iType = typeMsg;
-}
-
-public void cc_proc_RebuildString(int iClient, int &pLevel, const char[] szBind, char[] szBuffer, int iSize)
-{
-    if(iType > eMsg_ALL)
+    if(mType > eMsg_ALL)
         return;
     
     if(!StrEqual(szBind, "{PREFIX}") || !testPrefix[0])

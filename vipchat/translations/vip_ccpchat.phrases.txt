@@ -30,43 +30,25 @@
         "en"            "Empty"
     }
 
-    "vip_prefix_title"
+    "feature_title"
     {
-        "ru"            "Выберите себе префикс:"
-        "en"            "Choose ur prefix:"
+        "ru"            "Список доступных значений \n \nФункция: "
+        "en"            "List of available values \n \nFunction: "
     }
 
-    "vip_name_color_title"
-    {
-        "ru"            "Выбор цвета ника:"
-        "en"            "Choose ur username color:"
-    }
-
-    "vip_message_color_title"
-    {
-        "ru"            "Выбор цвета сообщения:"
-        "en"            "Choose ur message color:"
-    }
-
-    "vip_prefix_color_title"
-    {
-        "ru"            "Выбор цвета префикса:"
-        "en"            "Choose ur prefix color:"
-    }
-
-    "disable_this"
-    {
-        "ru"            "Убрать"
-        "en"            "Disable"
-    }
+    // "disable_this"
+    // {
+    //     "ru"            "Убрать"
+    //     "en"            "Disable"
+    // }
 
     "custom"
     {
-        "ru"            "Ввести свой"
-        "en"            "Enter custom value"
+        "ru"            "Свой вариант"
+        "en"            "Custom value"
     }
 
-    "ccp_custom_value"
+    "wait_custom_value"
     {
         "ru"            "{G}Введите свой вариант:"
         "en"            "{G}Please write ur custom value now:"
@@ -78,16 +60,11 @@
         "en"            "{G}Value updated successfully."
     }
 
-    "ccp_vip_valueupdated"
+    "invalid_color_value"
     {
-        "ru"            "{G}Значение обновлено!"
-        "en"            "{G}The value was updated successfully!"
-    }
-
-    "ccp_invalid_colorkey"
-    {
-        "ru"            "{R}Ключ цвета не найден, пожалуйства, повторите попытку:"
-        "en"            "{R}Invalid color key, pls write again:"
+        "#format"       "{1:s}"
+        "ru"            "{R}Неизвестная аббревиатура {G}'{1}' {R}попробуйте снова:"
+        "en"            "{R}Invalid ABBR {G}'{1}', {R}please repeat:"
     }
 
 }

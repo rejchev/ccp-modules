@@ -11,7 +11,7 @@ public Plugin myinfo =
 	name = "[CCP] SHOP Chat",
 	author = "nullent?",
 	description = "Decorates player messages",
-	version = "1.2.0",
+	version = "1.3.0",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -299,16 +299,9 @@ public void OnClientDisconnect(int iClient)
     delete aClientTemplate[iClient];
 }
 
-int MsgType;
-
-public void cc_proc_MsgBroadType(const int type)
+public void cc_proc_RebuildString(const int mType, int iClient, int &pLevel, const char[] szBind, char[] szBuffer, int size)
 {
-    MsgType = type;
-}
-
-public void cc_proc_RebuildString(int iClient, int &pLevel, const char[] szBind, char[] szBuffer, int size)
-{
-    if(MsgType < eMsg_SERVER)
+    if(mType < eMsg_SERVER)
     {
         static int i;
         i = GetItemByBind(szBind);

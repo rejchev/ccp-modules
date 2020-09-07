@@ -9,7 +9,7 @@ public Plugin myinfo =
 	name = "[CCP] ClanTag as Chat Prefix",
 	author = "nullent?",
 	description = "Set ClanTag as chat prefix",
-	version = "1.1.0",
+	version = "1.2.0",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -46,16 +46,16 @@ public Action OnClientCommandKeyValues(int client, KeyValues kv)
     return Plugin_Continue;
 }
 
-int iType;
+// int iType;
 
-public void cc_proc_MsgBroadType(const int typeMsg)
-{
-    iType = typeMsg;
-}
+// public void cc_proc_MsgBroadType(const int typeMsg)
+// {
+//     iType = typeMsg;
+// }
 
-public void cc_proc_RebuildString(int iClient, int &pLevel, const char[] szBind, char[] szBuffer, int iSize)
+public void cc_proc_RebuildString(const int mType, int iClient, int &pLevel, const char[] szBind, char[] szBuffer, int iSize)
 {
-    if(iType < eMsg_SERVER && plevel > pLevel && szPrefix[iClient][0] && !strcmp(szBind, szBinds[BIND_PREFIX]))
+    if(mType < eMsg_SERVER && plevel > pLevel && szPrefix[iClient][0] && !strcmp(szBind, szBinds[BIND_PREFIX]))
     {
         pLevel = plevel;
         FormatEx(szBuffer, iSize, szPrefix[iClient]);

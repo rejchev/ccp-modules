@@ -7,7 +7,7 @@ public Plugin myinfo =
 	name = "[CCP] CCMessage",
 	author = "nullent?",
 	description = "Custom client message",
-	version = "3.0.0",
+	version = "3.1.0",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -188,9 +188,6 @@ SMCResult OnNewSection(SMCParser smc, const char[] name, bool opt_quotes)
     if(strcmp(name, "CustomChat", false))
     {
         g_MEBuffer.InitMap();
-
-        LogMessage("Section: %s", name);
-        LogMessage("SMap: %x", g_MEBuffer.m_smTemplate);
     }
 
     return SMCParse_Continue;
@@ -411,17 +408,10 @@ public int PrefList_CallBack(Menu hMenu, MenuAction action, int iClient, int iOp
     }
 }
 
-int iType;
-
-public void cc_proc_MsgBroadType(const int typeMsg)
-{
-    iType = typeMsg;
-}
-
-public void cc_proc_RebuildString(int iClient, int &pLevel, const char[] szBind, char[] szBuffer, int iSize)
+public void cc_proc_RebuildString(const int mType, int iClient, int &pLevel, const char[] szBind, char[] szBuffer, int iSize)
 {
     // Only for standart client messages;;;
-    if(iType == eMsg_SERVER || iType == eMsg_CNAME || iType == eMsg_RADIO  || !clMessage[iClient].IsValidMap())
+    if(mType == eMsg_SERVER || mType == eMsg_CNAME || mType == eMsg_RADIO  || !clMessage[iClient].IsValidMap())
         return;
     
     static int i;

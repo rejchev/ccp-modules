@@ -19,14 +19,14 @@ public Plugin myinfo =
     name        = "[CCP, CSGO] CMarker",
     author      = "nullent?",
     description = "Competitive color marker into chat",
-    version     = "1.3.0",
+    version     = "1.4.0",
     url         = "discord.gg/ChTyPUG"
 };
 
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 { 
-    return (GetEngineVersion() != Engine_CSGO || FindConVar("game_mode").IntValue != 1) ? APLRes_SilentFailure : APLRes_Success;
+    return (GetEngineVersion() != Engine_CSGO /*|| FindConVar("game_mode").IntValue != 1*/) ? APLRes_SilentFailure : APLRes_Success;
 }
 
 public void OnPluginStart()
@@ -84,16 +84,16 @@ public void OnThinkPost(int entity)
     GetEntDataArray(entity, m_iCompTeammateColor, ColorArray, sizeof(ColorArray));
 }
 
-int TemplateType;
+// int TemplateType;
 
-public void cc_proc_MsgBroadType(const int type)
-{
-    TemplateType = type;
-}
+// public void cc_proc_MsgBroadType(const int type)
+// {
+//     TemplateType = type;
+// }
 
-public void cc_proc_RebuildString(int iClient, int &pLevel, const char[] szBind, char[] szBuffer, int iSize)
+public void cc_proc_RebuildString(const int mType, int iClient, int &pLevel, const char[] szBind, char[] szBuffer, int iSize)
 {
-    if(TemplateType < eMsg_SERVER && !strcmp(szBind, szBinds[BIND_STATUS]) && pLevel < Level)
+    if(mType < eMsg_SERVER && !strcmp(szBind, szBinds[BIND_STATUS]) && pLevel < Level)
     {
         pLevel = Level;
 

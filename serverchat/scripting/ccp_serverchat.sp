@@ -7,7 +7,7 @@ public Plugin myinfo =
 	name = "[CCP] ServerChat",
 	author = "nullent?",
 	description = "Create ur server message template",
-	version = "1.3.0",
+	version = "1.4.0",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -95,16 +95,9 @@ public Action cc_proc_OnDefMsg(const char[] szMessage, bool IsPhraseExists, bool
     return Stash.FindString(szMessage) != -1 ? Plugin_Handled : (IsPhraseExists && IsTranslated) ? Plugin_Changed : Plugin_Continue;
 }
 
-int MessageType;
-
-public void cc_proc_MsgBroadType(const int iType)
+public void cc_proc_RebuildString(const int mType, int iClient, int &pLevel, const char[] szBind, char[] szBuffer, int iSize)
 {
-    MessageType = iType;
-}
-
-public void cc_proc_RebuildString(int iClient, int &pLevel, const char[] szBind, char[] szBuffer, int size)
-{
-    if(MessageType != eMsg_SERVER)
+    if(mType != eMsg_SERVER)
         return;
 
 #define LEVEL 1    
@@ -118,13 +111,13 @@ public void cc_proc_RebuildString(int iClient, int &pLevel, const char[] szBind,
         return;
     
     static char szValue[NAME_LENGTH];
-    ServerChat.GetString(i, szValue, size);
+    ServerChat.GetString(i, szValue, iSize);
 
     if(!szValue[0])
         return;
     
     pLevel = LEVEL;
-    FormatEx(szBuffer, size, szValue);
+    FormatEx(szBuffer, iSize, szValue);
 }
 
 int GetPartByKey(const char[] szKey)

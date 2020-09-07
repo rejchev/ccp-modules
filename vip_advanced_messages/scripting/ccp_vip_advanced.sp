@@ -8,7 +8,7 @@ public Plugin myinfo =
 	name = "[CCP] Advanced VIP message",
 	author = "nullent?",
 	description = "Advanced vip message",
-	version = "1.2.0",
+	version = "1.3.0",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -55,7 +55,7 @@ public Action OnToogleFeature(int iClient, const char[] szFeature, VIP_ToggleSta
     bEnabled[iClient] = eNewStatus == ENABLED;
 }
 
-public bool cc_proc_SkipColorsInMsg(int iClient)
+public bool cc_proc_SkipColorsInMsg(const int mType, int iClient)
 {
     return bEnabled[iClient];
 }
