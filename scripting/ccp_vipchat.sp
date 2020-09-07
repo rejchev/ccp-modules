@@ -13,7 +13,7 @@ public Plugin myinfo =
 	name = "[CCP] VIP Chat",
 	author = "nullent?",
 	description = "Chat features for VIP by user R1KO",
-	version = "1.8.0",
+	version = "1.8.1",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -70,6 +70,11 @@ enum struct Items
     void Reset()
     {
         this.m_mFeatures.Clear();
+    }
+
+    void Init()
+    {
+        this.m_mFeatures = new StringMap();
     }
 }
 
@@ -155,6 +160,8 @@ public void OnPluginStart()
     LoadTranslations("ccproc.phrases");
     LoadTranslations("vip_ccpchat.phrases");
     LoadTranslations("vip_modules.phrases");
+
+    g_IFeatures.Init();
 
     char szBuffer[NAME_LENGTH];
     ConVar convar;
