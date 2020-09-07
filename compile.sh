@@ -1,5 +1,6 @@
 #!/bin/bash
 
+echo $1
 cd $1
 files=(*.sp)
 
@@ -8,5 +9,5 @@ for file in "${files[@]}"; do
     #     continue
     # fi
     echo $file
-    ./spcomp -E -v0 "${files[$file]}"
+    ./spcomp $file -E -v0 
 done
