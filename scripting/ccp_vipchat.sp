@@ -11,7 +11,7 @@ public Plugin myinfo =
 	name = "[CCP] VIP Chat",
 	author = "nullent?",
 	description = "Chat features for VIP by user R1KO",
-	version = "1.8.2",
+	version = "1.8.3",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -242,6 +242,8 @@ public void OnMapStart()
             kv.GetSectionName(szBuffer, OFFSET_GroupName - 1);
             szBuffer[OFFSET_GroupName-1] = 0;
 
+            g_IFeatures.WriteItem(szBuffer[OFFSET_FeatureName], NULL_STRING, new StringMap());
+
             if(kv.GotoFirstSubKey(false))
             {
                 do
@@ -259,6 +261,8 @@ public void OnMapStart()
 
                     for(int i; i < expc; i++)
                         aBuffer.PushString(explode[i]);
+                    
+                    g_IFeatures.WriteItem(szBuffer, szBuffer[OFFSET_GroupName], aBuffer);
 
                 }
                 while(kv.GotoNextKey(false));
@@ -405,7 +409,7 @@ Menu FeatureMenu(int iClient, const char[] szFeature)
     Menu hMenu;
     int iBind = FeatureAsNum(szFeature);
     ArrayList aValues = g_IFeatures.GetChildMap(szFeature, tempClient[iClient].m_szVIPGroup);
-
+    
     if(!aValues)
         return hMenu;
 
