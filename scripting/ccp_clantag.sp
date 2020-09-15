@@ -2,14 +2,14 @@
 
 #include <ccprocessor>
 
-char szPrefix[MAXPLAYERS+1][PREFIX_LENGTH];
+#include <cstrike>
 
 public Plugin myinfo = 
 {
 	name = "[CCP] ClanTag as Chat Prefix",
 	author = "nullent?",
 	description = "Set ClanTag as chat prefix",
-	version = "1.2.0",
+	version = "1.2.1",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -34,30 +34,36 @@ public void OnConVarChanged(ConVar cvar, const char[] oldVal, const char[] newVa
     plevel = cvar.IntValue;
 }
 
-public Action OnClientCommandKeyValues(int client, KeyValues kv)
-{
-    char szBuffer[16];
-    if(!IsClientInGame(client) || IsFakeClient(client))
-        return Plugin_Continue;
-    
-    if(kv.GetSectionName(szBuffer, sizeof(szBuffer)) && strncmp(szBuffer, "ClanTagChanged", 14) == 0)
-        kv.GetString("tag", szPrefix[client], sizeof(szPrefix[]));
-
-    return Plugin_Continue;
-}
-
-// int iType;
-
-// public void cc_proc_MsgBroadType(const int typeMsg)
-// {
-//     iType = typeMsg;
-// }
 
 public void cc_proc_RebuildString(const int mType, int iClient, int &pLevel, const char[] szBind, char[] szBuffer, int iSize)
 {
-    if(mType < eMsg_SERVER && plevel > pLevel && szPrefix[iClient][0] && !strcmp(szBind, szBinds[BIND_PREFIX]))
-    {
-        pLevel = plevel;
-        FormatEx(szBuffer, iSize, szPrefix[iClient]);
-    }
+    if(mType == eMsg_CNAME || mType == eMsg_SERVER)
+        return;
+
+    if(!iClient)
+        return;
+    
+    if(strcmp(szBind, szBinds[BIND_PREFIX]))
+        return;
+    
+    if(pLevel > plevel)
+        return;
+
+    char szPrefix[PREFIX_LENGTH];
+    szPrefix = GetClientClanTag(iClient);
+
+    if(!szPrefix[0])
+        return;
+    
+    pLevel = plevel;
+    FormatEx(szBuffer, iSize, szPrefix);
+}
+
+char GetClientClanTag(int iClient)
+{
+    char szTag[PREFIX_LENGTH];
+
+    CS_GetClientClanTag(iClient, szTag, sizeof(szTag));
+
+    return szTag;
 }
