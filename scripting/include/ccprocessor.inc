@@ -19,7 +19,7 @@ API key:
 	ATTENTION: Do not change it yourself if you are not ready for the consequences!
 */
 
-#define API_KEY 			92564419
+#define API_KEY 			73138147
 
 #if !defined CORE
 	#define API_OOD 		"The plugin module uses an outdated API. You must update it."
@@ -100,6 +100,19 @@ forward void cc_proc_MsgUniqueId(const int UniqueID);
  * 	@noreturn
 */
 forward void cc_proc_RebuildString(const int mType, int iClient, int &pLevel, const char[] szBind, char[] szBuffer, int iSize);
+
+/*
+ *	Call after build part of prototype
+ *
+ *  @param mType		Message type
+ *	@param iClient		Client index
+ *	@param pLevel		Replacement priority
+ *	@param szBind		Core binds ({PROTOTYPE}, {STATUS}, {TEAM}, {PREFIXCO}, {PREFIX}, {NAMECO}, {NAME}, {MSGCO}, {MSG})
+ *	@param szValue		Value of part
+ *
+ * 	@noreturn
+*/
+forward void cc_proc_RebuildString_Post(const int mType, int iClient, int pLevel, const char[] szBind, const char[] szValue);
 
 /*
  *	Calls when message is build ended
@@ -212,6 +225,22 @@ native int cc_get_APIKey();
  * 	@return				true - equal / false - otherwise
 */
 native bool cc_is_APIEqual(const int api);
+
+/*
+ *	Calling the internal message builder.
+ *	Calls child forwards to get the current object settings.
+ *
+ *	@param iClient		Client index
+ *	@param mType		Message type
+ *	@param um			Unique usermessage type (or. dev)
+ *	@param szName		Username value
+ *	@param szMessage	User message value
+ *	@param szBuffer		Buffer to store
+ *	@param size			Buffer size
+ *
+ * 	@noreturn
+*/
+native void cc_call_builder(int iClient, int mType, const char[] um, const char[] szName, const char[] szMessage, char[] szBuffer, int size);
 
 
 stock int BreakPoint(int iBindType, char[] szValue)
