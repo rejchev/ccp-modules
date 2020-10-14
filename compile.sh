@@ -10,9 +10,9 @@ for file in "${files[@]}"; do
     filename=$(basename -- "$file")
     filename="${filename%.*}"
 
-    # echo $filename
+    echo $filename
 
-    ./spcomp $file -E -o'/compiled/'$filename -v0
+    ./spcomp $filename'.sp' -E -o='/compiled/'$filename -v=0
 
     if [ ! -e '/compiled/'$filename ]; then
         exit 1
