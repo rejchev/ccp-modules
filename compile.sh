@@ -5,6 +5,7 @@ files=(*.sp)
 
 for file in "${files[@]}"; do
 
+    filename=$(basename -- "$file")
     filename="${filename%.*}"
 
     ./spcomp $file -E -v0
