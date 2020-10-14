@@ -3,19 +3,13 @@
 cd $1
 files=(*.sp)
 
-# ERRORS="errors.log"
-
 for file in "${files[@]}"; do
 
-    filename=$(basename -- "$file")
     filename="${filename%.*}"
 
-    echo $filename
+    ./spcomp $file -E -v0
 
-    ./spcomp $filename'.sp' -E -o='/compiled/'$filename -v=0
-
-    if [ ! -e '/compiled/'$filename ]; then
+    if [ ! -e $filename'.smx' ]; then
         exit 1
-        break
     fi
 done
