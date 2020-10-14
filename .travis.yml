@@ -10,7 +10,6 @@ language: c
 
 env:
   global:
-    
     - INCLUDE=addons/sourcemod/scripting/include
     - SCRIPTING=addons/sourcemod/scripting
   jobs:
@@ -25,8 +24,11 @@ before_script:
     - mkdir $SCRIPTING/compiled
     - find $SCRIPTING -name '*.sp' -type f -delete
     - cp -R scripting addons/sourcemod/
+    # - cd $SCRIPTING
 
-script: bash compile.sh $SCRIPTING
+script: 
+  #bash compile.sh $SCRIPTING
+  - bash compile.sh $SCRIPTING || exit 1
 
 notifications:
     email: false
