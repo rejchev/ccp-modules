@@ -10,22 +10,41 @@ language: c
 
 env:
   global:
-    - INCLUDE=addons/sourcemod/scripting/include
-    - SCRIPTING=addons/sourcemod/scripting
+    - MODULES=$TRAVIS_BUILD_DIR/modules
+    - SPSRC=$TRAVIS_BUILD_DIR/addons/sourcemod/scripting
+    - COREINC=$TRAVIS_BUILD/handler/scripting/include
+    - INCLUDES=$TRAVIS_BUILD_DIR/include
   jobs:
     - SMVERSION=1.10
 
 install:
     - wget --input-file=http://sourcemod.net/smdrop/$SMVERSION/sourcemod-latest-linux
     - tar -xzf $(cat sourcemod-latest-linux)
+    - git clone -b ${TRAVIS_BRANCH} https://github.com/nyood/ccprocessor.git $TRAVIS_BUILD_DIR/handler
+    - ls -l -A $TRAVIS_BUILD_DIR/handler
+    - cp -R -f $INCLUDES $SPSRC/
+    - cp -R -f ./handler/scripting/include $SPSRC/
 
 before_script:
-    - chmod +x $SCRIPTING/spcomp
-    - find $SCRIPTING -name '*.sp' -type f -delete
-    - cp -R scripting addons/sourcemod/
+    - chmod +x $SPSRC/spcomp
+    - chmod +x $TRAVIS_BUILD_DIR/travis/compile.sh
+    - chmod +x $TRAVIS_BUILD_DIR/travis/pack_modules.sh
 
 script: 
-  - bash compile.sh $SCRIPTING || exit 1
+  - bash ./travis/compile.sh $TRAVIS_BUILD_DIR $MODULES $SPSRC $SPSRC/include || exit 1 # ?
+
+before_deploy:
+  - bash ./travis/pack_modules.sh $MODULES ${TRAVIS_BUILD_NUMBER} || exit 1
+
+deploy:
+  provider: releases
+  token:
+    secure: nyRMPz3/XRRRie8HZBNJmyR/RoZe6GCHcw823TKqtBu5ft2hwPkw9oj7347EY28Dn5YCEHgDxxmaQ1SvtwPhqkWl93rZRTmW3fIufISTmRKyDoTahyquNEiCaN6QZdrBGpyYFIFe/TzCpc6JtLCKUTpjTdoWJS0aslWZgnx022eEJdQOoZINq5uill3XEEN1br55sDdufVA7SYVUsS7Pe24u7tr6cCZc7m3caL7y1cbGI1TMRONVUpA9GCrs+TDM260s3Lt97bWIUUmrC0R2WSwbD+cxlSo5IgRSB2rnOAe+Pm47ZHKr2msmAxce6BILRqBEt/tJr7cAgxZcYuPsHCQ2N2LoURcaqqA4da7syb0IqizDpAhuLVV7n4Rf3lGDQuJiAygz6hLVBWJxXXjaqTxcxdnDzW4Pdxm4/zZ1hr1cXihcwe5ZOSTpUserHx7qXh4nqAa0dg2we5f8oG00XJRccY3B8sQ18al0tWzAJr5904QvXWb4HbiCUKShHcWgH9lYbQniVF40Wjmfis12LUapm9CFxe6UMWOMFpr11vIP/CbdjYsi9+lp+K9GrMW0NuuLBzWGJOU0njQvI0te0oLygAr9Z9iLF5uEdufYPCkYqZeEBMU3eflhr5tUofseC2827vern5dIN5SW0fESYkyC+7wbLrr4wXqo5BnI8Pg=
+  file_glob: true
+  file: $MODULES/*
+  skip_cleanup: true
+  on:
+    tags: true
 
 notifications:
     email: false
