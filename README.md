@@ -23,5 +23,5 @@ List of relevant modules for the release version of the core handler.
 
 ## Requirements:
 -------------
-- [CCProcessor](https://github.com/Nullent/CCProcessor/releases)
+- [CCProcessor](https://github.com/nyood/ccprocessor/releases)
 - Sourcemod 1.10 [ [Win](http://sourcemod.net/latest.php?os=windows&version=1.10) | [Linux](http://sourcemod.net/latest.php?os=linux&version=1.10) ]
