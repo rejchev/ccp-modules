@@ -1,18 +1,18 @@
 <h1 align="center">CCProcessor core modules</h1>
 <p align="center">
-    <a href = "https://travis-ci.org/github/Nullent/CCP-Modules/builds" title = "Build Status">
-        <img src="https://travis-ci.org/Nullent/CCP-Modules.svg?branch=main" />
+    <a href = "https://travis-ci.org/github/nyood/ccp-modules/requests" title = "Build Requests">
+        <img src="https://travis-ci.org/nyood/ccp-modules.svg?branch=main" />
     </a>
     <a href = "https://discord.gg/ChTyPUG" title = "Online support">
         <img src="https://img.shields.io/discord/494942123548868609" />
     </a>
-    <a href="https://github.com/Nullent/CCProcessor/releases" title="Releases">
-        <img src="https://img.shields.io/github/v/release/Nullent/CCProcessor" />
+    <a href="https://github.com/nyood/ccp-modules/releases" title="Releases">
+        <img src="https://img.shields.io/github/v/release/nyood/ccp-modules" />
     </a>
 </p>
 
 ## Description
-List of relevant modules for the release version of the kernel.
+List of relevant modules for the release version of the core handler.
 
 ## Game support
 ---------
