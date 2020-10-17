@@ -20,7 +20,7 @@ env:
 install:
     - wget --input-file=http://sourcemod.net/smdrop/$SMVERSION/sourcemod-latest-linux
     - tar -xzf $(cat sourcemod-latest-linux)
-    - git clone -b ${TRAVIS_BRANCH} https://github.com/nyood/ccprocessor.git $TRAVIS_BUILD_DIR/handler
+    - git clone -b main https://github.com/nyood/ccprocessor.git $TRAVIS_BUILD_DIR/handler
     - ls -l -A $TRAVIS_BUILD_DIR/handler
     - cp -R -f $INCLUDES $SPSRC/
     - cp -R -f ./handler/scripting/include $SPSRC/
