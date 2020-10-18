@@ -40,3 +40,9 @@
 .idea
 *.bat
 *.smx
+
+# Private stage
+/modules/ccp-mimic/*
+/modules/ccp-chat-ext/*
+/modules/ccp-chat-flood/*
+/modules/ccp-web-chat/*
