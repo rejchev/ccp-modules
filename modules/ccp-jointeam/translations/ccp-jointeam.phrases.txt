@@ -1,0 +1,20 @@
+"Phrases"
+{
+    "spectators"
+    {
+        "ru"            "Наблюдателей"
+        "en"            "Spectators"
+    }
+
+    "terrorists"
+    {
+        "ru"            "Террористов"
+        "en"            "Terrorists"
+    }
+
+    "counter-terrorists"
+    {
+        "ru"            "Спецназа"
+        "en"            "Counter-terrorists"
+    }
+}
