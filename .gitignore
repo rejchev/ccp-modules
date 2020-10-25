@@ -46,3 +46,8 @@
 /modules/ccp-chat-ext/*
 /modules/ccp-chat-flood/*
 /modules/ccp-web-chat/*
+/modules/ccp-vipchat-sql/*
+/modules/ccp-lr-chat/*
+
+#hidden-includes
+/include/lvl_ranks.inc
