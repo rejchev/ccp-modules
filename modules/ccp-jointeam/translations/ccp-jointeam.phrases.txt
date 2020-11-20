@@ -2,19 +2,19 @@
 {
     "spectators"
     {
-        "ru"            "Наблюдателей"
-        "en"            "Spectators"
+        "ru"            "{PI}Наблюдателей"
+        "en"            "{PI}Spectators"
     }
 
     "terrorists"
     {
-        "ru"            "Террористов"
-        "en"            "Terrorists"
+        "ru"            "{CO}Террористов"
+        "en"            "{CO}Terrorists"
     }
 
     "counter-terrorists"
     {
-        "ru"            "Спецназа"
-        "en"            "Counter-terrorists"
+        "ru"            "{B}Спецназа"
+        "en"            "{B}Counter-terrorists"
     }
 }

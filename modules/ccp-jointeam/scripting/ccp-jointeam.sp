@@ -7,7 +7,7 @@ public Plugin myinfo =
 	name = "[CCP] Join team",
 	author = "nullent?",
 	description = "...",
-	version = "1.0.0",
+	version = "1.0.1",
 	url = "https://t.me/nyoood"
 };
 
@@ -94,4 +94,6 @@ void GetTeamName(int team, char[] buffer, int size)
             (team == 2) ? "terrorists" : "counter-terrorists"
         ), 0);
     }
+
+    ccp_replaceColors(buffer, false);
 }

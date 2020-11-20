@@ -42,12 +42,14 @@
 *.smx
 
 # Private stage
-/modules/ccp-mimic/*
-/modules/ccp-chat-ext/*
-/modules/ccp-chat-flood/*
-/modules/ccp-web-chat/*
-/modules/ccp-vipchat-sql/*
-/modules/ccp-lr-chat/*
+/modules/ccp-mimic/
+/modules/ccp-chat-ext/
+/modules/ccp-chat-flood/
+/modules/ccp-web-chat/
+/modules/ccp-vipchat-sql/
+/modules/ccp-lr-chat/
+/modules/ccp-hint/
 
 #hidden-includes
 /include/lvl_ranks.inc
+/include/vip_core.inc
