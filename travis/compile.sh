@@ -34,7 +34,7 @@ for dir in "${derictories[@]}"; do
 
         bin=$modulebin'/'$filenoext'.smx'
         
-        $spsrc'/spcomp' $src -w234 -o2 -E -v1 -i=$includes -o=$bin
+        $spsrc'/spcomp' $src -w234 -o2 -v1 -i=$includes -o=$bin
 
         if [ ! -e $bin ]; then
             echo "File ${bin} is not exists"
