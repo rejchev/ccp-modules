@@ -22,6 +22,8 @@ public void OnPluginStart()
 
 	CreateConVar("channels_prototype", "1000", "Template replacement priority", _, true, 1.0).AddChangeHook(OnProto);
 	CreateConVar("channels_msg", "1000", "Message replacement priority", _, true, 1.0).AddChangeHook(OnMessage);
+
+	AutoExecConfig(true, "channels", "ccprocessor");
 }
 
 public void OnMapStart()
