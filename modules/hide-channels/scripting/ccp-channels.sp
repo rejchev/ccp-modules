@@ -115,7 +115,7 @@ void RemoveFromRecepients(const int mType, int[] clients, int &numClients)
 
 	for(int i; i < size; i++)
 	{
-		if(!g_chIgnore[i][mType])
-			clients[numClients++] = i;
+		if(!g_chIgnore[clients[i]][mType])
+			clients[numClients++] = clients[i];
 	}
 }
