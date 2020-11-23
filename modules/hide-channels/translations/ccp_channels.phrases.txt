@@ -1,0 +1,55 @@
+"Phrases"
+{
+    "title"
+    {
+        "ru"            "Список доступных каналов"
+        "en"            "Available channel list"
+    }
+
+    "disabled"
+    {
+        "ru"            "Выключен"
+        "en"            "Disabled"
+    }
+
+    "enabled"
+    {
+        "ru"            "Включен"
+        "en"            "Enabled"
+    }
+
+    "team"
+    {
+        "#format"       "{1:s}"
+        "ru"            "Командый канал [{1}]"
+        "en"            "Team channel [{1}]"
+    }
+
+    "public"
+    {
+        "#format"       "{1:s}"
+        "ru"            "Общий канал [{1}]"
+        "en"            "Public channel [{1}]"
+    }
+
+    "changename"
+    {
+        "#format"       "{1:s}"
+        "ru"            "Канал смены прозвеща [{1}]"
+        "en"            "Change username channel [{1}]"
+    }
+
+    "radio"
+    {
+        "#format"       "{1:s}"
+        "ru"            "Радио канал [{1}]"
+        "en"            "Radio channel [{1}]"
+    }
+
+    "server"
+    {
+        "#format"       "{1:s}"
+        "ru"            "Серверный канал [{1}]"
+        "en"            "Server channel [{1}]"
+    }
+}
