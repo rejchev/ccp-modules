@@ -10,7 +10,7 @@ language: c
 
 env:
   global:
-    - MODULES=$TRAVIS_BUILD_DIR/modules
+    - MODULES=$TRAVIS_BUILD_DIR/src
     - SPSRC=$TRAVIS_BUILD_DIR/addons/sourcemod/scripting
     - COREINC=$TRAVIS_BUILD/handler/scripting/include
     - INCLUDES=$TRAVIS_BUILD_DIR/include

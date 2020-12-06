@@ -36,7 +36,7 @@ Competitive Marker | Sets a colored marker to the player's chat status, in compe
 Fake Username | Allows you to set a fake sender name in the chat | ccp_fakename-??.tar.gz
 Message Prefix | Allows to replace the standard chat prefix `[SM]` | ccp_message_prefix-??.tar.gz
 Custom chat | Allows you to set custom chat settings for players | customchat-??.tar.gz
-Server chat | Allows you to set custom chat settings for messages from the server | serverchat-??.tar.gz
+Hide channels | Allows you to hide messages from same channels | hide-channels-??.tar.gz
 Shop chat | Adds the ability for players to buy custom chat settings through the shop | shop_chat-??.tar.gz
 VIP chat | Adds the ability for VIP players to use custom chat settings | vipchat-??.tar.gz
 VIP advanced chat | Adds the ability for VIP players to use RTCP | vip_advanced_messages-??.tar.gz
