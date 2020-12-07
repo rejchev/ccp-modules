@@ -231,7 +231,7 @@ public bool OnDisplay_Feature(int iClient, const char[] szFeature, char[] szDisp
             Format(szDisplay, iMaxLength, "%T", szDisplay, iClient);
         }
 
-        cc_clear_allcolors(szDisplay, iMaxLength);
+        ccp_replaceColors(szDisplay, true);
 
         Format(szDisplay, iMaxLength, "%T [%s]", szFeature, iClient, szDisplay);
     }
@@ -352,7 +352,7 @@ Menu FeatureMenu(int iClient, const char[] szFeature)
 
         Format(szBuffer, sizeof(szBuffer), "%c%T", i, szBuffer, iClient);
 
-        cc_clear_allcolors(szBuffer[1], sizeof(szBuffer));
+        ccp_replaceColors(szBuffer[1], true);
         
         hMenu.AddItem(szBuffer, szBuffer[1], iDrawType);
     } 

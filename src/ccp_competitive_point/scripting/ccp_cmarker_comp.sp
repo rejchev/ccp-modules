@@ -98,10 +98,9 @@ public Action cc_proc_RebuildString(const int mType, int iClient, int &pLevel, c
         pLevel = Level;
 
         FormatEx(szBuffer, iSize, "%s", szStatusSmb);
-
         if(EnColor)
         {
-            cc_clear_allcolors(szBuffer, iSize);
+            ccp_replaceColors(szBuffer, true);
             
             Format(szBuffer, iSize, "%c%s", GetColor(iClient), szBuffer);
         }
