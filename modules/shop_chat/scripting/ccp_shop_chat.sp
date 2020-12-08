@@ -11,7 +11,7 @@ public Plugin myinfo =
 	name = "[CCP] SHOP Chat",
 	author = "nullent?",
 	description = "Decorates player messages",
-	version = "1.3.0",
+	version = "1.3.1",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -155,7 +155,7 @@ public void ReadCatItems(char[][] szConfigs)
     }
 }
 
-public bool OnCategoryDisplayed(int client, CategoryId category_id, const char[] category, const char[] name, char[] buffer, int maxlen)
+public bool OnCategoryDisplayed(int client, CategoryId category_id, const char[] category, const char[] name, char[] buffer, int maxlen, ShopMenu menu)
 {
     FormatEx(buffer, maxlen, "%T", name, client);
 
