@@ -14,7 +14,7 @@ for dir in "${derictories[@]}"; do
     dir=$modules'/'$dir
     name=$(basename -- "$dir")
 
-    tar -czvf ${name}-${build}.tar.gz './'$name
+    tar -czvf ${name}-${build}.tar.gz $name
 
     rm -Rfv $dir
 done
