@@ -155,7 +155,7 @@ public void ReadCatItems(char[][] szConfigs)
     }
 }
 
-public bool OnCategoryDisplayed(int client, CategoryId category_id, const char[] category, const char[] name, char[] buffer, int maxlen)
+public bool OnCategoryDisplayed(int client, CategoryId category_id, const char[] category, const char[] name, char[] buffer, int maxlen, ShopMenu menu)
 {
     FormatEx(buffer, maxlen, "%T", name, client);
 
