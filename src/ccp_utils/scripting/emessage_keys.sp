@@ -12,10 +12,8 @@ public void OnMapStart()
     cc_proc_APIHandShake(cc_get_APIKey());
 }
 
-public Action cc_proc_OnDefMsg(const char[] szMessage, bool IsPhraseExists, bool IsTranslated)
+public Action cc_proc_OnDefMsg(const char[] szMessage, bool IsPhraseExists)
 {
-    if(!IsPhraseExists || !IsTranslated)
-        LogMessage("Engine message key: %s | Is phrase exists: %b | Is translated for SERVER_LANG: %b", szMessage, IsPhraseExists, IsTranslated);
-
-    return (IsPhraseExists && IsTranslated) ? Plugin_Changed : Plugin_Continue;
+    if(!IsPhraseExists)
+        LogMessage("Engine message key: %s | Is phrase exists: %b ", szMessage, IsPhraseExists);
 }

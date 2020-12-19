@@ -7,7 +7,7 @@ public Plugin myinfo =
 	name = "[CCP] FakeUsername",
 	author = "nullent?",
 	description = "Ability to set a fake username in chat msgs",
-	version = "1.4.1",
+	version = "1.5.0",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -53,7 +53,7 @@ _CVAR_ON_CHANGE(OnAccessChanged)
     char szFlag[4];
     cvar.GetString(SZ(szFlag));
 
-    AccessFlag = (szFlag[0]) ? ReadFlagString(szFlag) : 0;
+    AccessFlag = ReadFlagString(szFlag);
 }
 
 _CVAR_ON_CHANGE(OnChangePName)
@@ -81,12 +81,12 @@ public void OnClientPostAdminCheck(int iClient)
     ClientFlags[iClient] = GetUserFlagBits(iClient);
 }
 
-public Action cc_proc_RebuildString(const int mType, int iClient, int &pLevel, const char[] szBind, char[] szBuffer, int iSize)
+public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size)
 {
-    if(mType < eMsg_SERVER && mType != eMsg_CNAME && !strcmp(szBind, "{NAME}") && fakename[iClient][0] && pLevel < nLevel)
+    if(mType <= eMsg_ALL && part == BIND_NAME && fakename[sender][0] && pLevel < nLevel)
     {
         pLevel = nLevel;
-        FormatEx(szBuffer, iSize, fakename[iClient]);
+        FormatEx(buffer, size, fakename[sender]);
     }  
 }
 

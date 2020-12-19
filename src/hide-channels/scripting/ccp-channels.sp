@@ -7,7 +7,7 @@ public Plugin myinfo =
 	name = "[CCP] Channels",
 	author = "nu11ent",
 	description = "...",
-	version = "1.0.1",
+	version = "1.1.0",
 	url = "https://t.me/nyoood"
 };
 
@@ -92,12 +92,10 @@ public int MenuCallBack(Menu hMenu, MenuAction action, int iClient, int option)
 	}
 }
 
-public Action cc_proc_RebuildString(const int mType, int iClient, int &pLevel, const char[] szBind, char[] szBuffer, int size)
+public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size)
 {
-	if(g_chIgnore[iClient][mType] && (!strcmp(szBinds[BIND_PROTOTYPE], szBind) || !strcmp(szBinds[BIND_MSG], szBind)))
-	{
-		return Plugin_Handled;
-	}
+	if(g_chIgnore[sender][mType])
+		return Plugin_Stop;
 
 	return Plugin_Continue;
 }

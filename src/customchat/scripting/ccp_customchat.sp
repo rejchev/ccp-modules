@@ -7,7 +7,7 @@ public Plugin myinfo =
 	name = "[CCP] CCMessage",
 	author = "nullent?",
 	description = "Custom client message",
-	version = "3.1.1",
+	version = "3.2.0",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -408,24 +408,21 @@ public int PrefList_CallBack(Menu hMenu, MenuAction action, int iClient, int iOp
     }
 }
 
-public Action cc_proc_RebuildString(const int mType, int iClient, int &pLevel, const char[] szBind, char[] szBuffer, int iSize)
+public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size)
 {
     // Only for standart client messages;;;
-    if(mType == eMsg_SERVER || mType == eMsg_CNAME || mType == eMsg_RADIO  || !clMessage[iClient].IsValidMap())
+    if(mType > eMsg_ALL || !clMessage[sender].IsValidMap())
         return Plugin_Continue;
-    
-    static int i;
-    i = CharToNumBind(szBind);
-    
-    if(PLEVEL[i] < pLevel)
+        
+    if(PLEVEL[part] < pLevel)
         return Plugin_Continue;
     
     static char szValue[MESSAGE_LENGTH];
-    if(!clMessage[iClient].GetValue(szBind, szValue, sizeof(szValue)))
+    if(!clMessage[sender].GetValue(szBinds[part], szValue, sizeof(szValue)) || !szValue[0])
         return Plugin_Continue;
     
-    pLevel = PLEVEL[i];
-    FormatEx(szBuffer, iSize, "%s", szValue);
+    pLevel = PLEVEL[part];
+    FormatEx(buffer, size, szValue);
 
     return Plugin_Continue;  
 }
@@ -480,16 +477,6 @@ void GetTranslationByAccess(int iClient, const eAccess accessType, const char[] 
         case eFlag: FormatEx(szBuffer, size, "%t", "ccm_flag_item", szValue);
         case eGroup: FormatEx(szBuffer, size, "%t", "ccm_group_item", szValue);
     }
-}
-
-int CharToNumBind(const char[] szBind)
-{
-    for(int i; i < BIND_MAX; i++)
-        if(!strcmp(szBinds[i], szBind))
-            return i;
-    
-    // But that will never happen :|
-    return BIND_MAX;
 }
 
 stock char AccessTypeToChar(eAccess eAValue)

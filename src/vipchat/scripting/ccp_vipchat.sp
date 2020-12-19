@@ -11,11 +11,11 @@ public Plugin myinfo =
 	name = "[CCP] VIP Chat",
 	author = "nullent?",
 	description = "Chat features for VIP by user R1KO",
-	version = "1.8.5",
+	version = "1.9.0",
 	url = "discord.gg/ChTyPUG"
 };
 
-StringMap g_mPalette;
+ArrayList g_mPalette;
 
 int level[BIND_PREFIX];
 Cookie coFeatures[BIND_PREFIX];
@@ -83,6 +83,8 @@ enum
 public void OnMapStart()
 {
     cc_proc_APIHandShake(cc_get_APIKey());
+
+    g_mPalette = null;
     
     delete g_mItems;
     
@@ -275,15 +277,20 @@ public void VIP_OnVIPClientLoaded(int iClient)
 
 void GetValueFromCookie(int iClient, Cookie coHandle, const char[] szFeature)
 {
-    char szValue[PREFIX_LENGTH], szBuffer[4];
+    char szValue[PREFIX_LENGTH];
     int iBind = BindFromString(szFeature);
 
     if(coHandle)
     {
         GetClientCookie(iClient, coHandle, szValue, sizeof(szValue));
         
-        if(iBind != BIND_PREFIX && !g_mPalette.GetString(szValue, szBuffer, sizeof(szBuffer)))
+        if(iBind != BIND_PREFIX) {
             szValue = NULL_STRING;
+
+            int a = g_mPalette.FindString(szValue);
+            if(a != -1)
+                g_mPalette.GetString(a+1, szValue, sizeof(szValue));
+        }
     }
 
     if(szValue[0])
@@ -439,7 +446,7 @@ public Action OnClientSayCommand(int iClient, const char[] command, const char[]
 
         TrimString(szBuffer);
 
-        if(g_iBindNow[iClient] != BIND_PREFIX && !g_mPalette.GetString(szBuffer, szBuffer[STATUS_LENGTH+1], STATUS_LENGTH))
+        if(g_iBindNow[iClient] != BIND_PREFIX && g_mPalette.FindString(szBuffer) == -1)
         {
             BreakPoint(g_iBindNow[iClient], szBuffer);
             PrintToChat(iClient, "%T", "invalid_color_value", iClient, szBuffer);
@@ -463,31 +470,31 @@ public Action OnClientSayCommand(int iClient, const char[] command, const char[]
     return Plugin_Continue;
 }
 
-public Action cc_proc_RebuildString(const int mType, int iClient, int &pLevel, const char[] szBind, char[] szBuffer, int iSize)
+public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size)
 {
-    int a, part = BindFromString(szBind);
+    int a;
     if((a = IsValidPart(part)) == -1)
         return Plugin_Continue;
 
     else if(mType > eMsg_ALL)
         return Plugin_Continue;
     
-    else if(!VIP_IsClientVIP(iClient))
+    else if(!VIP_IsClientVIP(sender))
         return Plugin_Continue;
     
     else if(pLevel > level[a])
         return Plugin_Continue;
     
     char szValue[NAME_LENGTH];
-    if(!g_mClients[iClient].GetString(szBind, szValue, sizeof(szValue)) || !szValue[0])
+    if(!g_mClients[sender].GetString(szBinds[part], szValue, sizeof(szValue)) || !szValue[0])
         return Plugin_Continue;
 
     if(part == BIND_PREFIX && TranslationPhraseExists(szValue)) {
-        Format(szValue, sizeof(szValue), "%T", szValue, iClient);
+        Format(szValue, sizeof(szValue), "%T", szValue, sender);
     }
     
     pLevel = level[a];
-    FormatEx(szBuffer, iSize, szValue);
+    FormatEx(buffer, size, szValue);
 
     return Plugin_Continue;
 }

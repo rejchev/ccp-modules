@@ -9,7 +9,7 @@ public Plugin myinfo =
 	name = "[CCP] ClanTag as Chat Prefix",
 	author = "nullent?",
 	description = "Set ClanTag as chat prefix",
-	version = "1.2.2",
+	version = "1.3.0",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -35,28 +35,19 @@ public void OnConVarChanged(ConVar cvar, const char[] oldVal, const char[] newVa
 }
 
 
-public Action cc_proc_RebuildString(const int mType, int iClient, int &pLevel, const char[] szBind, char[] szBuffer, int iSize)
+public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size)
 {
-    if(mType == eMsg_CNAME || mType == eMsg_SERVER)
-        return Plugin_Continue;
-
-    if(!iClient)
+    if(mType > eMsg_RADIO || part != BIND_PREFIX || pLevel > plevel)
         return Plugin_Continue;
     
-    if(strcmp(szBind, szBinds[BIND_PREFIX]))
-        return Plugin_Continue;
-    
-    if(pLevel > plevel)
-        return Plugin_Continue;
-
     char szPrefix[PREFIX_LENGTH];
-    szPrefix = GetClientClanTag(iClient);
+    szPrefix = GetClientClanTag(sender);
 
     if(!szPrefix[0])
         return Plugin_Continue;
     
     pLevel = plevel;
-    FormatEx(szBuffer, iSize, szPrefix);
+    FormatEx(buffer, size, szPrefix);
 
     return Plugin_Continue;
 }
