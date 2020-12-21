@@ -16,4 +16,6 @@ public Action cc_proc_OnDefMsg(const char[] szMessage, bool IsPhraseExists)
 {
     if(!IsPhraseExists)
         LogMessage("Engine message key: %s | Is phrase exists: %b ", szMessage, IsPhraseExists);
+    
+    return (!IsPhraseExists) ? Plugin_Continue : Plugin_Changed;
 }
