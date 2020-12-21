@@ -34,10 +34,9 @@ public void OnConVarChanged(ConVar cvar, const char[] oldVal, const char[] newVa
     plevel = cvar.IntValue;
 }
 
-
 public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size)
 {
-    if(mType > eMsg_RADIO || part != BIND_PREFIX || pLevel > plevel)
+    if(!sender || mType > eMsg_RADIO || part != BIND_PREFIX || pLevel > plevel)
         return Plugin_Continue;
     
     char szPrefix[PREFIX_LENGTH];
