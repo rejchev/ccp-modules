@@ -50,6 +50,7 @@
 /src/ccp-lr-chat/
 /src/ccp-hint/
 /src/distant-chat/
+/modules/*
 
 #hidden-includes
 /include/lvl_ranks.inc
