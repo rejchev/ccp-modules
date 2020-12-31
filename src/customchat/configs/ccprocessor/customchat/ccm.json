@@ -1,0 +1,41 @@
+[
+    {
+        "name":          "only_for_u",
+
+        "type":         1,
+        "value":        "STEAM_1:1:12323131",
+
+        "priority":     3,
+
+        "{PREFIXCO}":   "{V}",
+        "{PREFIX}":     "ex_prefix",
+        "{NAMECO}":     "{W}",
+        "{MSGCO}":      "{LG}"
+    },
+    {
+        "name":          "only_for_root",
+
+        "type":         2,
+        "value":        "z",
+
+        "priority":     2,
+
+        "{PREFIXCO}":   "{PI}",
+        "{PREFIX}":     "ex_root",
+        "{NAMECO}":     "{G}",
+        "{MSGCO}":      "{W}"
+    },
+    {
+        "name":          "admin_group",
+
+        "type":         3,
+        "value":        "Admin",
+
+        "priority":     1,
+
+        "{PREFIXCO}":   "{B}",
+        "{PREFIX}":     "ex_admin",
+        "{NAMECO}":     "{G}",
+        "{MSGCO}":      "{W}"
+    }
+]
