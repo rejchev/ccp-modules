@@ -1,0 +1,24 @@
+{
+    "vip1":
+    {
+        "{PREFIXCO}": ["custom", "{W}", "{R}"],
+        "{PREFIX}": [],
+        "{NAMECO}": [],
+        "{MSGCO}": []
+    },
+    "vip2":
+    {
+        "{PREFIXCO}": [],
+        "{PREFIX}": [],
+        "{NAMECO}": [],
+        "{MSGCO}": []
+    },
+
+    "model":
+    {
+        "{PREFIXCO}": null,
+        "{PREFIX}": null,
+        "{NAMECO}": null,
+        "{MSGCO}": null
+    }
+}
