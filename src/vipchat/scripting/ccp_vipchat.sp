@@ -50,6 +50,7 @@ public void OnPluginStart()
         cc_config_parsed();
 
         for(int i = 1; i <= MaxClients; i++) {
+            OnClientPutInServer(i);
             if(IsClientInGame(i) && !IsFakeClient(i) && VIP_IsClientVIP(i)) {
                 VIP_OnVIPClientLoaded(i);
             }
@@ -92,13 +93,17 @@ public void onChange(ConVar convar, const char[] oldVal, const char[] newVal)
     level[part] = convar.IntValue;
 }
 
+public void OnMapEnd() {
+    g_mPalette = null;
+}
+
 public void OnMapStart()
 {
     cc_proc_APIHandShake(cc_get_APIKey());
 
     manageConVars(false);
 
-    g_mPalette = null;    
+    // g_mPalette = null;    
 }
 
 public void ccp_OnPackageAvailable(int iClient, Handle objClient) {
@@ -128,8 +133,9 @@ public void ccp_OnPackageRemove(int iClient, Handle objClient) {
 
     if(!iClient) {
         obj = view_as<JSONObject>(pkg.Get(pkgKey));
+        JSONObjectKeys objKeys = view_as<JSONObjectKeys>(obj.Keys());
         JSONObject sub;
-        JSONObjectKeys objKeys = view_as<JSONObjectKeys>(obj);
+
         char szKey[64];
         while(objKeys.ReadKey(szKey, sizeof(szKey))) {
             sub = view_as<JSONObject>(obj.Get(szKey));
@@ -233,8 +239,9 @@ public void VIP_OnVIPClientLoaded(int iClient)
 
     JSONObject server = view_as<JSONObject>(ccp_GetPackage(0));
     JSONObject client = view_as<JSONObject>(ccp_GetPackage(iClient));
+    JSONObject model = view_as<JSONObject>(view_as<JSONObject>(server.Get(pkgKey)).Get("model"));
 
-    for(int i, idx; i < BIND_MAX; i++)
+    for(int i, idx, a; i < BIND_MAX; i++)
     {
         if((idx = IsValidPart(i)) == -1)
             continue;
@@ -244,7 +251,10 @@ public void VIP_OnVIPClientLoaded(int iClient)
         if(!VIP_IsClientFeatureUse(iClient, szFeature))
             continue;
         
-        client.Set(pkgKey, view_as<JSONObject>(view_as<JSONObject>(server.Get(pkgKey)).Get("model")));
+        if(!a) {
+            client.Set(pkgKey, model);
+            a++;
+        }
         
         GetValueFromCookie(iClient, view_as<JSONObject>(client.Get(pkgKey)), coFeatures[idx], i);
     }
@@ -300,24 +310,10 @@ Menu FeatureMenu(int iClient, const char[] szFeature)
     }
 
     hMenu = new Menu(FeatureMenu_CallBack);
-
-    // SetGlobalTransTarget(iClient);
     hMenu.SetTitle("%T%T \n \n", "feature_title", iClient, szFeature, iClient);
 
-    // FormatEx(szBuffer, sizeof(szBuffer), "%c%c%T \n \n", 'r', iBind, "ccp_disable", iClient);
-
-    // int iDrawType = (g_mClients[iClient].GetString(szBinds[iBind], szOption, sizeof(szOption)) && szOption[0]) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED;
-
-    // hMenu.AddItem(szBuffer, szBuffer[2], iDrawType);
-
-    // if(partValues.FindString("custom") != -1)
-    // {
-    //     FormatEx(szBuffer, sizeof(szBuffer), "%c%T \n \n", 'c', "custom", iClient);
-    //     hMenu.AddItem(szBuffer, szBuffer[1]);
-    // }
-
     char szValue[MESSAGE_LENGTH];
-    if(!model.IsNull(szBinds[iBind]) || !model.GetString(szBinds[iBind], szValue, sizeof(szValue))) {
+    if(model.IsNull(szBinds[iBind]) || !model.GetString(szBinds[iBind], szValue, sizeof(szValue))) {
         szValue = NULL_STRING;
     }
 
@@ -329,25 +325,24 @@ Menu FeatureMenu(int iClient, const char[] szFeature)
 
         items.GetString(i, szBuffer, sizeof(szBuffer));
         
-        if(!strcmp(szBuffer, "disable")) {
+        if(StrContains(szBuffer, "disable", false) != -1) {
             iDrawType = (szValue[0]) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED;
             a = 0;
-        } else if(!strcmp(szBuffer, "custom")) {
+        } else if(StrContains(szBuffer, "custom", false) != -1) {
             iDrawType = ITEMDRAW_DEFAULT;
             a = 1;
         } else {
             iDrawType = (!strcmp(szBuffer, szValue)) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT;
         }
 
-        Format(szBuffer, sizeof(szBuffer), "%c%c%T %c%c", iBind, i+1, szBuffer, iClient, (a != -1) ? 10 : 0, (a != -1) ? 10 : 0);
+        Format(szBuffer, sizeof(szBuffer), "%c%c%T", iBind, i+1, szBuffer, iClient);
 
-        ccp_replaceColors(szBuffer[1], true);
+        ccp_replaceColors(szBuffer[2], true);
+
+        if(a != -1)
+            Format(szBuffer, sizeof(szBuffer), "%s \n \n", szBuffer);
         
-        if(a == -1)
-            hMenu.AddItem(szBuffer, szBuffer[2], iDrawType);
-        else {
-            hMenu.InsertItem(a, NULL_STRING, szBuffer[2], iDrawType);
-        }
+        hMenu.AddItem(szBuffer, szBuffer[2], iDrawType);
     } 
 
     if(hMenu.ItemCount == 1)
@@ -391,34 +386,42 @@ public int FeatureMenu_CallBack(Menu hMenu, MenuAction action, int iClient, int 
                     ).Get(pkgKey)
                 );
 
+            // pkg -> pkgKey -> vipGroup -> bindArray
             JSONArray items =
                 view_as<JSONArray>(
                     view_as<JSONObject>(
                         view_as<JSONObject>(
-                            ccp_GetPackage(0)
-                        ).Get(pkgKey)
-                    ).Get(szOption)
+                            view_as<JSONObject>(
+                                ccp_GetPackage(0)
+                            ).Get(pkgKey)
+                        ).Get(szOption)
+                    ).Get(szBinds[part])
                 );
 
             items.GetString(idx, szOption, sizeof(szOption));
-
-            if(!strcmp(szOption, "disable")) {
-                model.SetNull(szBinds[part]);
-                UpdateCookie(iClient, part, NULL_STRING);
-                return;
-            } else if(!strcmp(szOption, "custom")) {
+            
+            if(!strcmp(szOption, "custom")) {
                 g_iBindNow[iClient] = part;
 
                 PrintToChat(iClient, "%T", "wait_custom_value", iClient);
                 return;
-            }
+            } 
 
-            model.SetString(szBinds[part], szOption);
+            if(!strcmp(szOption, "disable")) {
+                model.SetNull(szBinds[part]);
+                szOption = NULL_STRING;
+            }
+            else model.SetString(szBinds[part], szOption);
+            
             UpdateCookie(iClient, part, szOption);
 
             VIP_SendClientVIPMenu(iClient, false);
         }
     }
+}
+
+public void OnClientPutInServer(int iClient) {
+    g_iBindNow[iClient] = BIND_MAX;
 }
 
 public Action OnClientSayCommand(int iClient, const char[] command, const char[] args)
@@ -467,44 +470,36 @@ public Action OnClientSayCommand(int iClient, const char[] command, const char[]
 JSONObject senderModel;
 
 public void cc_proc_MsgUniqueId(int mType, int sender, int msgId, const int[] clients, int count) {
-    if(mType > eMsg_ALL || !sender)
+    senderModel = null;
+
+    if(mType > eMsg_ALL || !sender || !VIP_IsClientVIP(sender))
+        return;
+
+    JSONObject client = view_as<JSONObject>(ccp_GetPackage(sender));
+    if(!client)
         return;
     
-    senderModel = 
-        view_as<JSONObject>(
-            view_as<JSONObject>(
-                ccp_GetPackage(sender)
-            ).Get(pkgKey)
-        );
+    senderModel = view_as<JSONObject>(client.Get(pkgKey));
 }
 
 public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size)
 {
-    if(mType > eMsg_ALL || !sender || !VIP_IsClientVIP(sender)) {
+    if(!senderModel) {
         return Plugin_Continue;
     }
 
     int idx = IsValidPart(part);
-    if(idx == -1) {
-        return Plugin_Continue;
-    }
-
-    if(level[idx] < pLevel) {
-        return Plugin_Continue;
-    }
-    
-    if(!senderModel || senderModel.IsNull(szBinds[part])) {
+    if(idx == -1 || level[idx] < pLevel || senderModel.IsNull(szBinds[part])) {
         return Plugin_Continue;
     }
 
     static char szValue[MESSAGE_LENGTH];
     senderModel.GetString(szBinds[part], szValue, sizeof(szValue));
-
     if(!szValue[0]) {
         return Plugin_Continue;
     }
 
-    if(part == BIND_PREFIX) {
+    if(part == BIND_PREFIX && TranslationPhraseExists(szValue)) {
         Format(szValue, sizeof(szValue), "%T", szValue, recipient);
     }
 

@@ -3,24 +3,24 @@
 	"vip_chat_nameco"
 	{
 		"ru"		"Цвет никнейма"
-		"en"		"Client username color"
+		"en"		"Chat Name Color"
 	}
 
 	"vip_chat_msgco"
 	{
 		"ru"		"Цвет сообщения"
-		"en"		"Client message color"
+		"en"		"Chat Msg Color"
 	}
 
 	"vip_chat_prefix"
 	{
 		"ru"		"Префикс"
-		"en"		"Client prefix"
+		"en"		"Chat Tag"
 	}
 
 	"vip_chat_prefixco"
 	{
 		"ru"		"Цвет префикса"
-		"en"		"Client prefix color"
+		"en"		"Chat Tag Color"
 	}
 }

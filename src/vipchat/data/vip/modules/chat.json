@@ -1,17 +1,17 @@
 {
     "vip1":
     {
-        "{PREFIXCO}": ["custom", "{W}", "{R}"],
-        "{PREFIX}": [],
-        "{NAMECO}": [],
-        "{MSGCO}": []
+        "{PREFIXCO}": ["custom", "disable", "{W}", "{R}"],
+        "{PREFIX}": ["custom", "disable", "p_lol", "p_cheb"],
+        "{NAMECO}": ["custom", "disable", "{W}", "{R}"],
+        "{MSGCO}": ["custom", "disable", "{W}", "{R}", "{V}"]
     },
     "vip2":
     {
-        "{PREFIXCO}": [],
-        "{PREFIX}": [],
-        "{NAMECO}": [],
-        "{MSGCO}": []
+        "{PREFIXCO}": ["custom", "disable", "{W}", "{R}"],
+        "{PREFIX}": ["custom", "disable", "p_lol", "p_cheb", "p_kek"],
+        "{NAMECO}": ["custom", "disable", "{W}", "{R}"],
+        "{MSGCO}": ["custom", "disable", "{W}", "{R}", "{V}"]
     },
 
     "model":
