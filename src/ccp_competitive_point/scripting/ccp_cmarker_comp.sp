@@ -19,7 +19,7 @@ public Plugin myinfo =
     name        = "[CCP, CSGO] CMarker",
     author      = "nullent?",
     description = "Competitive color marker into chat",
-    version     = "1.4.1",
+    version     = "1.5.0",
     url         = "discord.gg/ChTyPUG"
 };
 
@@ -84,31 +84,22 @@ public void OnThinkPost(int entity)
     GetEntDataArray(entity, m_iCompTeammateColor, ColorArray, sizeof(ColorArray));
 }
 
-// int TemplateType;
-
-// public void cc_proc_MsgBroadType(const int type)
-// {
-//     TemplateType = type;
-// }
-
-public Action cc_proc_RebuildString(const int mType, int iClient, int &pLevel, const char[] szBind, char[] szBuffer, int iSize)
+public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size)
 {
-    if(mType < eMsg_SERVER && !strcmp(szBind, szBinds[BIND_STATUS]) && pLevel < Level)
-    {
-        pLevel = Level;
+    if(mType > eMsg_ALL || (part != BIND_STATUS && part != BIND_STATUS_CO) || pLevel > Level)
+        return Plugin_Continue;
 
-        FormatEx(szBuffer, iSize, "%s", szStatusSmb);
-        if(EnColor)
-        {
-            ccp_replaceColors(szBuffer, true);
-            
-            Format(szBuffer, iSize, "%c%s", GetColor(iClient), szBuffer);
-        }
-            
-        
-        // Exception reported: Instruction contained invalid parameter - > NULL_STRING before the value throws this exception
-        // FormatEx(szBuffer, iSize, "%s%s", (EnColor) ? GetColor(iClient) : "", szStatusSmb);
-    }
+    if((part == BIND_STATUS && !szStatusSmb[0]) || (part == BIND_STATUS_CO && !EnColor))
+        return Plugin_Continue;
+
+    pLevel = Level;
+
+    if(part == BIND_STATUS)
+        FormatEx(buffer, size, szStatusSmb);
+    
+    else FormatEx(buffer, size, "%c", GetColor(sender));
+
+    return Plugin_Continue;
 }
 
 int GetColor(int iClient)

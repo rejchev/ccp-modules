@@ -76,13 +76,11 @@ Action cmduse(int iClient, int args) {
     }
 
     IsViewer[iClient] = true;
-    cc_call_builder(target, mtype, "dev", NULL_STRING, NULL_STRING, szArgs, sizeof(szArgs));
+    cc_call_builder(mtype, target, iClient, "dev", NULL_STRING, NULL_STRING, szArgs, sizeof(szArgs));
     return Plugin_Handled;
 }
 
-public void cc_proc_RebuildString_Post(const int mType, int iClient, int pLevel, const char[] szBind, const char[] szValue) {    
-    int part = BindFromString(szBind);
-
+public void cc_proc_RebuildString_Post(const int mType, int sender, int recipient, int part, int pLevel, const char[] szValue) {    
     if(part != BIND_PROTOTYPE) {
         return;
     }

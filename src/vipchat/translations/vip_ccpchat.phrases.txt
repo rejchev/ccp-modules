@@ -30,6 +30,12 @@
         "en"            "Empty"
     }
 
+    "disable"
+    {
+        "ru"            "Убрать"    
+        "en"            "Remove"
+    }
+
     "feature_title"
     {
         "ru"            "Список доступных значений \n \nФункция: "

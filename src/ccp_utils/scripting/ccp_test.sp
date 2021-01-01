@@ -50,20 +50,19 @@ Action CmdTestPrefix(int Client, int Args)
 }
 
 
-public Action cc_proc_RebuildString(const int mType, int iClient, int &pLevel, const char[] szBind, char[] szBuffer, int iSize)
+public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size)
 {
     if(mType > eMsg_ALL)
         return Plugin_Continue;
     
-    if(!StrEqual(szBind, "{PREFIX}") || !testPrefix[0])
+    if(part != BIND_PREFIX || !testPrefix[0])
         return Plugin_Continue;
 
     if(pLevel > LEVEL_PRIOR)
         return Plugin_Continue;
     
     pLevel = LEVEL_PRIOR;
-
-    FormatEx(szBuffer, iSize, testPrefix);
+    FormatEx(buffer, size, testPrefix);
 
     return Plugin_Continue;
 }

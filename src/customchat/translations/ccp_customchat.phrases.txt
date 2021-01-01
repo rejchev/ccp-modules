@@ -1,50 +1,58 @@
 "Phrases"
 {
-    "ccm_proto_list"
+    "only_for_u"
     {
         //"#format"           ""
 
-        "ru"                "Список кастомных шаблонов сообщения:"
-        "en"                "List of custom message templates:"
+        "ru"                "Этот шаблон только для тебя"
+        "en"                "This is template only for u"
     }
 
-    "ccp_disable"
+    "only_for_root"
     {
         //"#format"           ""
 
-        "ru"                "Выключить шаблон"
-        "en"                "Disable template"
+        "ru"                "Только для самых самых"
+        "en"                "Only for ROOT"
     }
 
-    "ccm_default_item"
+    "admin_group"
     {
         //"#format"           ""
 
-        "ru"                "Шаблон по умолчанию"
-        "en"                "Default template"
+        "ru"                "Для обладателей группы Admin"
+        "en"                "For 'Admin' group owners"
     }
 
-    "ccm_personal_item"
+    "choose_template"
     {
         //"#format"           ""
 
-        "ru"                "Персональный шаблон"
-        "en"                "Personal template"
+        "ru"                "Доступные чат модификации"
+        "en"                "Available chat templates"
     }
 
-    "ccm_flag_item"
+    "remove"
     {
-        "#format"           "{1:s}"
-
-        "ru"                "Шаблон для флага: {1}"
-        "en"                "Template for the flag: {1}"
+        "ru"                "Убрать"
+        "en"                "Remove"
     }
 
-    "ccm_group_item"
+    "ex_prefix"
     {
-        "#format"           "{1:s}"
+        "ru"                "*ВАУ*"
+        "en"                "*WAU*"
+    }
 
-        "ru"                "Шаблон для группы: {1}"
-        "en"                "Template for a group: {1}"
+    "ex_root"
+    {
+        "ru"                "ROOOOOOOOOOOOT"
+        "en"                "ROOOOOOOOOOOOT"
+    }
+
+    "ex_admin"
+    {
+        "ru"                "<..>"
+        "en"                "<..>"
     }
 }

@@ -1,3 +1,5 @@
+#include <UTF-8-string>
+
 #pragma newdecls required
 
 #include <ccprocessor>
@@ -7,7 +9,7 @@ public Plugin myinfo =
 	name = "[CCP] Join team",
 	author = "nullent?",
 	description = "...",
-	version = "1.0.1",
+	version = "1.0.2",
 	url = "https://t.me/nyoood"
 };
 
@@ -19,6 +21,8 @@ public Plugin myinfo =
 // #define CT "#counter-terrorists"
 
 UserMessageType umType;
+
+int msgCaller;
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 { 
@@ -34,7 +38,7 @@ public void OnPluginStart() {
 }
 
 Action EventTeam(Event event, const char[] name, bool dbc) {
-    
+        
     // this is too bad thing...
     // i'll fix it later
     event.BroadcastDisabled = true;
@@ -49,15 +53,17 @@ Action EventTeam(Event event, const char[] name, bool dbc) {
     char szName[NAME_LENGTH];
     GetClientName(iClient, szName, sizeof(szName));
 
-    char szTeam[NAME_LENGTH];
-    GetTeamName(iTeam, szTeam, sizeof(szTeam));
+    // char szTeam[NAME_LENGTH];
+    // GetTeamName(iTeam, iClient, szTeam, sizeof(szTeam));
 
-    TriggerUMessage(szName, szTeam);
+    // {1} - username
+    // {2} - team key
+    TriggerUMessage(iClient, szName, (iTeam < 2) ? "spectators" : (iTeam == 2) ? "terrorists" : "counter-terrorists");
 
     return Plugin_Changed;
 }
 
-void TriggerUMessage(const char[] username, const char[] teamname)
+void TriggerUMessage(int iClient, const char[] username, const char[] teamname)
 {
     static const char um[] = "TextMsg";
 
@@ -68,6 +74,8 @@ void TriggerUMessage(const char[] username, const char[] teamname)
     if(!msg) {
         return;
     }
+
+    msgCaller = iClient;
 
     if(!umType) {
         BfWriteByte(msg, 3);
@@ -88,15 +96,31 @@ void TriggerUMessage(const char[] username, const char[] teamname)
     EndMessage();
 }
 
-void GetTeamName(int team, char[] buffer, int size)
+public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size) {
+    if(mType != eMsg_SERVER || part != BIND_MSG || !msgCaller)
+        return Plugin_Continue;
+    
+    // ....
+    char team[PREFIX_LENGTH];
+    GetTeamName(GetClientTeam(msgCaller), recipient, team, sizeof(team));
+
+    msgCaller = 0;
+
+    // after prepareDefMessage();
+    ReplaceStringEx(buffer, size, "%s2", team);
+
+    return Plugin_Continue;
+}
+
+void GetTeamName(int team, int lang, char[] buffer, int size)
 {
     if(team < 2) {
-        FormatEx(buffer, size, "%T", "spectators", 0);
+        FormatEx(buffer, size, "%T", "spectators", lang);
     } else {
         FormatEx(buffer, size, "%T", (
             (team == 2) ? "terrorists" : "counter-terrorists"
-        ), 0);
+        ), lang);
     }
 
-    ccp_replaceColors(buffer, false);
+    // ccp_replaceColors(buffer, false);
 }
