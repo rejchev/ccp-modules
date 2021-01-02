@@ -1,4 +1,4 @@
-#include <UTF-8-string>
+// #include <UTF-8-string>
 
 #pragma newdecls required
 
@@ -13,7 +13,7 @@ public Plugin myinfo =
 	name = "[CCP] VIP Chat",
 	author = "nullent?",
 	description = "Chat features for VIP by user R1KO",
-	version = "2.0.0",
+	version = "2.0.1",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -201,21 +201,27 @@ public bool OnSelected_Feature(int iClient, const char[] szFeature)
     g_iBindNow[iClient] = BIND_MAX;
 
     Menu hMenu = FeatureMenu(iClient, szFeature);
-    if(hMenu)   hMenu.Display(iClient, MENU_TIME_FOREVER);
+    if(!hMenu) {
+        LogError("OnSelected_Feature(%N): Items array or client model is null. Aborted", iClient);
+        return true;
+    }
 
+    hMenu.Display(iClient, MENU_TIME_FOREVER);
     return false;
 }
 
 public bool OnDisplay_Feature(int iClient, const char[] szFeature, char[] szDisplay, int iMaxLength)
 {
     int iBind = BindFromString(szFeature);
-
     FormatEx(szDisplay, iMaxLength, "%T [%T]", szFeature, iClient, "empty_value", iClient);
 
-    JSONObject obj = view_as<JSONObject>(ccp_GetPackage(iClient));
-    obj = view_as<JSONObject>(obj.Get(pkgKey));
+    JSONObject model = getClientModel(iClient);
+    if(!model) {
+        LogError("OnDisplay_Feature(%N): Something went wrong, client model is null..", iClient);
+        return true;
+    }
 
-    if(obj && !obj.IsNull(szBinds[iBind]) && obj.GetString(szBinds[iBind], szDisplay, iMaxLength))
+    if(IsPartValid(model, iBind) && model.GetString(szBinds[iBind], szDisplay, iMaxLength))
     {
         if(TranslationPhraseExists(szDisplay)) {
             Format(szDisplay, iMaxLength, "%T", szDisplay, iClient);
@@ -237,26 +243,25 @@ public void VIP_OnVIPClientLoaded(int iClient)
 
     // int idx;
 
-    JSONObject server = view_as<JSONObject>(ccp_GetPackage(0));
     JSONObject client = view_as<JSONObject>(ccp_GetPackage(iClient));
-    JSONObject model = view_as<JSONObject>(view_as<JSONObject>(server.Get(pkgKey)).Get("model"));
 
-    for(int i, idx, a; i < BIND_MAX; i++)
+    // model
+    client.Set(pkgKey, new JSONObject());
+    JSONObject model = view_as<JSONObject>(client.Get(pkgKey));
+
+    for(int i, idx; i < BIND_MAX; i++)
     {
         if((idx = IsValidPart(i)) == -1)
             continue;
         
         FormatBind("vip_chat_", i, 'l', szFeature, sizeof(szFeature));
 
-        if(!VIP_IsClientFeatureUse(iClient, szFeature))
+        if(!VIP_IsClientFeatureUse(iClient, szFeature)){
+            model.SetNull(szBinds[i]);
             continue;
-        
-        if(!a) {
-            client.Set(pkgKey, model);
-            a++;
         }
         
-        GetValueFromCookie(iClient, view_as<JSONObject>(client.Get(pkgKey)), coFeatures[idx], i);
+        GetValueFromCookie(iClient, model, coFeatures[idx], i);
     }
 }
 
@@ -301,7 +306,12 @@ Menu FeatureMenu(int iClient, const char[] szFeature)
     char szBuffer[MESSAGE_LENGTH], szOption[NAME_LENGTH];
     VIP_GetClientVIPGroup(iClient, szBuffer, sizeof(szBuffer));
     
-    JSONObject model = view_as<JSONObject>(view_as<JSONObject>(ccp_GetPackage(iClient)).Get(pkgKey));
+    JSONObject model = getClientModel(iClient);
+    if(!model) {
+        LogError("FeatureMenu(%N): Something went wrong, client model is null..", iClient);
+        return hMenu;
+    }
+
     JSONObject pkg = view_as<JSONObject>(view_as<JSONObject>(ccp_GetPackage(0)).Get(pkgKey));
     JSONArray items = view_as<JSONArray>(view_as<JSONObject>(pkg.Get(szBuffer)).Get(szBinds[iBind]));
 
@@ -313,7 +323,7 @@ Menu FeatureMenu(int iClient, const char[] szFeature)
     hMenu.SetTitle("%T%T \n \n", "feature_title", iClient, szFeature, iClient);
 
     char szValue[MESSAGE_LENGTH];
-    if(model.IsNull(szBinds[iBind]) || !model.GetString(szBinds[iBind], szValue, sizeof(szValue))) {
+    if(!IsPartValid(model, iBind) || !model.GetString(szBinds[iBind], szValue, sizeof(szValue))) {
         szValue = NULL_STRING;
     }
 
@@ -345,7 +355,7 @@ Menu FeatureMenu(int iClient, const char[] szFeature)
         hMenu.AddItem(szBuffer, szBuffer[2], iDrawType);
     } 
 
-    if(hMenu.ItemCount == 1)
+    if(!hMenu.ItemCount)
     {
         delete hMenu;
         return hMenu;
@@ -379,12 +389,11 @@ public int FeatureMenu_CallBack(Menu hMenu, MenuAction action, int iClient, int 
 
             VIP_GetClientVIPGroup(iClient, szOption, sizeof(szOption));
 
-            JSONObject model = 
-                view_as<JSONObject>(
-                    view_as<JSONObject>(
-                        ccp_GetPackage(iClient)
-                    ).Get(pkgKey)
-                );
+            JSONObject model = getClientModel(iClient);
+            if(!model) {
+                LogError("FeatureMenu_CallBack(%N): Something went wrong, client model is null..", iClient);
+                return;
+            }
 
             // pkg -> pkgKey -> vipGroup -> bindArray
             JSONArray items =
@@ -444,18 +453,18 @@ public Action OnClientSayCommand(int iClient, const char[] command, const char[]
             return Plugin_Handled;
         }
 
-        JSONObject model = 
-            view_as<JSONObject>(
-                view_as<JSONObject>(
-                    ccp_GetPackage(iClient)
-                ).Get(pkgKey)
-            );
-        
-        model.SetString(szBinds[g_iBindNow[iClient]], szBuffer);
+        JSONObject model = getClientModel(iClient);
 
         UpdateCookie(iClient, g_iBindNow[iClient], szBuffer);
 
         g_iBindNow[iClient] = BIND_MAX;
+
+        if(!model) {
+            LogError("OnClientSayCommand(%N): Something went wrong, client model is null..", iClient);
+            return Plugin_Handled;
+        }
+        
+        model.SetString(szBinds[g_iBindNow[iClient]], szBuffer);
 
         PrintToChat(iClient, "%T", "ccp_custom_success", iClient);
 
@@ -475,11 +484,7 @@ public void cc_proc_MsgUniqueId(int mType, int sender, int msgId, const int[] cl
     if(mType > eMsg_ALL || !sender || !VIP_IsClientVIP(sender))
         return;
 
-    JSONObject client = view_as<JSONObject>(ccp_GetPackage(sender));
-    if(!client)
-        return;
-    
-    senderModel = view_as<JSONObject>(client.Get(pkgKey));
+    senderModel = getClientModel(sender);
 }
 
 public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size)
@@ -489,13 +494,12 @@ public Action cc_proc_RebuildString(const int mType, int sender, int recipient, 
     }
 
     int idx = IsValidPart(part);
-    if(idx == -1 || level[idx] < pLevel || senderModel.IsNull(szBinds[part])) {
+    if(idx == -1 || level[idx] < pLevel || !IsPartValid(senderModel, part)) {
         return Plugin_Continue;
     }
 
     static char szValue[MESSAGE_LENGTH];
-    senderModel.GetString(szBinds[part], szValue, sizeof(szValue));
-    if(!szValue[0]) {
+    if(!senderModel.GetString(szBinds[part], szValue, sizeof(szValue)) || !szValue[0]) {
         return Plugin_Continue;
     }
 
@@ -518,4 +522,19 @@ stock int IsValidPart(const int part)
             return i;
 
     return -1;
+}
+
+stock JSONObject getClientModel(int iClient) {
+    JSONObject obj;
+    obj = view_as<JSONObject>(ccp_GetPackage(iClient));
+
+    if(!obj || !obj.HasKey(pkgKey))
+        return null;
+    
+    obj = view_as<JSONObject>(obj.Get(pkgKey));
+    return obj;
+}
+
+stock bool IsPartValid(JSONObject model, int part) {
+    return model.HasKey(szBinds[part]) && !model.IsNull(szBinds[part]);
 }
