@@ -1,55 +1,23 @@
 "Phrases"
 {
-    "ccp_cprefix"
+    "tag_display"
     {
-        "ru"            "Цвет префикса"
-        "en"            "Prefix color"
+        "#format"       "{1:s}"
+        "ru"            "Префикс: {1}"
+        "en"            "Chat Tag: {1}"
     }
 
-    "ccp_lprefix"
+    "lol_key"
     {
-        "ru"            "Список префиксов"
-        "en"            "List of prefix"
-    }
-
-
-    "ccp_cname"
-    {
-        "ru"            "Цвет ника"
-        "en"            "Username color"
+        "ru"            "[LOL]"
+        "en"            "[LOL]"
     }
 
 
-    "ccp_cmessage"
+    "air_key"
     {
-        "ru"            "Цвет сообщения"
-        "en"            "Message color"
-    }
-
-    "color_r"
-    {
-        "ru"            "Красный цвет"
-        "en"            "Red color"
-    }
-
-
-    "color_g"
-    {
-        "ru"            "Зеленый цвет"
-        "en"            "Green color"
-    }
-
-    "prefix_lol"
-    {
-        "ru"            "Префикс: [LOL]"
-        "en"            "Prefix: [LOL]"
-    }
-
-
-    "prefix_null"
-    {
-        "ru"            "Префикс: [NULL]"
-        "en"            "Prefix: [NULL]"
+        "ru"            "~~~"
+        "en"            "~~~"
     }
 
 

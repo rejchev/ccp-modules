@@ -1,0 +1,41 @@
+{
+    "{PREFIXCO}": [
+        {
+            "value": "{R}",
+
+            "price": 1000,
+            "sellprice": 500,
+            "duration": 86400
+        },
+        {
+            "value": "{B}",
+
+            "price": 1000,
+            "sellprice": 500,
+            "duration": 86400
+        }
+    ],
+
+    "{PREFIX}": [
+        {
+            "value": "lol_key",
+
+            "price": 1000,
+            "sellprice": 500,
+            "duration": 86400
+        },
+        {
+            "value": "air_key",
+
+            "price": 1000,
+            "sellprice": 500,
+            "duration": 86400
+        }
+    ],
+    "{NAMECO}": [
+        
+    ],
+    "{MSGCO}": [
+        
+    ]
+}
