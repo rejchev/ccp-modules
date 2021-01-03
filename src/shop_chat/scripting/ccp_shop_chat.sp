@@ -68,7 +68,7 @@ public void ccp_OnPackageAvailable(int iClient, Handle hPkg) {
     JSONObject pkg = asJSONO(hPkg);
 
     if(!iClient) {
-        static char config[MESSAGE_LENGTH] = "configs/shop/ccprocessor/chop_chat.json";
+        static char config[MESSAGE_LENGTH] = "configs/shop/ccprocessor/shop_chat.json";
 
         if(config[0] == 'c') {
             BuildPath(Path_SM, config, sizeof(config), config);
