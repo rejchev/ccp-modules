@@ -1,9 +1,8 @@
 #!/bin/bash
 
-travis=$1
-modules=$2
-spsrc=$3
-includes=$4
+modules=$1
+spsrc=$2
+includes=$3
 
 ERROR=1
 
