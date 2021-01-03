@@ -38,7 +38,7 @@ void manageConVars(bool bCreate = true) {
     char szBuffer[128];
 
     for(int i; i < BIND_MAX; i++) {
-        FormatBind("ccp_vip_", i, 'l', szBuffer, sizeof(szBuffer)/2);
+        FormatBind("ccp_shop_", i, 'l', szBuffer, sizeof(szBuffer)/2);
         if(bCreate){
             Format(szBuffer[strlen(szBuffer)+1], sizeof(szBuffer), "Priority level for %s", szBinds[i]);
             CreateConVar(szBuffer, "1", szBuffer[strlen(szBuffer)+1], _, true, 1.0).AddChangeHook(onChange);
