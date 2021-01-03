@@ -3,6 +3,7 @@
 #include <ccprocessor>
 #include <ccprocessor_pkg>
 
+#include <clientprefs>
 #include <jansson>
 
 public Plugin myinfo = 
@@ -10,11 +11,12 @@ public Plugin myinfo =
 	name = "[CCP] CCMessage",
 	author = "nullent?",
 	description = "Custom client message",
-	version = "3.3.0",
+	version = "3.3.1",
 	url = "discord.gg/ChTyPUG"
 };
 
 int LEVEL[4];
+Cookie coHandle;
 bool IsMenuDisabled;
 
 public void OnPluginStart()
@@ -40,10 +42,11 @@ void manageConVars(bool bCreate = true) {
         } else {
             onChange(FindConVar(szBuffer), NULL_STRING, NULL_STRING);
         }
-        
     }
     
     if(bCreate) {
+        coHandle = new Cookie("ccm_prefix", NULL_STRING, CookieAccess_Private);
+        
         CreateConVar("ccm_disable_menu", "0", "Disable menu", _, true, 0.0, true, 1.0).AddChangeHook(disableMenu);
         AutoExecConfig(true, "ccp_ccmessage", "ccprocessor");
     } else {
@@ -86,12 +89,6 @@ public void ccp_OnPackageAvailable(int iClient, Handle objClient) {
         }
 
         pkg.Set("ccm", JSONArray.FromFile(szBuffer, 0));
-
-        char szValue[1024];
-        JSONArray arr = view_as<JSONArray>(pkg.Get("ccm"));
-        view_as<JSON>(arr).ToString(szValue, sizeof(szValue));
-        // LogMessage(szValue);
-
     } else {
 
         if(!pkg.HasKey("auth")) {
@@ -99,8 +96,9 @@ public void ccp_OnPackageAvailable(int iClient, Handle objClient) {
             GetClientAuthId(iClient, AuthId_Engine, szBuffer, sizeof(szBuffer));
             pkg.SetString("auth", szBuffer);
         }
-        
-        setTemplate(iClient, pkg);
+
+        GetValueFromCookie(iClient, pkg);
+        // setTemplate(iClient, pkg);
     }
 }
 
@@ -115,7 +113,24 @@ public void OnClientPostAdminCheck(int iClient) {
     if(!pkg.HasKey("adminId"))
         pkg.SetInt("adminId", view_as<int>(GetUserAdmin(iClient)));
 
-    setTemplate(iClient, pkg);
+    // setTemplate(iClient, pkg);
+
+    if(!pkg.HasKey("ccm")) {
+        GetValueFromCookie(iClient, pkg);
+    }
+}
+
+void GetValueFromCookie(int iClient, JSONObject pkg) {
+    char szValue[MESSAGE_LENGTH];
+    coHandle.Get(iClient, szValue, sizeof(szValue));
+    
+    if(szValue[0]) {
+        JSONObject jsonModel = FindInObjects(szValue);
+
+        if(HasAccess(pkg, jsonModel)) {
+            pkg.Set("ccm", jsonModel);
+        }
+    }
 }
 
 public void ccp_OnPackageRemove(int iClient, Handle objClient) {
@@ -169,6 +184,12 @@ void setTemplate(int iClient, JSONObject pkg, int index = -1) {
 
         // LogMessage("Set val");
         pkg.Set("ccm", jsonArray.Get(index));
+
+        char szValue[MESSAGE_LENGTH];
+        server = view_as<JSONObject>(pkg.Get("ccm"));
+
+        server.GetString("name", szValue, sizeof(szValue));
+        coHandle.Set(iClient, szValue);
         return;
     }
 
@@ -195,7 +216,11 @@ void setTemplate(int iClient, JSONObject pkg, int index = -1) {
                 // LogMessage("Set obj: %i", i);
 
                 if(pkg.Set("ccm", view_as<JSON>(obj))){
-                    // LogMessage("Success");
+                    // char szValue[MESSAGE_LENGTH];
+                    server = view_as<JSONObject>(pkg.Get("ccm"));
+
+                    server.GetString("name", szBuffer, sizeof(szBuffer));
+                    coHandle.Set(iClient, szBuffer);
                 }
             }
         }   
@@ -216,6 +241,7 @@ public Action Cmd_Prefix(int iClient, int args)
                     setTemplate(iClient, objClient);
                 } else {
                     objClient.Remove("ccm");
+                    coHandle.Set(iClient, NULL_STRING);
                 }
             } else {
                 menuTemplates(iClient);
@@ -405,4 +431,33 @@ int indexPart(int part) {
             return i-1;
     
     return -1;
+}
+
+JSONObject FindInObjects(const char[] szName) {
+    JSONObject obj;
+    JSONArray jsonItems = view_as<JSONArray>(
+        view_as<JSONObject>(view_as<JSONObject>(ccp_GetPackage(0))).Get("ccm")
+    );
+
+    if(!jsonItems || !jsonItems.Length) {
+        return null;
+    }
+
+    char szValue[MESSAGE_LENGTH];
+    for(int i; i < jsonItems.Length; i++) {
+        obj = view_as<JSONObject>(jsonItems.Get(i));
+
+        if(!obj.HasKey("name")) {
+            LogError("FindInObjects(%i): Invalid object", i);
+            continue;
+        }
+
+        obj.GetString("name", szValue, sizeof(szValue));
+
+        if(StrEqual(szValue, szName, false)) {
+            return obj;
+        }
+    }
+
+    return null;
 }
