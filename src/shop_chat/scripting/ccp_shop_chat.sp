@@ -67,10 +67,6 @@ public void onChange(ConVar convar, const char[] oldVal, const char[] newVal)
 public void ccp_OnPackageAvailable(int iClient, Handle hPkg) {
     JSONObject pkg = asJSONO(hPkg);
 
-    if(!pkg || !pkg.HasKey(pkgKey)) {
-        return;
-    }
-
     if(!iClient) {
         static char config[MESSAGE_LENGTH] = "configs/shop/ccprocessor/chop_chat.json";
 
