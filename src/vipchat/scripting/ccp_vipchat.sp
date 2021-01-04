@@ -13,7 +13,7 @@ public Plugin myinfo =
 	name = "[CCP] VIP Chat",
 	author = "nullent?",
 	description = "Chat features for VIP by user R1KO",
-	version = "2.0.1",
+	version = "2.0.2",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -266,18 +266,14 @@ public void VIP_OnVIPClientLoaded(int iClient)
 }
 
 void GetValueFromCookie(int iClient, JSONObject model, Cookie coHandle, const int part) {
-    char szValue[PREFIX_LENGTH];
+    char szValue[MESSAGE_LENGTH];
 
     if(coHandle)
     {
         GetClientCookie(iClient, coHandle, szValue, sizeof(szValue));
         
-        if(part != BIND_PREFIX) {
+        if(part != BIND_PREFIX && g_mPalette.FindString(szValue) == -1) {
             szValue = NULL_STRING;
-
-            int a = g_mPalette.FindString(szValue);
-            if(a != -1)
-                g_mPalette.GetString(a+1, szValue, sizeof(szValue));
         }
     }
 
@@ -296,6 +292,8 @@ void UpdateCookie(int iClient, int iIdx, const char[] newValue)
 
 Menu FeatureMenu(int iClient, const char[] szFeature)
 {
+    g_iBindNow[iClient] = BIND_MAX;
+
     Menu hMenu;
 
     int iBind = BindFromString(szFeature);
@@ -424,7 +422,9 @@ public int FeatureMenu_CallBack(Menu hMenu, MenuAction action, int iClient, int 
             
             UpdateCookie(iClient, part, szOption);
 
-            VIP_SendClientVIPMenu(iClient, false);
+            FormatBind("vip_chat_", part, 'l', szOption, sizeof(szOption));
+
+            FeatureMenu(iClient, szOption).Display(iClient, MENU_TIME_FOREVER);
         }
     }
 }
@@ -457,9 +457,9 @@ public Action OnClientSayCommand(int iClient, const char[] command, const char[]
 
         UpdateCookie(iClient, g_iBindNow[iClient], szBuffer);
 
-        g_iBindNow[iClient] = BIND_MAX;
 
         if(!model) {
+            g_iBindNow[iClient] = BIND_MAX;
             LogError("OnClientSayCommand(%N): Something went wrong, client model is null..", iClient);
             return Plugin_Handled;
         }
@@ -468,7 +468,11 @@ public Action OnClientSayCommand(int iClient, const char[] command, const char[]
 
         PrintToChat(iClient, "%T", "ccp_custom_success", iClient);
 
-        VIP_SendClientVIPMenu(iClient, false);
+        FormatBind("vip_chat_", g_iBindNow[iClient], 'l', szBuffer, sizeof(szBuffer));
+
+        FeatureMenu(iClient, szBuffer).Display(iClient, MENU_TIME_FOREVER);
+
+        g_iBindNow[iClient] = BIND_MAX; /// ???
 
         return Plugin_Handled;
     }
