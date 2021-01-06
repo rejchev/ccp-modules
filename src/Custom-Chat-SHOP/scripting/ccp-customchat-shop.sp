@@ -15,13 +15,12 @@ public Plugin myinfo =
 	name = "[CCP] Custom Chat <SHOP>",
 	author = "nullent?",
 	description = "...",
-	version = "1.5.0",
+	version = "1.5.1",
 	url = "discord.gg/ChTyPUG"
 };
 
 const ItemType g_IType = Item_Togglable;
 
-static CategoryId g_CatS[BIND_MAX];
 static const char pkgKey[] = "shop_chat";
 
 int levels[BIND_MAX];
@@ -67,12 +66,8 @@ public void onChange(ConVar convar, const char[] oldVal, const char[] newVal)
 public void ccp_OnPackageAvailable(int iClient, Handle hPkg) {
     JSONObject pkg = asJSONO(hPkg);
 
-    if(!pkg || !pkg.HasKey(pkgKey)) {
-        return;
-    }
-
     if(!iClient) {
-        static char config[MESSAGE_LENGTH] = "configs/shop/ccprocessor/chop_chat.json";
+        static char config[MESSAGE_LENGTH] = "configs/shop/ccprocessor/shop_chat.json";
 
         if(config[0] == 'c') {
             BuildPath(Path_SM, config, sizeof(config), config);
@@ -87,7 +82,7 @@ public void ccp_OnPackageAvailable(int iClient, Handle hPkg) {
         if(!Shop_IsStarted())
             return;
 
-        RegisterCategory();
+        RegisterCategorys();
     } else {
         JSONObject model = new JSONObject();
         for(int i; i < BIND_MAX; i++)
@@ -136,7 +131,7 @@ public void OnMapStart()
 public void Shop_Started()
 {
     OnMapEnd();
-    RegisterCategory();
+    RegisterCategorys();
 }
 
 public void OnMapEnd()
@@ -149,42 +144,54 @@ public void OnPluginEnd()
     OnMapEnd();
 }
 
-public void RegisterCategory()
-{
-    for(int i; i < BIND_MAX; i++) {
-        g_CatS[i] = Shop_RegisterCategory(
-            szBinds[i], szBinds[i], NULL_STRING, OnCategoryDisplayed
-        );
-
-        FillItems(g_CatS[i], i);
-    }
-}
-
-void FillItems(CategoryId id, const int part) {
+void RegisterCategorys() {
     JSONObject obj = asJSONO(asJSONO(ccp_GetPackage(0)).Get(pkgKey));
-    if(!obj || !obj.HasKey(szBinds[part])) {
+    if(!obj) {
         return;
     }
 
-    JSONArray jsonPart = asJSONA(obj.Get(szBinds[part]));
-    if(!jsonPart || !jsonPart.Length) {
-        return;
-    }
+    JSONArray jsonPart;
+    CategoryId id;
 
     char szBuffer[MESSAGE_LENGTH];
-    for(int i, p, s, d; i < jsonPart.Length; i++) {
-        obj = asJSONO(jsonPart.Get(i));
-        if(!obj) {
+
+    JSONObject item;
+
+    for(int i; i < BIND_MAX; i++ ) {
+        if(!obj.HasKey(szBinds[i])) {
             continue;
         }
 
-        obj.GetString("value", szBuffer, sizeof(szBuffer));
-        p = obj.GetInt("price");
-        s = obj.GetInt("sellprice");
-        d = obj.GetInt("duration");
+        jsonPart = asJSONA(obj.Get(szBinds[i]));
+        if(!jsonPart || !jsonPart.Length) {
+            continue;
+        }
 
-        RegisterItem(id, szBuffer, szBuffer, szBuffer, p, s, d);
+        id = Shop_RegisterCategory(
+            szBinds[i], szBinds[i], NULL_STRING, OnCategoryDisplayed
+        );
+
+        if(id == INVALID_CATEGORY) {
+            continue;
+        }
+
+        for(int j, p, s, d; j < jsonPart.Length; j++) {
+            item = asJSONO(jsonPart.Get(j));
+            if(!item) {
+                continue;
+            }
+
+            item.GetString("value", szBuffer, sizeof(szBuffer));
+            p = item.GetInt("price");
+            s = item.GetInt("sellprice");
+            d = item.GetInt("duration");
+
+            RegisterItem(id, szBuffer, szBuffer, szBuffer, p, s, d);
+        }
     }
+
+    // Free memory
+    ccp_OnPackageRemove(0, obj);
 }
 
 void RegisterItem(CategoryId cid, const char[] item_key, const char[] item_name, const char[] item_value, int p, int s, int d)
