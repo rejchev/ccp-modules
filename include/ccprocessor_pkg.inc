@@ -3,9 +3,13 @@
 #endif
 #define _ccprocessor_pkg_included
 
+forward void ccp_OnPackageAvailable_Pre(int iClient, Handle jsonObj);
 forward void ccp_OnPackageAvailable(int iClient, Handle jsonObj);
 forward void ccp_OnPackageRemove(int iClient, Handle jsonObj);
 
+forward void ccp_OnPackageUpdated(int iClient, Handle jsonObj, Handle hCaller);
+
+native Handle ccp_UpdatePackage(int iClient, Handle newValue);
 native Handle ccp_GetPackage(int iClient);
 
 public SharedPlugin __pl_ccprocessor_pkg= 
@@ -20,8 +24,9 @@ public SharedPlugin __pl_ccprocessor_pkg=
 };
 
 #if !defined REQUIRE_PLUGIN
-public void __pl_ccprocessor_SetNTVOptional()
+public void __pl_ccprocessor_pkg_SetNTVOptional()
 {
     MarkNativeAsOptional("ccp_GetPackage");
+    MarkNativeAsOptional("ccp_UpdatePackage");
 }
 #endif
