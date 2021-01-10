@@ -1,0 +1,14 @@
+"Phrases"
+{
+    "team_admin"
+    {
+        "ru"                "[Администраторы]"
+        "en"                "[Admins]"
+    }
+
+    "team_color"
+    {
+        "en"                "{G}"
+        "ru"                "{G}"
+    }
+}
