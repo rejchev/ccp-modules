@@ -482,7 +482,7 @@ public Action OnClientSayCommand(int iClient, const char[] command, const char[]
 
 JSONObject senderModel;
 
-public void cc_proc_MsgUniqueId(int mType, int sender, int msgId, const int[] clients, int count) {
+public void cc_proc_MsgUniqueId(int mType, int sender, int msgId, const char[] message, const int[] clients, int count) {
     senderModel = null;
 
     if(mType > eMsg_ALL || !sender || !VIP_IsClientVIP(sender))

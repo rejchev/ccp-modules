@@ -322,7 +322,7 @@ public int menuCallBack(Menu hMenu, MenuAction action, int iClient, int param) {
 
 JSONObject objSender;
 
-public void cc_proc_MsgUniqueId(int mType, int sender, int msgId, const int[] clients, int count) {
+public void cc_proc_MsgUniqueId(int mType, int sender, int msgId, const char[] message, const int[] clients, int count) {
     if(mType > eMsg_ALL || !sender)
         return;
 
