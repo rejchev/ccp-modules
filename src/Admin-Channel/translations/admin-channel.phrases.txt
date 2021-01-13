@@ -11,4 +11,10 @@
         "en"                "{G}"
         "ru"                "{G}"
     }
+
+    "team_template"
+    {
+        "en"                "{STATUSCO}{STATUS} {TEAMCO}{TEAM} {NAMECO}{NAME}{W}: {MSGCO}{MSG}"
+        "ru"                "{STATUSCO}{STATUS} {TEAMCO}{TEAM} {NAMECO}{NAME}{W}: {MSGCO}{MSG}"
+    }
 }
