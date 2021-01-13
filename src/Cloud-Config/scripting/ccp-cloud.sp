@@ -3,7 +3,9 @@
 #include <ccprocessor>
 #include <ccprocessor_pkg>
 
+#undef REQUIRE_EXTENSIONS
 #include <ripext_m>
+#define REQUIRE_EXTENSIONS
 
 public Plugin myinfo = 
 {
