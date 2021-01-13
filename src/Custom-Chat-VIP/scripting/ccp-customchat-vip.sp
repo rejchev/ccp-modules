@@ -1,12 +1,13 @@
-// #include <UTF-8-string>
-
 #pragma newdecls required
 
 #include <vip_core>
 #include <ccprocessor>
 #include <clientprefs>
 #include <ccprocessor_pkg>
-#include <jansson>
+
+#undef REQUIRE_EXTENSIONS
+#include <ripext_m>
+#define REQUIRE_EXTENSIONS
 
 public Plugin myinfo = 
 {

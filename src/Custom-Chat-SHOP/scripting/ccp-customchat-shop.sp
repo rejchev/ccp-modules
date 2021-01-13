@@ -2,13 +2,13 @@
 
 #include <ccprocessor>
 #include <shop>
-#include <jansson>
 #include <ccprocessor_pkg>
 
+#undef REQUIRE_EXTENSIONS
+#include <ripext_m>
+#define REQUIRE_EXTENSIONS
+
 #define SZ(%0) %0, sizeof(%0)
-#define asJSONO(%0) view_as<JSONObject>(%0)
-#define asJSONA(%0) view_as<JSONArray>(%0)
-#define asJSONK(%0) view_as<JSONObjectKeys>(%0)
 
 public Plugin myinfo = 
 {

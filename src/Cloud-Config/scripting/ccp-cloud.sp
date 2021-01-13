@@ -1,13 +1,9 @@
 #pragma newdecls required
 
-#define asJSONO(%0) view_as<JSONObject>(%0)
-#define asJSONA(%0) view_as<JSONArray>(%0)
-#define asJSONK(%0) view_as<JSONObjectKeys>(%0)
-
 #include <ccprocessor>
 #include <ccprocessor_pkg>
 
-#include <ripext>
+#include <ripext_m>
 
 public Plugin myinfo = 
 {

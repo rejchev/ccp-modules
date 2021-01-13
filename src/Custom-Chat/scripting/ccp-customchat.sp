@@ -4,7 +4,10 @@
 #include <ccprocessor_pkg>
 
 #include <clientprefs>
-#include <jansson>
+
+#undef REQUIRE_EXTENSIONS
+#include <ripext_m>
+#define REQUIRE_EXTENSIONS
 
 public Plugin myinfo = 
 {

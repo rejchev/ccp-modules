@@ -1,7 +1,7 @@
 #pragma newdecls required
 
-#include ccprocessor
-#include vip_core
+#include <ccprocessor>
+#include <vip_core>
 
 public Plugin myinfo = 
 {
