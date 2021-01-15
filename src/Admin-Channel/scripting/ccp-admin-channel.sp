@@ -87,7 +87,7 @@ public Action cc_proc_RebuildString(const int mType, int sender, int recipient, 
                 return Plugin_Continue;
             }
 
-            FormatEx(buffer, size, "%T", szValue);
+            FormatEx(buffer, size, "%T", szValue, recipient);
         }
     }
 
