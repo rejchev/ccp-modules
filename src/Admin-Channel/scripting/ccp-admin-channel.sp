@@ -2,20 +2,22 @@
 
 #include <ccprocessor>
 
-static const char trigger[] = "#";
-
-bool IsAdminChannel;
-
 public Plugin myinfo = 
 {
 	name = "[CCP] Admin channel",
 	author = "nu11ent",
 	description = "...",
-	version = "1.0.1",
+	version = "1.0.2",
 	url = "https://t.me/nyoood"
 };
 
+static const char trigger[] = "#";
+
 StringMap g_smSettings;
+
+bool IsLogAction;
+bool IsPlayer;
+bool IsAdminChannel;
 
 public void OnPluginStart() {
     LoadTranslations("admin-channel.phrases");
@@ -41,6 +43,7 @@ public void OnMapStart() {
         kv.Rewind();
 
         char szBuffer[MESSAGE_LENGTH];
+        IsLogAction = view_as<bool>(kv.GetNum("use_log", 1));
 
         for(int i; i < BIND_MAX; i++) {
             FormatBind("channel_", i, 'l', szBuffer, sizeof(szBuffer));
@@ -61,7 +64,15 @@ public void cc_proc_MsgUniqueId(int mType, int sender, int msgId, const char[] m
         return;
     }
 
-    IsAdminChannel = (message[0] == trigger[0] && GetUserAdmin(sender) != INVALID_ADMIN_ID);
+    IsAdminChannel = message[0] == trigger[0];
+
+    if(IsAdminChannel) {
+        IsPlayer = GetUserAdmin(sender) == INVALID_ADMIN_ID;
+
+        if(IsLogAction && !IsClientSourceTV(clients[0])) {
+            LogAction(sender, -1, "\"%L\" (%s) used admin channel (text %s)", sender, !IsPlayer ? "Admin" : "Player", message[1]);
+        }
+    }
 }
 
 public void cc_proc_RebuildClients(const int mType, int iClient, int[] clients, int &numClients) {
@@ -71,16 +82,21 @@ public void cc_proc_RebuildClients(const int mType, int iClient, int[] clients, 
 
     numClients = 0;
     for(int i = 1; i <= MaxClients; i++) {
-        if(IsClientInGame(i) && !IsFakeClient(i) && GetUserAdmin(i) != INVALID_ADMIN_ID) {
+        if(IsClientInGame(i) && !IsFakeClient(i) && (iClient == i || GetUserAdmin(i) != INVALID_ADMIN_ID)) {
             clients[numClients++] = i;
         }
     }
+
 }
 
 public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size) {
     if(IsAdminChannel) {
+        
         if(part == BIND_MSG) {
             ReplaceStringEx(buffer, size, trigger, "", -1, -1, false);
+        } else if(part == BIND_TEAM && IsPlayer) {
+            // Message from player
+            FormatEx(buffer, size, "%T", (sender == recipient) ? "to_admins" : "from_player", recipient);
         } else {
             char szValue[64];
             if(!g_smSettings.GetString(szBinds[part], szValue, sizeof(szValue)) || !szValue[0]) {

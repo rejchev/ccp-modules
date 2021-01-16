@@ -1,5 +1,17 @@
 "Phrases"
 {
+    "to_admins"
+    {
+        "ru"                "[Администраторам]"
+        "en"                "[To admins]"
+    }
+
+    "from_player"
+    {
+        "ru"                "[От игрока]"
+        "en"                "[From player]"
+    }
+
     "team_admin"
     {
         "ru"                "[Администраторы]"
