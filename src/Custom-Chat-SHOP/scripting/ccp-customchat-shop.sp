@@ -15,7 +15,7 @@ public Plugin myinfo =
 	name = "[CCP] Custom Chat <SHOP>",
 	author = "nullent?",
 	description = "...",
-	version = "1.5.1",
+	version = "1.5.2",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -65,6 +65,7 @@ public void onChange(ConVar convar, const char[] oldVal, const char[] newVal)
 
 public void ccp_OnPackageAvailable(int iClient, Handle hPkg) {
     JSONObject pkg = asJSONO(hPkg);
+    JSONObject obj;
 
     if(!iClient) {
         static char config[MESSAGE_LENGTH] = "configs/shop/ccprocessor/shop_chat.json";
@@ -76,50 +77,21 @@ public void ccp_OnPackageAvailable(int iClient, Handle hPkg) {
         if(!FileExists(config)) {
             SetFailState("Config file is not exists: %s", config);
         }
-
-        pkg.Set(pkgKey, JSONObject.FromFile(config, 0));
-
-        if(!Shop_IsStarted())
-            return;
-
-        RegisterCategorys();
-    } else {
-        JSONObject model = new JSONObject();
-        for(int i; i < BIND_MAX; i++)
-            model.SetNull(szBinds[i]);
         
-        pkg.Set(pkgKey, model);
-    }
-}
-
-public void ccp_OnPackageRemove(int iClient, Handle hPkg) {
-    JSONObject pkg = asJSONO(hPkg);
-    if(!pkg.HasKey(pkgKey)) {
-        return;
-    }
-
-    JSONObject obj = asJSONO(pkg.Get(pkgKey));
-
-    if(!iClient) {
-        JSONObject sub;
-        JSONObjectKeys keys = asJSONK(obj.Keys());
-
-        char szKey[64];
-        while(keys.ReadKey(szKey, sizeof(szKey))) {
-            sub = asJSONO(obj.Get(szKey));
-            if(sub) {
-                delete sub;
-            }
-        }
-
-        delete keys;
+        obj = JSONObject.FromFile(config, 0);
+        pkg.Set(pkgKey, obj);
+    
+        if(Shop_IsStarted())
+            RegisterCategorys();
+    } else {
+        obj = new JSONObject();
+        for(int i; i < BIND_MAX; i++)
+            obj.SetNull(szBinds[i]);
+        
+        pkg.Set(pkgKey, obj);
     }
 
-    if(obj) {
-        delete obj;
-    }
-
-    pkg.Remove(pkgKey);
+    delete obj;
 }
 
 public void OnMapStart()
@@ -151,12 +123,11 @@ void RegisterCategorys() {
     }
 
     JSONArray jsonPart;
+    JSONObject item;
+
     CategoryId id;
 
     char szBuffer[MESSAGE_LENGTH];
-
-    JSONObject item;
-
     for(int i; i < BIND_MAX; i++ ) {
         if(!obj.HasKey(szBinds[i])) {
             continue;
@@ -164,6 +135,7 @@ void RegisterCategorys() {
 
         jsonPart = asJSONA(obj.Get(szBinds[i]));
         if(!jsonPart || !jsonPart.Length) {
+            delete jsonPart;
             continue;
         }
 
@@ -172,6 +144,7 @@ void RegisterCategorys() {
         );
 
         if(id == INVALID_CATEGORY) {
+            delete jsonPart;
             continue;
         }
 
@@ -187,11 +160,14 @@ void RegisterCategorys() {
             d = item.GetInt("duration");
 
             RegisterItem(id, szBuffer, szBuffer, szBuffer, p, s, d);
-        }
-    }
 
-    // Free memory
-    ccp_OnPackageRemove(0, obj);
+            delete item;
+        }
+
+        delete jsonPart;
+    }
+    
+    delete obj;
 }
 
 void RegisterItem(CategoryId cid, const char[] item_key, const char[] item_name, const char[] item_value, int p, int s, int d)
@@ -237,6 +213,9 @@ public ShopAction OnItemToogle(int iClient, CategoryId category_id, const char[]
         obj.SetString(szBinds[part], szValue);
     } else obj.SetNull(szBinds[part]);
 
+    asJSONO(ccp_GetPackage(iClient)).Set(pkgKey, obj);
+    delete obj;
+
     return (isOn || elapsed) ? Shop_UseOff : Shop_UseOn;
 }
 
@@ -274,7 +253,8 @@ public bool OnItemSell(int client, CategoryId category_id, const char[] category
         obj.SetNull(szBinds[part]);
     }
 
-    // aClientTemplate[client].SetString(GetCatIdx(category), NULL_STRING);
+    asJSONO(ccp_GetPackage(client)).Set(pkgKey, obj);
+    delete obj;
 
     return true;
 }
@@ -292,7 +272,7 @@ public void OnClientDisconnect(int iClient)
 JSONObject senderModel;
 
 public void cc_proc_MsgUniqueId(int mType, int sender, int msgId, const char[] message, const int[] clients, int count) {
-    senderModel = null;
+    delete senderModel;
 
     if(mType > eMsg_ALL || !sender) {
         return;

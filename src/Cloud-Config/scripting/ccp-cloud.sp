@@ -12,7 +12,7 @@ public Plugin myinfo =
 	name = "[CCP] Cloud Config",
 	author = "nyoood?",
 	description = "...",
-	version = "1.0.0",
+	version = "1.0.1",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -39,13 +39,13 @@ public void ccp_OnPackageAvailable(int iClient, Handle hPkg) {
             SetFailState("");
         }
 
-        pkg.Set(pkgKey, JSONObject.FromFile(config, 0));
-        pkg = asJSONO(pkg.Get(pkgKey));
+        JSONObject objFile = JSONObject.FromFile(config, 0);
+        pkg.Set(pkgKey, objFile);
 
-        pkg.GetString("url", g_szURL, sizeof(g_szURL));
-        pkg.GetString("endpoint", g_szEndPoint, sizeof(g_szEndPoint));
+        objFile.GetString("url", g_szURL, sizeof(g_szURL));
+        objFile.GetString("endpoint", g_szEndPoint, sizeof(g_szEndPoint));
 
-        delete pkg;
+        delete objFile;
     }
 }
 

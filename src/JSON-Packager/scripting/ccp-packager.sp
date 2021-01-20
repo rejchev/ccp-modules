@@ -7,7 +7,7 @@ public Plugin myinfo =
 	name = "[CCP] JSON Packager",
 	author = "nyoood?",
 	description = "...",
-	version = "1.0.1",
+	version = "1.0.2",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -18,41 +18,37 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
     CreateNative("ccp_UpdatePackage", Native_UpdatePackage);
     
     RegPluginLibrary("ccprocessor_pkg");
-}
 
-public void OnPluginStart() {
-    jClients[0] = new JSONObject();
+    if(late) {
+        for(int i =1; i <= MaxClients; i++) {
+            if(IsClientInGame(i)) {
+                OnClientDisconnect(i);
+                OnClientPutInServer(i);
+            }
+        }
+    }
 }
 
 public void OnMapStart() {
-    pkgRemove(0);
+    Call_pkgReady(0);
+}
 
-    if(!jClients[0].Clear()) {
-        delete jClients[0];
-        jClients[0] = new JSONObject();
-    }
-
-    packageReady_Pre(0);
-    packageReady(0);
+public void OnMapEnd() {
+    Call_pkgClear(0);
 }
 
 public void OnClientPutInServer(int iClient) {
-    delete jClients[iClient];
     if(IsFakeClient(iClient) || IsClientSourceTV(iClient))
         return;
 
-    jClients[iClient] = new JSONObject();
-
-    packageReady_Pre(iClient);
-    packageReady(iClient);
+    Call_pkgReady(iClient);
 }
 
 public void OnClientDisconnect(int iClient) {
-    if(jClients[iClient]) {
-        pkgRemove(iClient);
+    if(IsFakeClient(iClient) || IsClientSourceTV(iClient))
+        return;
 
-        delete jClients[iClient];
-    }
+    Call_pkgClear(iClient);
 }
 
 public any Native_GetPackage(Handle h, int a) {
@@ -108,7 +104,14 @@ void packageReady(int iClient) {
     Call_Finish();
 }
 
-void pkgRemove(int iClient) {
+void Call_pkgReady(int iClient) {
+    pkgInit(iClient);
+
+    packageReady_Pre(iClient);
+    packageReady(iClient);
+}
+
+void Call_pkgClear(int iClient) {
     static GlobalForward h;
     if(!h)
         h = new GlobalForward("ccp_OnPackageRemove", ET_Ignore, Param_Cell, Param_Cell);
@@ -117,6 +120,18 @@ void pkgRemove(int iClient) {
     Call_PushCell(iClient);
     Call_PushCell(jClients[iClient]);
     Call_Finish();
+
+    pkgClear(iClient);
+}
+
+void pkgInit(int iClient) {
+    if(!jClients[iClient]) {
+        jClients[iClient] = new JSONObject();
+    }
+}
+
+void pkgClear(int iClient) {
+    delete jClients[iClient];
 }
 
 void pkgUpdated(int iClient, Handle hInitiator) {

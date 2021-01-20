@@ -14,13 +14,15 @@ public Plugin myinfo =
 	name = "[CCP] Custom Chat",
 	author = "nullent?",
 	description = "...",
-	version = "3.3.1",
+	version = "3.3.2",
 	url = "discord.gg/ChTyPUG"
 };
 
 int LEVEL[4];
 Cookie coHandle;
 bool IsMenuDisabled;
+
+static const char objKey[] = "ccm";
 
 public void OnPluginStart()
 {
@@ -80,20 +82,20 @@ public void OnMapStart() {
 }
 
 public void ccp_OnPackageAvailable(int iClient, Handle objClient) {
-    JSONObject pkg = view_as<JSONObject>(objClient);
+    JSONObject pkg = asJSONO(objClient);
 
     if(!iClient) {
-        static char szBuffer[256] = "configs/ccprocessor/customchat/ccm.json";
-
+        static char szBuffer[MESSAGE_LENGTH] = "configs/ccprocessor/customchat/ccm.json";
         if(szBuffer[0] == 'c') {
             BuildPath(Path_SM, szBuffer, sizeof(szBuffer), szBuffer);
         } else if(!FileExists(szBuffer)) {
             SetFailState("Where is my config: %s", szBuffer);
         }
 
-        pkg.Set("ccm", JSONArray.FromFile(szBuffer, 0));
+        JSONArray jsonInput = JSONArray.FromFile(szBuffer, 0);
+        pkg.Set(objKey, jsonInput);
+        delete jsonInput;
     } else {
-
         if(!pkg.HasKey("auth")) {
             char szBuffer[64];
             GetClientAuthId(iClient, AuthId_Engine, szBuffer, sizeof(szBuffer));
@@ -101,24 +103,22 @@ public void ccp_OnPackageAvailable(int iClient, Handle objClient) {
         }
 
         GetValueFromCookie(iClient, pkg);
-        // setTemplate(iClient, pkg);
     }
 }
 
 public void OnClientPostAdminCheck(int iClient) {
-    JSONObject pkg = view_as<JSONObject>(ccp_GetPackage(iClient));
-    if(!pkg)
+    JSONObject pkg = asJSONO(ccp_GetPackage(iClient));
+    if(!pkg) {
         return;
-    
+    }
+
     if(!pkg.HasKey("flags"))
         pkg.SetInt("flags", GetUserFlagBits(iClient));
     
     if(!pkg.HasKey("adminId"))
         pkg.SetInt("adminId", view_as<int>(GetUserAdmin(iClient)));
 
-    // setTemplate(iClient, pkg);
-
-    if(!pkg.HasKey("ccm")) {
+    if(!pkg.HasKey(objKey)) {
         GetValueFromCookie(iClient, pkg);
     }
 }
@@ -130,149 +130,91 @@ void GetValueFromCookie(int iClient, JSONObject pkg) {
     if(szValue[0]) {
         JSONObject jsonModel = FindInObjects(szValue);
 
-        if(HasAccess(pkg, jsonModel)) {
-            pkg.Set("ccm", jsonModel);
+        if(jsonModel && HasAccess(pkg, jsonModel)) {
+            pkg.Set(objKey, jsonModel);
         }
+
+        delete jsonModel;
     }
 }
 
-public void ccp_OnPackageRemove(int iClient, Handle objClient) {
-    JSONObject pkg = view_as<JSONObject>(objClient);
-
-    if(!pkg.HasKey("ccm")) {
+void setTemplate(int iClient, JSONObject pkg, int index = -1) {    
+    JSONArray jsonArray = asJSONA(asJSONO(ccp_GetPackage(0)).Get(objKey));
+    
+    if(!jsonArray) {
         return;
-    }
+    } 
 
-    JSONObject obj;
+    if(jsonArray.Length) {
+        char szValue[MESSAGE_LENGTH];
+        JSONObject obj;
+        if(index != -1) {
+            obj = asJSONO(jsonArray.Get(index));
+            obj.GetString("name", szValue, sizeof(szValue));
 
-    if(!iClient) {
-        JSONArray objArray = view_as<JSONArray>(pkg.Get("ccm"));
-        
-        for(int i; i < objArray.Length; i++) {
-            obj = view_as<JSONObject>(objArray.Get(i));
-            if(obj) {
+            if(pkg.Set(objKey, obj)){
+                coHandle.Set(iClient, szValue);
+            }
+        } else {
+            for(int i, b, c; i < jsonArray.Length; i++) {
+                obj = asJSONO(jsonArray.Get(i));
+                obj.GetString("name", szValue, sizeof(szValue));
+
+                c = obj.GetInt("priority");
+                if(c > b && HasAccess(pkg, obj)) {
+                    b = c;
+                    if(pkg.Set(objKey, obj)) {
+                        coHandle.Set(iClient, szValue);
+                    }
+                }
+
                 delete obj;
             }
         }
-
-        delete objArray;
-
-    } {
-        obj = view_as<JSONObject>(pkg.Get("ccm"));
-        if(obj)
-            delete obj;
+        
+        delete obj;
     }
 
-    pkg.Remove("ccm");
+    delete jsonArray;
 }
 
-void setTemplate(int iClient, JSONObject pkg, int index = -1) {
-    JSONObject server = view_as<JSONObject>(ccp_GetPackage(0));
-
-    if(!server.HasKey("ccm")) {
-        // LogMessage("!Server Has: ccm");
-        return;
-    }
-    
-    JSONArray jsonArray = view_as<JSONArray>(server.Get("ccm"));
-    if(!jsonArray) {
-        // LogMessage("Invalid array");
-        return;
-    }
-
-    if(index != -1) {
-        if(pkg.HasKey("ccm")) {
-            pkg.Remove("ccm");
-        }        
-
-        // LogMessage("Set val");
-        pkg.Set("ccm", jsonArray.Get(index));
-
-        char szValue[MESSAGE_LENGTH];
-        server = view_as<JSONObject>(pkg.Get("ccm"));
-
-        server.GetString("name", szValue, sizeof(szValue));
-        coHandle.Set(iClient, szValue);
-        return;
-    }
-
-    JSONObject obj;
-
-    char szBuffer[64];
-    if(!GetClientAuthId(iClient, AuthId_Engine, szBuffer, sizeof(szBuffer))){
-        return;
-    }
-
-    for(int i, b, c; i < jsonArray.Length; i++) {
-        obj = view_as<JSONObject>(jsonArray.Get(i));
-
-        if(obj) {
-            c = obj.GetInt("priority");
-
-            if(c > b && HasAccess(pkg, obj)) {
-                b = c;
-
-                if(pkg.HasKey("ccm")) {
-                    pkg.Remove("ccm");
-                }
-
-                // LogMessage("Set obj: %i", i);
-
-                if(pkg.Set("ccm", view_as<JSON>(obj))){
-                    // char szValue[MESSAGE_LENGTH];
-                    server = view_as<JSONObject>(pkg.Get("ccm"));
-
-                    server.GetString("name", szBuffer, sizeof(szBuffer));
-                    coHandle.Set(iClient, szBuffer);
-                }
-            }
-        }   
-
-        obj = null;
-    }
-
-}
-
-public Action Cmd_Prefix(int iClient, int args)
-{
+public Action Cmd_Prefix(int iClient, int args) {
     if(iClient && IsClientInGame(iClient) && !IsFakeClient(iClient))
     {
-        JSONObject objClient = view_as<JSONObject>(ccp_GetPackage(iClient));
+        JSONObject objClient = asJSONO(ccp_GetPackage(iClient));
         if(objClient) {
             if(IsMenuDisabled) {
-                if(!objClient.HasKey("ccm")) {
+                if(!objClient.HasKey(objKey)) {
                     setTemplate(iClient, objClient);
                 } else {
-                    objClient.Remove("ccm");
+                    objClient.Remove(objKey);
                     coHandle.Set(iClient, NULL_STRING);
                 }
             } else {
                 menuTemplates(iClient);
             }
-
         }
     }
     
     return Plugin_Handled;
 }
 
-void menuTemplates(int iClient)
-{
+void menuTemplates(int iClient) {
     Menu hMenu = new Menu(menuCallBack);
 
     hMenu.SetTitle("%T \n \n", "choose_template", iClient);
 
     char szBuffer[256];
 
-    JSONObject objClient = view_as<JSONObject>(ccp_GetPackage(iClient));
-    JSONArray objArray = view_as<JSONArray>(view_as<JSONObject>(ccp_GetPackage(0)).Get("ccm"));
-    int drawType = ITEMDRAW_DEFAULT;
+    JSONObject objClient = asJSONO(ccp_GetPackage(iClient));
+    JSONArray objArray = asJSONA(asJSONO(ccp_GetPackage(0)).Get(objKey));
     JSONObject obj;
+    int drawType = ITEMDRAW_DEFAULT;
     char szValue[64];
-    if(objClient.HasKey("ccm")) {
-        obj = view_as<JSONObject>(objClient.Get("ccm"));
+    if(objClient.HasKey(objKey) && !objClient.IsNull(objKey)) {
+        obj = asJSONO(objClient.Get(objKey));
         obj.GetString("name", szValue, sizeof(szValue));
-        obj = null;
+        delete obj;
     } else {
         drawType = ITEMDRAW_DISABLED;
     }
@@ -281,22 +223,21 @@ void menuTemplates(int iClient)
     hMenu.AddItem(szBuffer, szBuffer[1], drawType);
 
     for(int i; i < objArray.Length; i++) {
-        obj = view_as<JSONObject>(objArray.Get(i));
-        if(!obj) {
-            continue;
-        }
-
+        obj = asJSONO(objArray.Get(i));
         obj.GetString("name", szBuffer, sizeof(szBuffer));
+
         drawType = (!strcmp(szValue, szBuffer)) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT;
         
         Format(szBuffer, sizeof(szBuffer), "%c%T", i+1, szBuffer, iClient);
 
-        if(!HasAccess(objClient, obj)) {
-            continue;
+        if(HasAccess(objClient, obj)) {
+            hMenu.AddItem(szBuffer, szBuffer[1], drawType);
         }
 
-        hMenu.AddItem(szBuffer, szBuffer[1], drawType);
+        delete obj;
     }
+
+    delete objArray;
 
     hMenu.Display(iClient, MENU_TIME_FOREVER);
 }
@@ -308,11 +249,11 @@ public int menuCallBack(Menu hMenu, MenuAction action, int iClient, int param) {
             char item[64];
             hMenu.GetItem(param, item, sizeof(item));
 
-            JSONObject objClient = view_as<JSONObject>(ccp_GetPackage(iClient));
+            JSONObject objClient = asJSONO(ccp_GetPackage(iClient));
 
             int index = item[0];
             if(index == 'd') {
-                objClient.Remove("ccm");
+                objClient.Remove(objKey);
             } else {
                 index -= 1;
                 setTemplate(iClient, objClient, index);
@@ -323,46 +264,36 @@ public int menuCallBack(Menu hMenu, MenuAction action, int iClient, int param) {
     }
 }
 
-JSONObject objSender;
+JSONObject senderModel;
 
 public void cc_proc_MsgUniqueId(int mType, int sender, int msgId, const char[] message, const int[] clients, int count) {
+    delete senderModel;
+
     if(mType > eMsg_ALL || !sender)
         return;
 
-    objSender = view_as<JSONObject>(ccp_GetPackage(sender));
+    senderModel = asJSONO(ccp_GetPackage(sender));
+    if(!senderModel.HasKey(objKey) || senderModel.IsNull(objKey)) {
+        senderModel = null;
+        return;
+    }
+
+    senderModel = asJSONO(senderModel.Get(objKey));
 }
 
-public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size)
-{
-    if(mType > eMsg_ALL || !sender)
+public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size) {
+    if(!senderModel)
         return Plugin_Continue;
     
     int index = indexPart(part);
-    if(index == -1)
-        return Plugin_Continue;
-    
-    if(LEVEL[index] < pLevel)
-        return Plugin_Continue;
-    
-    // LogMessage("levle: %d:%i", part, sender);
-
-    JSONObject obj;
-    // LogMessage("Has ccm: %b", objSender.HasKey("ccm"));
-    if(!objSender || !objSender.HasKey("ccm"))
+    if(index == -1 || LEVEL[index] < pLevel)
         return Plugin_Continue;
 
-    // LogMessage("Client obj");
-    
-    obj = view_as<JSONObject>(objSender.Get("ccm"));
-    if(!obj || !obj.HasKey(szBinds[part]))
+    if(!senderModel.HasKey(szBinds[part]))
         return Plugin_Continue;
     
-    // LogMessage("obj");
-
     static char szValue[MESSAGE_LENGTH];
-    obj.GetString(szBinds[part], szValue, sizeof(szValue));
-
-    // LogMessage(szValue);
+    senderModel.GetString(szBinds[part], szValue, sizeof(szValue));
 
     if(!szValue[0])
         return Plugin_Continue;
@@ -376,11 +307,11 @@ public Action cc_proc_RebuildString(const int mType, int sender, int recipient, 
     return Plugin_Continue;  
 }
 
-bool HasAccess(JSONObject objClient, JSONObject obj) {
+bool HasAccess(JSONObject objClient, JSONObject jsonModel) {
     char szBuffer[64], szValue[64];
 
-    int type = obj.GetInt("type");
-    obj.GetString("value", szValue, sizeof(szValue));
+    int type = jsonModel.GetInt("type");
+    jsonModel.GetString("value", szValue, sizeof(szValue));
 
     switch(type) {
         // auth
@@ -414,7 +345,7 @@ bool HasAccess(JSONObject objClient, JSONObject obj) {
                 szBuffer = NULL_STRING;
             }
 
-            if(szBuffer[0] == 0) {
+            if(!szBuffer[0]) {
                 return false;
             }
         }
@@ -437,30 +368,27 @@ int indexPart(int part) {
 }
 
 JSONObject FindInObjects(const char[] szName) {
-    JSONObject obj;
-    JSONArray jsonItems = view_as<JSONArray>(
-        view_as<JSONObject>(view_as<JSONObject>(ccp_GetPackage(0))).Get("ccm")
-    );
-
-    if(!jsonItems || !jsonItems.Length) {
+    JSONArray jsonItems = asJSONA(asJSONO(ccp_GetPackage(0)).Get(objKey));
+    if(!jsonItems) {
         return null;
     }
 
-    char szValue[MESSAGE_LENGTH];
-    for(int i; i < jsonItems.Length; i++) {
-        obj = view_as<JSONObject>(jsonItems.Get(i));
+    JSONObject obj;
+    if(jsonItems.Length) {
+        char szValue[MESSAGE_LENGTH];
 
-        if(!obj.HasKey("name")) {
-            LogError("FindInObjects(%i): Invalid object", i);
-            continue;
-        }
+        for(int i; i < jsonItems.Length; i++) {
+            obj = asJSONO(jsonItems.Get(i));
+            obj.GetString("name", szValue, sizeof(szValue));
 
-        obj.GetString("name", szValue, sizeof(szValue));
+            if(StrEqual(szValue, szName, false)) {
+                break;
+            }
 
-        if(StrEqual(szValue, szName, false)) {
-            return obj;
+            delete obj;
         }
     }
-
-    return null;
+    
+    delete jsonItems;
+    return obj;
 }

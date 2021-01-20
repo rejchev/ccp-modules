@@ -14,7 +14,7 @@ public Plugin myinfo =
 	name = "[CCP] Custom Chat <VIP>",
 	author = "nullent?",
 	description = "...",
-	version = "2.0.2",
+	version = "2.0.3",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -94,21 +94,15 @@ public void onChange(ConVar convar, const char[] oldVal, const char[] newVal)
     level[part] = convar.IntValue;
 }
 
-public void OnMapEnd() {
-    g_mPalette = null;
-}
-
 public void OnMapStart()
 {
     cc_proc_APIHandShake(cc_get_APIKey());
 
     manageConVars(false);
-
-    // g_mPalette = null;    
 }
 
 public void ccp_OnPackageAvailable(int iClient, Handle objClient) {
-    JSONObject pkg = view_as<JSONObject>(objClient);
+    JSONObject pkg = asJSONO(objClient);
 
     if(!iClient) {
         static char szConfig[PLATFORM_MAX_PATH] = "data/vip/modules/chat.json";
@@ -119,41 +113,13 @@ public void ccp_OnPackageAvailable(int iClient, Handle objClient) {
         if(!FileExists(szConfig))
             SetFailState("Where is my config??: %s", szConfig);
         
-        pkg.Set(pkgKey, JSONObject.FromFile(szConfig, 0));
+        JSONObject objFile = JSONObject.FromFile(szConfig, 0);
+
+        LogMessage("Pkg(%x) && file(%x)", pkg, objFile);
+        pkg.Set(pkgKey, objFile);
+
+        delete objFile;
     }
-}
-
-public void ccp_OnPackageRemove(int iClient, Handle objClient) {
-    JSONObject pkg = view_as<JSONObject>(objClient);
-
-    if(!pkg.HasKey(pkgKey)) {
-        return;
-    }
-
-    JSONObject obj;
-
-    if(!iClient) {
-        obj = view_as<JSONObject>(pkg.Get(pkgKey));
-        JSONObjectKeys objKeys = view_as<JSONObjectKeys>(obj.Keys());
-        JSONObject sub;
-
-        char szKey[64];
-        while(objKeys.ReadKey(szKey, sizeof(szKey))) {
-            sub = view_as<JSONObject>(obj.Get(szKey));
-            if(sub)
-                delete sub;
-        }
-
-        delete objKeys;
-        delete obj;
-
-    } else {
-        obj = view_as<JSONObject>(pkg.Get(pkgKey));
-        if(obj)
-            delete obj;
-    }
-
-    pkg.Remove(pkgKey);
 }
 
 public void cc_config_parsed()
@@ -233,6 +199,8 @@ public bool OnDisplay_Feature(int iClient, const char[] szFeature, char[] szDisp
         Format(szDisplay, iMaxLength, "%T [%s]", szFeature, iClient, szDisplay);
     }
 
+    delete model;
+
     return true;
 }
 
@@ -244,11 +212,11 @@ public void VIP_OnVIPClientLoaded(int iClient)
 
     // int idx;
 
-    JSONObject client = view_as<JSONObject>(ccp_GetPackage(iClient));
+    JSONObject client = asJSONO(ccp_GetPackage(iClient));
 
     // model
-    client.Set(pkgKey, new JSONObject());
-    JSONObject model = view_as<JSONObject>(client.Get(pkgKey));
+    // client.Set(pkgKey, new JSONObject());
+    JSONObject model = new JSONObject();
 
     for(int i, idx; i < BIND_MAX; i++)
     {
@@ -264,6 +232,9 @@ public void VIP_OnVIPClientLoaded(int iClient)
         
         GetValueFromCookie(iClient, model, coFeatures[idx], i);
     }
+
+    client.Set(pkgKey, model);
+    delete model;
 }
 
 void GetValueFromCookie(int iClient, JSONObject model, Cookie coHandle, const int part) {
@@ -293,9 +264,9 @@ void UpdateCookie(int iClient, int iIdx, const char[] newValue)
 
 Menu FeatureMenu(int iClient, const char[] szFeature)
 {
-    g_iBindNow[iClient] = BIND_MAX;
-
     Menu hMenu;
+
+    g_iBindNow[iClient] = BIND_MAX;
 
     int iBind = BindFromString(szFeature);
     if(iBind == BIND_MAX) {
@@ -305,16 +276,20 @@ Menu FeatureMenu(int iClient, const char[] szFeature)
     char szBuffer[MESSAGE_LENGTH], szOption[NAME_LENGTH];
     VIP_GetClientVIPGroup(iClient, szBuffer, sizeof(szBuffer));
     
-    JSONObject model = getClientModel(iClient);
-    if(!model) {
-        LogError("FeatureMenu(%N): Something went wrong, client model is null..", iClient);
-        return hMenu;
-    }
+    JSONObject  model    =   getClientModel(iClient);
+    JSONObject  pkg      =   (model) ? asJSONO(asJSONO(ccp_GetPackage(0)).Get(pkgKey)) : null;
+    JSONObject  group    =   (pkg)   ? asJSONO(pkg.Get(szBuffer)) : null;
+    JSONArray   items    =   (group) ? asJSONA(group.Get(szBinds[iBind])) : null;
 
-    JSONObject pkg = view_as<JSONObject>(view_as<JSONObject>(ccp_GetPackage(0)).Get(pkgKey));
-    JSONArray items = view_as<JSONArray>(view_as<JSONObject>(pkg.Get(szBuffer)).Get(szBinds[iBind]));
+    delete group;
 
-    if(!items || !items.Length) {
+    if(!model || !pkg || !items || !items.Length) {
+        LogError("FeatureMenu(%N): Something went wrong..", iClient);
+
+        delete model;
+        delete pkg;
+        delete items;
+
         return hMenu;
     }
 
@@ -354,14 +329,16 @@ Menu FeatureMenu(int iClient, const char[] szFeature)
         hMenu.AddItem(szBuffer, szBuffer[2], iDrawType);
     } 
 
-    if(!hMenu.ItemCount)
-    {
-        delete hMenu;
-        return hMenu;
-    }
-
     hMenu.ExitButton = true;
     hMenu.ExitBackButton = true;
+
+    if(!hMenu.ItemCount) {
+        delete hMenu;
+    }
+
+    delete model;
+    delete pkg;
+    delete items;
 
     return hMenu; 
 }
@@ -395,18 +372,15 @@ public int FeatureMenu_CallBack(Menu hMenu, MenuAction action, int iClient, int 
             }
 
             // pkg -> pkgKey -> vipGroup -> bindArray
-            JSONArray items =
-                view_as<JSONArray>(
-                    view_as<JSONObject>(
-                        view_as<JSONObject>(
-                            view_as<JSONObject>(
-                                ccp_GetPackage(0)
-                            ).Get(pkgKey)
-                        ).Get(szOption)
-                    ).Get(szBinds[part])
-                );
+            JSONObject group = asJSONOEx(szOption, 
+                asJSONOEx(pkgKey, asJSONO(ccp_GetPackage(0)), false)
+            );
+
+            JSONArray items = asJSONA(group.Get(szBinds[part]));
+            delete group;
 
             items.GetString(idx, szOption, sizeof(szOption));
+            delete items;
             
             if(!strcmp(szOption, "custom")) {
                 g_iBindNow[iClient] = part;
@@ -420,6 +394,9 @@ public int FeatureMenu_CallBack(Menu hMenu, MenuAction action, int iClient, int 
                 szOption = NULL_STRING;
             }
             else model.SetString(szBinds[part], szOption);
+
+            asJSONO(ccp_GetPackage(iClient)).Set(pkgKey, model);
+            delete model;
             
             UpdateCookie(iClient, part, szOption);
 
@@ -455,9 +432,7 @@ public Action OnClientSayCommand(int iClient, const char[] command, const char[]
         }
 
         JSONObject model = getClientModel(iClient);
-
         UpdateCookie(iClient, g_iBindNow[iClient], szBuffer);
-
 
         if(!model) {
             g_iBindNow[iClient] = BIND_MAX;
@@ -466,6 +441,8 @@ public Action OnClientSayCommand(int iClient, const char[] command, const char[]
         }
         
         model.SetString(szBinds[g_iBindNow[iClient]], szBuffer);
+        asJSONO(ccp_GetPackage(iClient)).Set(pkgKey, model);
+        delete model;
 
         PrintToChat(iClient, "%T", "ccp_custom_success", iClient);
 
@@ -484,7 +461,7 @@ public Action OnClientSayCommand(int iClient, const char[] command, const char[]
 JSONObject senderModel;
 
 public void cc_proc_MsgUniqueId(int mType, int sender, int msgId, const char[] message, const int[] clients, int count) {
-    senderModel = null;
+    delete senderModel;
 
     if(mType > eMsg_ALL || !sender || !VIP_IsClientVIP(sender))
         return;
@@ -531,15 +508,25 @@ stock int IsValidPart(const int part)
 
 stock JSONObject getClientModel(int iClient) {
     JSONObject obj;
-    obj = view_as<JSONObject>(ccp_GetPackage(iClient));
+    obj = asJSONO(ccp_GetPackage(iClient));
 
     if(!obj || !obj.HasKey(pkgKey))
         return null;
     
-    obj = view_as<JSONObject>(obj.Get(pkgKey));
+    obj = asJSONO(obj.Get(pkgKey));
     return obj;
 }
 
 stock bool IsPartValid(JSONObject model, int part) {
     return model.HasKey(szBinds[part]) && !model.IsNull(szBinds[part]);
+}
+
+stock JSONObject asJSONOEx(const char[] key, JSONObject obj, bool dlt = true) {
+    JSONObject out;
+    
+    out = asJSONO(obj.Get(key));
+
+    if(dlt) delete obj;
+
+    return out;
 }
