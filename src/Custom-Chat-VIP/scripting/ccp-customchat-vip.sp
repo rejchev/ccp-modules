@@ -115,7 +115,7 @@ public void ccp_OnPackageAvailable(int iClient, Handle objClient) {
         
         JSONObject objFile = JSONObject.FromFile(szConfig, 0);
 
-        LogMessage("Pkg(%x) && file(%x)", pkg, objFile);
+        //LogMessage("Pkg(%x) && file(%x)", pkg, objFile);
         pkg.Set(pkgKey, objFile);
 
         delete objFile;
