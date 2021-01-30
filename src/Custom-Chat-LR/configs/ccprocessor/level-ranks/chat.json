@@ -1,0 +1,10 @@
+[
+    {
+        "level":        1,
+        "itemName":     "item_1",
+
+        "{PREFIX}":     "level_1",
+        "{PREFIXCO}":   "{R}",
+        "{NAMECO}":     "{G}"
+    }
+]

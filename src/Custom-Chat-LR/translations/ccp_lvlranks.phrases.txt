@@ -1,0 +1,66 @@
+"Phrases"
+{
+    "rankmenu_title_tag"
+    {
+        "en"                    "CCP-LVL"
+        "ru"                    "CCP-LVL"
+    }
+
+    "rankmenu_title"
+    {
+        // {1} - rankmenu_title_tag
+        "#format"               "{1:s}"
+        "en"                    "{1}:> Custom chat"
+        "ru"                    "{1}:> Пользовательский чат"
+    }
+
+    "some_wrong"
+    {
+        "en"                    "{PI} Something went wrong"
+        "ru"                    "{PI} Что-то пошло не так..."
+    }
+
+    "item_view_pattern"
+    {
+        // {1} - CCP-Part name
+        // {2} - Value
+        "#format"               "{1:s},{2:s}"
+        "en"                    "{1}: {2}"
+        "ru"                    "{1}: {2}"
+    }
+
+    "rankinfo_title"
+    {
+        // {1} - rankmenu_title_tag
+        // {2} - Item
+        "#format"               "{1:s},{2:s}"
+        "en"                    "{1}:> {2}"
+        "ru"                    "{1}:> {2}" 
+    }
+
+    "item_choose"
+    {
+        "en"                    "Choose"
+        "ru"                    "Установить"
+    }
+
+    "item_disable"
+    {
+        "en"                    "Remove"
+        "ru"                    "Убрать"
+    }
+
+    // Items name
+    "item_1"
+    {
+        "en"                    "LEVEL 1"
+        "ru"                    "LEVEL 1"
+    }
+
+    // Items apperancy: Translating values for a message part
+    "level_1"
+    {
+        "en"                    "[LVL 1]"
+        "ru"                    "[Уровень 1]"
+    }
+}
