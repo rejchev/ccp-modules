@@ -80,9 +80,9 @@ Action cmduse(int iClient, int args) {
     return Plugin_Handled;
 }
 
-public void cc_proc_RebuildString_Post(const int mType, int sender, int recipient, int part, int pLevel, const char[] szValue) {    
+public bool cc_proc_RebuildString_Post(const int mType, int sender, int recipient, int part, int pLevel, const char[] szValue) {    
     if(part != BIND_PROTOTYPE) {
-        return;
+        return false;
     }
 
     for(int i = 1; i <= MaxClients; i++) {
@@ -91,4 +91,6 @@ public void cc_proc_RebuildString_Post(const int mType, int sender, int recipien
             IsViewer[i] = false;
         }
     }
+
+    return false;
 }
