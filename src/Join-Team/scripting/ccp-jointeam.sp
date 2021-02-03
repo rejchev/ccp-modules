@@ -9,7 +9,7 @@ public Plugin myinfo =
 	name = "[CCP] Join team",
 	author = "nullent?",
 	description = "...",
-	version = "1.0.3",
+	version = "1.0.4",
 	url = "https://t.me/nyoood"
 };
 
@@ -54,7 +54,6 @@ Action EventTeam(Event event, const char[] name, bool dbc) {
     return Plugin_Changed;
 }
 
-bool IsTeamMsg;
 void TriggerUMessage(int iTeam, const char[] username, const char[] teamname)
 {
     static const char um[] = "TextMsg";
@@ -85,24 +84,19 @@ void TriggerUMessage(int iTeam, const char[] username, const char[] teamname)
     EndMessage();
 }
 
-// bruh....
-public Action cc_proc_OnDefMsg(const char[] szMessage, bool IsPhraseExists) {
-    IsTeamMsg = strcmp(szMessage, KEY) == 0;
-
-    if(!IsTeamMsg) {
-        initiatorTeam = -1;
-    }
-
-    return (IsPhraseExists) ? Plugin_Changed : Plugin_Continue;
-}
-
 public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size) {
-    if(mType != eMsg_SERVER || !IsTeamMsg || initiatorTeam == -1 || part != BIND_MSG)
+    if(mType != eMsg_SERVER || initiatorTeam == -1 || part != BIND_MSG)
         return Plugin_Continue;
     
     // after prepareDefMessage();
     ReplaceStringEx(buffer, size, "%s2", GetTeamName(initiatorTeam, recipient));
     return Plugin_Continue;
+}
+
+public void cc_proc_MessageEnd(const int mType, const int sender, int msgId) {
+    if(mType == eMsg_SERVER && initiatorTeam != -1) {
+        initiatorTeam = -1;
+    }
 }
 
 char[] GetTeamName(int team, int lang)
