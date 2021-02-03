@@ -9,7 +9,7 @@ public Plugin myinfo =
 	name = "[CCP] Join team",
 	author = "nullent?",
 	description = "...",
-	version = "1.0.2",
+	version = "1.0.3",
 	url = "https://t.me/nyoood"
 };
 
@@ -17,12 +17,9 @@ public Plugin myinfo =
 // params: {1} - name, {2} - team
 #define KEY "#Game_team_change"
 
-// #define T  "#terrorists"
-// #define CT "#counter-terrorists"
-
 UserMessageType umType;
 
-int msgCaller;
+int initiatorTeam;
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 { 
@@ -38,9 +35,6 @@ public void OnPluginStart() {
 }
 
 Action EventTeam(Event event, const char[] name, bool dbc) {
-        
-    // this is too bad thing...
-    // i'll fix it later
     event.BroadcastDisabled = true;
 
     if(event.GetInt("disconnect")) {
@@ -53,29 +47,24 @@ Action EventTeam(Event event, const char[] name, bool dbc) {
     char szName[NAME_LENGTH];
     GetClientName(iClient, szName, sizeof(szName));
 
-    // char szTeam[NAME_LENGTH];
-    // GetTeamName(iTeam, iClient, szTeam, sizeof(szTeam));
-
     // {1} - username
     // {2} - team key
-    TriggerUMessage(iClient, szName, (iTeam < 2) ? "spectators" : (iTeam == 2) ? "terrorists" : "counter-terrorists");
+    TriggerUMessage(iTeam, szName, (iTeam < 2) ? "spectators" : (iTeam == 2) ? "terrorists" : "counter-terrorists");
 
     return Plugin_Changed;
 }
 
-void TriggerUMessage(int iClient, const char[] username, const char[] teamname)
+bool IsTeamMsg;
+void TriggerUMessage(int iTeam, const char[] username, const char[] teamname)
 {
     static const char um[] = "TextMsg";
 
-    // The handler will do the rest.
-    Handle msg =
-        StartMessageAll(um, USERMSG_RELIABLE);
-
-    if(!msg) {
+    Handle msg;
+    if(!(msg = StartMessageAll(um, USERMSG_RELIABLE))) {
         return;
     }
 
-    msgCaller = iClient;
+    initiatorTeam = iTeam;
 
     if(!umType) {
         BfWriteByte(msg, 3);
@@ -96,31 +85,38 @@ void TriggerUMessage(int iClient, const char[] username, const char[] teamname)
     EndMessage();
 }
 
+// bruh....
+public Action cc_proc_OnDefMsg(const char[] szMessage, bool IsPhraseExists) {
+    IsTeamMsg = strcmp(szMessage, KEY) == 0;
+
+    if(!IsTeamMsg) {
+        initiatorTeam = -1;
+    }
+
+    return (IsPhraseExists) ? Plugin_Changed : Plugin_Continue;
+}
+
 public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size) {
-    if(mType != eMsg_SERVER || part != BIND_MSG || !msgCaller)
+    if(mType != eMsg_SERVER || !IsTeamMsg || initiatorTeam == -1 || part != BIND_MSG)
         return Plugin_Continue;
     
-    // ....
-    char team[PREFIX_LENGTH];
-    GetTeamName(GetClientTeam(msgCaller), recipient, team, sizeof(team));
-
-    msgCaller = 0;
-
     // after prepareDefMessage();
-    ReplaceStringEx(buffer, size, "%s2", team);
-
+    ReplaceStringEx(buffer, size, "%s2", GetTeamName(initiatorTeam, recipient));
     return Plugin_Continue;
 }
 
-void GetTeamName(int team, int lang, char[] buffer, int size)
+char[] GetTeamName(int team, int lang)
 {
-    if(team < 2) {
-        FormatEx(buffer, size, "%T", "spectators", lang);
-    } else {
-        FormatEx(buffer, size, "%T", (
-            (team == 2) ? "terrorists" : "counter-terrorists"
-        ), lang);
-    }
+    char szTeam[TEAM_LENGTH];
 
-    // ccp_replaceColors(buffer, false);
+    FormatEx(szTeam, sizeof(szTeam), "%T",
+        (team < 2)
+            ? "spectators"
+            : (team == 2)
+                ? "terrorists"
+                : "counter-terrorists",
+        lang
+    );
+
+    return szTeam;
 }
