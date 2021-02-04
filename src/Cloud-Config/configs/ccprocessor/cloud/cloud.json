@@ -1,4 +1,28 @@
 {
     "url": "http://some.domen",
-    "endpoint": "/api/users"
+
+    "loadUser": {
+        "headers": {},
+        "route": "/api/users/{SID}",
+
+        "ConnectTimeout": 20,
+        "Timeout": 10,
+        "FollowLocation": false,
+
+        "responseCode": 200,
+        "responseData": "data"
+    },
+
+    "updateUser": {
+        "headers": {},
+        "method": "PUT",
+        "route": "/api/users/{SID}/update",
+
+        "ConnectTimeout": 20,
+        "Timeout": 10,
+        "FollowLocation": false,
+
+        "responseCode": 200,
+        "responseData": ""
+    }
 }
