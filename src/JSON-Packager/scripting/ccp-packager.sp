@@ -1,3 +1,9 @@
+#pragma newdecls required
+
+#if defined INCLUDE_DEBUG
+    #define DEBUG "[Packager]"
+#endif
+
 #undef REQUIRE_EXTENSIONS
 #include <ripext_m>
 #define REQUIRE_EXTENSIONS
@@ -14,6 +20,10 @@ public Plugin myinfo =
 JSONObject jClients[MAXPLAYERS+1];
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max) {
+    #if defined DEBUG
+    DBUILD()
+    #endif
+
     CreateNative("ccp_GetPackage", Native_GetPackage);
     CreateNative("ccp_UpdatePackage", Native_UpdatePackage);
     
@@ -30,6 +40,10 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 }
 
 public void OnMapStart() {
+    #if defined DEBUG
+    DBUILD()
+    #endif
+
     Call_pkgReady(0);
 }
 
@@ -63,7 +77,6 @@ public any Native_GetPackage(Handle h, int a) {
 
 public any Native_UpdatePackage(Handle h, int a) {
     int iClient = GetNativeCell(1);
-
     if(iClient < 0 || iClient >= MAXPLAYERS+1) {
         ThrowNativeError(SP_ERROR_INDEX, "Invalid client '%d' index", iClient);
     }
@@ -74,8 +87,15 @@ public any Native_UpdatePackage(Handle h, int a) {
 
     char szBuffer[2048];
     view_as<JSON>(GetNativeCell(2)).ToString(szBuffer, sizeof(szBuffer), 0);
+    
+    #if defined DEBUG
+    DWRITE("%s: Native(update): => \n%s", DEBUG, szBuffer);
+    #endif
 
     jClients[iClient] = JSONObject.FromString(szBuffer);
+
+    GetPluginFilename(h, szBuffer, sizeof(szBuffer));
+    jClients[iClient].SetBool("cloud", StrContains(szBuffer, "ccp-cloud") != -1);
 
     pkgUpdated(iClient, h); 
 
