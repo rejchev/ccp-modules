@@ -7,7 +7,7 @@ public Plugin myinfo =
 	name = "[CCP] Admin channel",
 	author = "nu11ent",
 	description = "...",
-	version = "1.0.2",
+	version = "1.0.3",
 	url = "https://t.me/nyoood"
 };
 
@@ -57,41 +57,63 @@ public void OnMapStart() {
     delete kv;
 }
 
-public void cc_proc_MsgUniqueId(int mType, int sender, int msgId, const char[] message, const int[] clients, int count) {
+public bool cc_proc_OnNewMessage(
+const char[] indent, 
+int sender, 
+const char[] msg_key, 
+const char[] msg,
+const int[] players, 
+int playersNum) {
     IsAdminChannel = false;
 
-    if(mType > eMsg_ALL || !sender) {
-        return;
-    }
+    if((indent[0] != 'S' && indent[1] != 'T' && strlen(indent) < 3) || !sender) {
+        return true;
+    } 
 
-    IsAdminChannel = message[0] == trigger[0];
+    IsAdminChannel = msg[0] == trigger[0];
 
     if(IsAdminChannel) {
         IsPlayer = GetUserAdmin(sender) == INVALID_ADMIN_ID;
 
-        if(IsLogAction && !IsClientSourceTV(clients[0])) {
-            LogAction(sender, -1, "\"%L\" (%s) used admin channel (text %s)", sender, !IsPlayer ? "Admin" : "Player", message[1]);
+        if(IsLogAction && !IsClientSourceTV(players[0])) {
+            LogAction(sender, -1, "\"%L\" (%s) used admin channel (text %s)", sender, !IsPlayer ? "Admin" : "Player", msg[1]);
         }
-    }
+    }    
+
+    return true;
 }
 
-public void cc_proc_RebuildClients(const int mType, int iClient, int[] clients, int &numClients) {
-    if(!IsAdminChannel || !numClients || IsClientSourceTV(clients[0])) {
+public void cc_proc_OnRebuildClients(
+int mid,
+const char[] indent,
+int sender, 
+const char[] msg_key, 
+int[] players, 
+int &playersNum 
+) {
+    if(!IsAdminChannel || !playersNum || IsClientSourceTV(players[0])) {
         return;
     }
 
-    numClients = 0;
+    playersNum = 0;
     for(int i = 1; i <= MaxClients; i++) {
-        if(IsClientInGame(i) && !IsFakeClient(i) && (iClient == i || GetUserAdmin(i) != INVALID_ADMIN_ID)) {
-            clients[numClients++] = i;
+        if(IsClientInGame(i) && !IsFakeClient(i) && (sender == i || GetUserAdmin(i) != INVALID_ADMIN_ID)) {
+            players[playersNum++] = i;
         }
     }
-
 }
 
-public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size) {
+public Action cc_proc_OnRebuildString(
+int mid,
+const char[] indent,
+int sender,
+int recipient,
+int part,
+int &level, 
+char[] buffer,
+int size
+) {
     if(IsAdminChannel) {
-        
         if(part == BIND_MSG) {
             ReplaceStringEx(buffer, size, trigger, "", -1, -1, false);
         } else if(part == BIND_TEAM && IsPlayer) {

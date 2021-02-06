@@ -7,7 +7,7 @@ public Plugin myinfo =
 	name = "[CCP] SM Prefix Changer",
 	author = "nullent?",
 	description = "Allows you to replace the standard Sourcemod prefix",
-	version = "1.5.0",
+	version = "1.5.1",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -33,9 +33,12 @@ public void OnCvarChanged(ConVar cvar, const char[] oldVal, const char[] newVal)
     cvar.GetString(szPrefix, sizeof(szPrefix));
 }
 
-public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size)
-{
-    if(mType == eMsg_SERVER && part == BIND_MSG)
+public Action cc_proc_OnRebuildString(
+    int mid, const char[] indent, int sender,
+    int recipient, int part, int &level, 
+    char[] buffer, int size
+) {
+    if(!strcmp(indent, "TM") && part == BIND_MSG)
         ReplaceStringEx(buffer, size, SM_PREFIX, szPrefix, -1, -1, true);
 }
 

@@ -9,7 +9,7 @@ public Plugin myinfo =
 	name = "[CCP] Join team",
 	author = "nullent?",
 	description = "...",
-	version = "1.0.4",
+	version = "1.0.5",
 	url = "https://t.me/nyoood"
 };
 
@@ -84,8 +84,12 @@ void TriggerUMessage(int iTeam, const char[] username, const char[] teamname)
     EndMessage();
 }
 
-public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size) {
-    if(mType != eMsg_SERVER || initiatorTeam == -1 || part != BIND_MSG)
+public Action cc_proc_OnRebuildString(
+    int mid, const char[] indent, int sender,
+    int recipient, int part, int &level, 
+    char[] buffer, int size
+) {
+    if(strcmp(indent, "TM") != 0 || initiatorTeam == -1 || part != BIND_MSG)
         return Plugin_Continue;
     
     // after prepareDefMessage();
@@ -93,8 +97,10 @@ public Action cc_proc_RebuildString(const int mType, int sender, int recipient, 
     return Plugin_Continue;
 }
 
-public void cc_proc_MessageEnd(const int mType, const int sender, int msgId) {
-    if(mType == eMsg_SERVER && initiatorTeam != -1) {
+public void cc_proc_OnMessageEnd(
+    int mid, const char[] indent, int sender
+) {
+    if(strcmp(indent, "TM") == 0 && initiatorTeam != -1) {
         initiatorTeam = -1;
     }
 }

@@ -84,15 +84,21 @@ public void OnThinkPost(int entity)
     GetEntDataArray(entity, m_iCompTeammateColor, ColorArray, sizeof(ColorArray));
 }
 
-public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size)
+public Action cc_proc_OnRebuildString(
+    int mid, const char[] indent, int sender,
+    int recipient, int part, int &level, 
+    char[] buffer, int size
+)
 {
-    if(mType > eMsg_ALL || (part != BIND_STATUS && part != BIND_STATUS_CO) || pLevel > Level)
+    if((indent[0] != 'S' && indent[1] != 'T' && strlen(indent) < 3) 
+    || (part != BIND_STATUS && part != BIND_STATUS_CO) 
+    || level > Level)
         return Plugin_Continue;
 
     if((part == BIND_STATUS && !szStatusSmb[0]) || (part == BIND_STATUS_CO && !EnColor))
         return Plugin_Continue;
 
-    pLevel = Level;
+    level = Level;
 
     if(part == BIND_STATUS)
         FormatEx(buffer, size, szStatusSmb);

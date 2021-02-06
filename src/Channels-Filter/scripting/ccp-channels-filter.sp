@@ -7,11 +7,14 @@ public Plugin myinfo =
 	name = "[CCP] Channels Filter",
 	author = "nu11ent",
 	description = "...",
-	version = "1.1.0",
+	version = "1.1.1",
 	url = "https://t.me/nyoood"
 };
 
-bool g_chIgnore[MAXPLAYERS+1][eMsg_MAX];
+
+static const char keys[][] = {"STP", "STA", "RT", "TM", "ST"};
+
+bool g_chIgnore[MAXPLAYERS+1][5];
 
 int levels[2];
 
@@ -44,13 +47,12 @@ public void OnMessage(ConVar cvar, const char[] oldVal, const char[] newVal)
 
 public void OnClientPutInServer(int iClient)
 {
-	for(int i; i < eMsg_MAX; i++)
+	for(int i; i < sizeof(keys); i++)
 		g_chIgnore[iClient][i] = false;
 }
 
 Action cmd(int iClient, int args)
 {
-	static const char keys[][] = {"team", "public", "changename", "radio", "server"};
 
 	if(iClient && IsClientInGame(iClient))
 	{
@@ -59,7 +61,7 @@ Action cmd(int iClient, int args)
 		hMenu.SetTitle("%T \n \n", "title", iClient);
 
 		char szBuffer[MESSAGE_LENGTH];
-		for(int i; i < eMsg_MAX; i++)
+		for(int i; i < sizeof(keys); i++)
 		{
 			FormatEx(szBuffer, sizeof(szBuffer), "%T", (g_chIgnore[iClient][i]) ? "disabled" : "enabled", iClient);
 			Format(szBuffer, sizeof(szBuffer), "%c%T", i+1, keys[i], iClient, szBuffer);
@@ -92,22 +94,40 @@ public int MenuCallBack(Menu hMenu, MenuAction action, int iClient, int option)
 	}
 }
 
-public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size)
-{
-	if(g_chIgnore[sender][mType])
+public Action cc_proc_OnRebuildString(
+    int mid, const char[] indent, int sender,
+    int recipient, int part, int &level, 
+    char[] buffer, int size
+) {
+	int i;
+	if((i = GetIndexOfIndent(indent)) != -1 && g_chIgnore[sender][i])
 		return Plugin_Stop;
 
 	return Plugin_Continue;
 }
 
-public void cc_proc_RebuildClients(const int mType, int iClient, int[] clients, int &numClients)
-{
-	RemoveFromRecepients(mType, clients, numClients);
+stock int GetIndexOfIndent(const char[] indent) {
+	for(int i; i < sizeof(keys); i++) {
+		if(!strcmp(keys[i], indent)) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+public void cc_proc_OnRebuildClients(
+    int mid, const char[] indent, int sender, 
+    const char[] msg_key, int[] players, int &playersNum 
+) {
+	RemoveFromRecepients(GetIndexOfIndent(indent), players, playersNum);
 }
 
 void RemoveFromRecepients(const int mType, int[] clients, int &numClients)
 {
-	// int players[MAXPLAYERS+1];
+	if(mType == -1) {
+		return;
+	}
 
 	int size = numClients;
 	numClients = 0;

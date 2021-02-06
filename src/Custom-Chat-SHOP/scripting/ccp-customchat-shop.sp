@@ -15,7 +15,7 @@ public Plugin myinfo =
 	name = "[CCP] Custom Chat <SHOP>",
 	author = "nullent?",
 	description = "...",
-	version = "1.5.2",
+	version = "1.5.3",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -271,23 +271,29 @@ public void OnClientDisconnect(int iClient)
 
 JSONObject senderModel;
 
-public void cc_proc_MsgUniqueId(int mType, int sender, int msgId, const char[] message, const int[] clients, int count) {
+public bool cc_proc_OnNewMessage(
+    const char[] indent, int sender, const char[] temp_key, const char[] msg, const int[] players, int playersNum
+) {
     delete senderModel;
 
-    if(mType > eMsg_ALL || !sender) {
-        return;
+    if((indent[0] != 'S' && indent[1] != 'T' && strlen(indent) < 3) || !sender) {
+        return true;
     }
 
     senderModel = getClientModel(sender);
+    return true;
 }
 
-public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size)
-{
+public Action cc_proc_OnRebuildString(
+    int mid, const char[] indent, int sender,
+    int recipient, int part, int &level, 
+    char[] buffer, int size
+) {
     if(!senderModel) {
         return Plugin_Continue;
     }
 
-    if(levels[part] < pLevel || !IsPartValid(senderModel, part)) {
+    if(levels[part] < level || !IsPartValid(senderModel, part)) {
         return Plugin_Continue;
     }
 
@@ -300,7 +306,7 @@ public Action cc_proc_RebuildString(const int mType, int sender, int recipient, 
         Format(szValue, sizeof(szValue), "%T", szValue, recipient);
     }
 
-    pLevel = levels[part];
+    level = levels[part];
     FormatEx(buffer, size, szValue);
 
     return Plugin_Continue;
