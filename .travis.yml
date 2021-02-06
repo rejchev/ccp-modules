@@ -25,7 +25,7 @@ install:
 before_script:
     - cp -R -f $INCLUDES $SOURCES_SM
     - cp -R -f $SOURCES_CORE/include $SOURCES_SM
-    - chmod +x $SPSRC/spcomp
+    - chmod +x $SOURCES_SM/spcomp
     - chmod +x $TRAVIS_BUILD_DIR/travis/compile.sh
     - chmod +x $TRAVIS_BUILD_DIR/travis/package.sh
 
