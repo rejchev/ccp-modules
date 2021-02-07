@@ -84,23 +84,24 @@ void TriggerUMessage(int iTeam, const char[] username, const char[] teamname)
     EndMessage();
 }
 
-public Action cc_proc_OnRebuildString(
-    int mid, const char[] indent, int sender,
-    int recipient, int part, int &level, 
-    char[] buffer, int size
-) {
-    if(strcmp(indent, "TM") != 0 || initiatorTeam == -1 || part != BIND_MSG)
-        return Plugin_Continue;
+public Action  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
+    char szIndent[64];
+    params.GetString(0, szIndent, sizeof(szIndent));
     
+    if((szIndent[0] != 'T' && szIndent[1] != 'M' && strlen(szIndent) == 2)) {
+        return Plugin_Continue;
+    }  
+
     // after prepareDefMessage();
-    ReplaceStringEx(buffer, size, "%s2", GetTeamName(initiatorTeam, recipient));
+    ReplaceStringEx(value, size, "%s2", GetTeamName(initiatorTeam, props[2]));
     return Plugin_Continue;
 }
 
-public void cc_proc_OnMessageEnd(
-    int mid, const char[] indent, int sender
-) {
-    if(strcmp(indent, "TM") == 0 && initiatorTeam != -1) {
+public void cc_proc_OnMessageEnd(const int[] props, int propsCount, ArrayList params) {
+    char szIndent[64];
+    params.GetString(0, szIndent, sizeof(szIndent));
+
+    if(strcmp(szIndent, "TM") == 0 && initiatorTeam != -1) {
         initiatorTeam = -1;
     }
 }

@@ -5,17 +5,21 @@
 
 #pragma newdecls required
 
-#include ccprocessor
+#include <ccprocessor>
 
 public void OnMapStart()
 {
     cc_proc_APIHandShake(cc_get_APIKey());
 }
 
-public Action cc_proc_OnDefMsg(const char[] szMessage, bool IsPhraseExists)
+public bool cc_proc_HandleEngineMsg(const int[] props, int propsCount, ArrayList params)
 {
-    if(!IsPhraseExists)
-        LogMessage("Engine message key: %s | Is phrase exists: %b ", szMessage, IsPhraseExists);
+    bool translated;
+
+    char szMessage[MESSAGE_LENGTH];
+    params.GetString(0, szMessage, sizeof(szMessage));
+
+    LogMessage("Engine message key: %s | Is phrase exists: %b ", szMessage, (translated = ccp_Translate(szMessage, props[1])));
     
-    return (!IsPhraseExists) ? Plugin_Continue : Plugin_Changed;
+    return translated;
 }

@@ -4,12 +4,14 @@
 
 #include <cstrike>
 
+#define SENDER(%0) (%0 >> 3)
+
 public Plugin myinfo = 
 {
 	name = "[CCP] Clan Tag as Chat Tag",
 	author = "nullent?",
 	description = "...",
-	version = "1.3.1",
+	version = "1.3.2",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -34,26 +36,25 @@ public void OnConVarChanged(ConVar cvar, const char[] oldVal, const char[] newVa
     plevel = cvar.IntValue;
 }
 
-public Action cc_proc_OnRebuildString(
-    int mid, const char[] indent, int sender,
-    int recipient, int part, int &level, 
-    char[] buffer, int size
-) {
-    if(indent[0] != 'S' && indent[1] != 'T' && strlen(indent) < 3) {
-        return Plugin_Continue;
-    }
+public Action  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
+    char szIndent[64];
+    params.GetString(0, szIndent, sizeof(szIndent));
 
-    if(!sender || part != BIND_PREFIX || level > plevel)
+    if((szIndent[0] != 'S' && szIndent[1] != 'T' && strlen(szIndent) < 3) || !SENDER(props[1])) {
+        return Plugin_Continue;
+    } 
+
+    if(part != BIND_PREFIX || level > plevel)
         return Plugin_Continue;
     
     char szPrefix[PREFIX_LENGTH];
-    szPrefix = GetClientClanTag(sender);
+    szPrefix = GetClientClanTag(SENDER(props[1]));
 
     if(!szPrefix[0])
         return Plugin_Continue;
     
     level = plevel;
-    FormatEx(buffer, size, szPrefix);
+    FormatEx(value, size, szPrefix);
 
     return Plugin_Continue;
 }

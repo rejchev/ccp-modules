@@ -14,7 +14,7 @@ public Plugin myinfo =
 	name = "[CCP] Custom Chat",
 	author = "nullent?",
 	description = "...",
-	version = "3.3.3",
+	version = "3.3.4",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -266,13 +266,15 @@ public int menuCallBack(Menu hMenu, MenuAction action, int iClient, int param) {
 
 JSONObject senderModel;
 
-public bool cc_proc_OnNewMessage(
-    const char[] indent, int sender, const char[] temp_key, const char[] msg, const int[] players, int playersNum
-) {
+public bool cc_proc_OnNewMessage(int sender, ArrayList params) {
     delete senderModel;
 
-    if((indent[0] != 'S' && indent[1] != 'T' && strlen(indent) < 3) || !sender)
+    char szIndent[64];
+    params.GetString(0, szIndent, sizeof(szIndent));
+    
+    if((szIndent[0] != 'S' && szIndent[1] != 'T' && strlen(szIndent) < 3) || !sender) {
         return true;
+    }
 
     senderModel = asJSONO(ccp_GetPackage(sender));
     if(!senderModel.HasKey(objKey) || senderModel.IsNull(objKey)) {
@@ -284,11 +286,7 @@ public bool cc_proc_OnNewMessage(
     return true;
 }
 
-public Action cc_proc_OnRebuildString(
-    int mid, const char[] indent, int sender,
-    int recipient, int part, int &level, 
-    char[] buffer, int size
-) {
+public Action  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
     if(!senderModel)
         return Plugin_Continue;
     
@@ -306,10 +304,10 @@ public Action cc_proc_OnRebuildString(
         return Plugin_Continue;
     
     if(part == BIND_PREFIX)
-        Format(szValue, sizeof(szValue), "%T", szValue, recipient);
+        Format(szValue, sizeof(szValue), "%T", szValue, props[2]);
     
     level = LEVEL[index];
-    FormatEx(buffer, size, szValue);
+    FormatEx(value, size, szValue);
 
     return Plugin_Continue;  
 }

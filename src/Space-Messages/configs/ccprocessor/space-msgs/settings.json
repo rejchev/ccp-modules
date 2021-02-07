@@ -3,5 +3,6 @@
     "STA":  false,
     "RT":   false,
     "TM":   true,
-    "ST":   false
+    "ST":   false,
+    "ST1":  false
 }

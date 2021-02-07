@@ -94,11 +94,7 @@ public int MenuCallBack(Menu hMenu, MenuAction action, int iClient, int option)
 	}
 }
 
-public Action cc_proc_OnRebuildString(
-    int mid, const char[] indent, int sender,
-    int recipient, int part, int &level, 
-    char[] buffer, int size
-) {
+public Action  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
 	int i;
 	if((i = GetIndexOfIndent(indent)) != -1 && g_chIgnore[sender][i])
 		return Plugin_Stop;
