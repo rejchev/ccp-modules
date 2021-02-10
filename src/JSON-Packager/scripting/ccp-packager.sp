@@ -4,6 +4,8 @@
     #define DEBUG "[Packager]"
 #endif
 
+#include <ccprocessor>
+
 #undef REQUIRE_EXTENSIONS
 #include <ripext_m>
 #define REQUIRE_EXTENSIONS

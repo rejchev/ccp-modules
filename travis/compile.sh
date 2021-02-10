@@ -1,39 +1,50 @@
 #!/bin/bash
 
-modules=$1
-spsrc=$2
-includes=$3
-
+SOURCES=$1
+SOURCES_SM=$2
+INCLUDES_SM=$SOURCES_SM'/include'
 ERROR=1
 
-cd $modules
+cd $SOURCES
 
 derictories=($(ls -d */))
 
 for dir in "${derictories[@]}"; do
+    module=$(basename -- "$dir")
+    echo "Module name: ${module}"
 
-    dir=$(basename -- "$dir")
-    module=$modules'/'$dir
-    modulebin=$module'/plugins'
-    modulesrcs=$module'/scripting'
+    module_path=$SOURCES'/'$module
+    echo "Module path: ${module_path}"
 
-    mkdir $modulebin
+    module_path_bin=$module_path'/plugins'
+    module_path_bin_debug=$module_path_bin'/disabled/'$module
+    module_path_src=$module_path'/scripting'
 
-    cd $modulesrcs
+    mkdir $module_path_bin
+    mkdir -p $module_path_bin_debug
 
-    srcs=(*.sp)
+    cd $module_path_src
 
-    cd $modules
+    source_list=(*.sp)
+    echo "Source list: ${source_list}"
 
-    for src in "${srcs[@]}"; do
+    cd $SOURCES
 
-        src=$modulesrcs'/'$src
-        filename=$(basename -- "$src")
-        filenoext="${filename%.*}"
+    for src in "${source_list[@]}"; do
+        source=$module_path_src'/'$src
+        echo "Module source: ${source}"
 
-        bin=$modulebin'/'$filenoext'.smx'
+        source_file=$(basename -- "$source")
+        echo "Module source name: ${source_file}"
+
+        source_file_noext="${source_file%.*}"
+        echo "Module source name no ext: ${source_file_noext}"
+
+        bin=$module_path_bin'/'$source_file_noext'.smx'
+        bin_debug=$module_path_bin_debug'/'$source_file_noext'.smx'
         
-        $spsrc'/spcomp' $src -w234 -o2 -v1 -i=$includes -o=$bin
+        $SOURCES_SM'/spcomp' $source -o2 -v2 -i=$INCLUDES_SM -o=$bin
+        $SOURCES_SM'/spcomp' INCLUDE_DEBUG=1 $source -o2 -v2 -i=$INCLUDES_SM -o=$bin_debug
 
         if [ ! -e $bin ]; then
             echo "File ${bin} is not exists"

@@ -14,7 +14,7 @@ public Plugin myinfo =
 	name = "[CCP] Custom Chat <VIP>",
 	author = "nullent?",
 	description = "...",
-	version = "2.0.3",
+	version = "2.0.5",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -460,23 +460,27 @@ public Action OnClientSayCommand(int iClient, const char[] command, const char[]
 
 JSONObject senderModel;
 
-public void cc_proc_MsgUniqueId(int mType, int sender, int msgId, const char[] message, const int[] clients, int count) {
+public bool cc_proc_OnNewMessage(int sender, ArrayList params) {
     delete senderModel;
 
-    if(mType > eMsg_ALL || !sender || !VIP_IsClientVIP(sender))
-        return;
+    char szIndent[64];
+    params.GetString(0, szIndent, sizeof(szIndent));
+    
+    if((szIndent[0] != 'S' && szIndent[1] != 'T' && strlen(szIndent) < 3) || !sender) {
+        return true;
+    }
 
     senderModel = getClientModel(sender);
+    return true;
 }
 
-public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size)
-{
+public Action  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &plevel, char[] value, int size) {
     if(!senderModel) {
         return Plugin_Continue;
     }
 
     int idx = IsValidPart(part);
-    if(idx == -1 || level[idx] < pLevel || !IsPartValid(senderModel, part)) {
+    if(idx == -1 || level[idx] < plevel || !IsPartValid(senderModel, part)) {
         return Plugin_Continue;
     }
 
@@ -486,11 +490,11 @@ public Action cc_proc_RebuildString(const int mType, int sender, int recipient, 
     }
 
     if(part == BIND_PREFIX && TranslationPhraseExists(szValue)) {
-        Format(szValue, sizeof(szValue), "%T", szValue, recipient);
+        Format(szValue, sizeof(szValue), "%T", szValue, props[2]);
     }
 
-    pLevel = level[idx];
-    FormatEx(buffer, size, szValue);
+    plevel = level[idx];
+    FormatEx(value, size, szValue);
 
     return Plugin_Continue;
 }

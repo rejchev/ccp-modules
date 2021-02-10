@@ -5,6 +5,8 @@
 #include sdkhooks
 #include sdktools
 
+#define SENDER(%0) (%0 >> 3)
+
 int m_iCompTeammateColor = -1;
 
 int ColorArray[MAXPLAYERS+1];
@@ -19,7 +21,7 @@ public Plugin myinfo =
     name        = "[CCP] Teammate color <Competitve>",
     author      = "nullent?",
     description = "Competitve teammate color into chat",
-    version     = "1.5.0",
+    version     = "1.5.1",
     url         = "discord.gg/ChTyPUG"
 };
 
@@ -84,20 +86,24 @@ public void OnThinkPost(int entity)
     GetEntDataArray(entity, m_iCompTeammateColor, ColorArray, sizeof(ColorArray));
 }
 
-public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size)
-{
-    if(mType > eMsg_ALL || (part != BIND_STATUS && part != BIND_STATUS_CO) || pLevel > Level)
+public Action  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
+    char szIndent[64];
+    params.GetString(0, szIndent, sizeof(szIndent));
+
+    if((szIndent[0] != 'S' && szIndent[1] != 'T' && strlen(szIndent) < 3) 
+    || (part != BIND_STATUS && part != BIND_STATUS_CO) 
+    || level > Level)
         return Plugin_Continue;
 
     if((part == BIND_STATUS && !szStatusSmb[0]) || (part == BIND_STATUS_CO && !EnColor))
         return Plugin_Continue;
 
-    pLevel = Level;
+    level = Level;
 
     if(part == BIND_STATUS)
-        FormatEx(buffer, size, szStatusSmb);
+        FormatEx(value, size, szStatusSmb);
     
-    else FormatEx(buffer, size, "%c", GetColor(sender));
+    else FormatEx(value, size, "%c", GetColor(SENDER(props[1])));
 
     return Plugin_Continue;
 }

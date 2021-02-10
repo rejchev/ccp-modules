@@ -9,7 +9,7 @@ public Plugin myinfo =
 	name = "[CCP] Clan Tag as Chat Tag",
 	author = "nullent?",
 	description = "...",
-	version = "1.3.0",
+	version = "1.3.2",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -34,19 +34,25 @@ public void OnConVarChanged(ConVar cvar, const char[] oldVal, const char[] newVa
     plevel = cvar.IntValue;
 }
 
-public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size)
-{
-    if(!sender || mType > eMsg_RADIO || part != BIND_PREFIX || pLevel > plevel)
+public Action  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
+    char szIndent[64];
+    params.GetString(0, szIndent, sizeof(szIndent));
+
+    if((szIndent[0] != 'S' && szIndent[1] != 'T' && strlen(szIndent) < 3) || !SENDER_INDEX(props[1])) {
+        return Plugin_Continue;
+    } 
+
+    if(part != BIND_PREFIX || level > plevel)
         return Plugin_Continue;
     
     char szPrefix[PREFIX_LENGTH];
-    szPrefix = GetClientClanTag(sender);
+    szPrefix = GetClientClanTag(SENDER_INDEX(props[1]));
 
     if(!szPrefix[0])
         return Plugin_Continue;
     
-    pLevel = plevel;
-    FormatEx(buffer, size, szPrefix);
+    level = plevel;
+    FormatEx(value, size, szPrefix);
 
     return Plugin_Continue;
 }

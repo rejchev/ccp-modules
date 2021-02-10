@@ -14,7 +14,7 @@ public Plugin myinfo =
 	name = "[CCP] Custom Chat",
 	author = "nullent?",
 	description = "...",
-	version = "3.3.2",
+	version = "3.3.4",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -254,6 +254,7 @@ public int menuCallBack(Menu hMenu, MenuAction action, int iClient, int param) {
             int index = item[0];
             if(index == 'd') {
                 objClient.Remove(objKey);
+                coHandle.Set(iClient, NULL_STRING);
             } else {
                 index -= 1;
                 setTemplate(iClient, objClient, index);
@@ -266,27 +267,32 @@ public int menuCallBack(Menu hMenu, MenuAction action, int iClient, int param) {
 
 JSONObject senderModel;
 
-public void cc_proc_MsgUniqueId(int mType, int sender, int msgId, const char[] message, const int[] clients, int count) {
+public bool cc_proc_OnNewMessage(int sender, ArrayList params) {
     delete senderModel;
 
-    if(mType > eMsg_ALL || !sender)
-        return;
+    char szIndent[64];
+    params.GetString(0, szIndent, sizeof(szIndent));
+    
+    if((szIndent[0] != 'S' && szIndent[1] != 'T' && strlen(szIndent) < 3) || !sender) {
+        return true;
+    }
 
     senderModel = asJSONO(ccp_GetPackage(sender));
     if(!senderModel.HasKey(objKey) || senderModel.IsNull(objKey)) {
         senderModel = null;
-        return;
+        return true;
     }
 
     senderModel = asJSONO(senderModel.Get(objKey));
+    return true;
 }
 
-public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size) {
+public Action  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
     if(!senderModel)
         return Plugin_Continue;
     
     int index = indexPart(part);
-    if(index == -1 || LEVEL[index] < pLevel)
+    if(index == -1 || LEVEL[index] < level)
         return Plugin_Continue;
 
     if(!senderModel.HasKey(szBinds[part]))
@@ -299,10 +305,10 @@ public Action cc_proc_RebuildString(const int mType, int sender, int recipient, 
         return Plugin_Continue;
     
     if(part == BIND_PREFIX)
-        Format(szValue, sizeof(szValue), "%T", szValue, recipient);
+        Format(szValue, sizeof(szValue), "%T", szValue, props[2]);
     
-    pLevel = LEVEL[index];
-    FormatEx(buffer, size, szValue);
+    level = LEVEL[index];
+    FormatEx(value, size, szValue);
 
     return Plugin_Continue;  
 }

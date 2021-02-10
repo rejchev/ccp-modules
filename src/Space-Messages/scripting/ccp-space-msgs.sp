@@ -11,7 +11,7 @@ public Plugin myinfo =
 	name = "[CCP] Space Messages",
 	author = "nullent?",
 	description = "...",
-	version = "1.0.0",
+	version = "1.0.2",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -31,14 +31,17 @@ public void OnMapStart() {
     objConfig = JSONObject.FromFile(szBuffer, 0);
 }
 
-public bool cc_proc_RebuildString_Post(const int mType, int sender, int recipient, int part, int pLevel, const char[] szValue) {
+public bool    cc_proc_OnRebuildString_Post(const int[] props, int part, ArrayList params, int level, const char[] value) {
     if(part != BIND_MSG) {
         return false;
     }
 
-    if(!objConfig.GetBool(szMsgTypes[mType])) {
-        for(int i; i < strlen(szValue); i++) {
-            if(szValue[i] >= 33) {
+    char szIndent[64];
+    params.GetString(0, szIndent, sizeof(szIndent));
+
+    if(!objConfig.GetBool(szIndent)) {
+        for(int i; i < strlen(value); i++) {
+            if(value[i] >= 33) {
                 return false;
             }
         }

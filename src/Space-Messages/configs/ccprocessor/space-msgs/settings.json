@@ -1,7 +1,8 @@
 {
-    "<TEAM>":   false,
-    "<ALL>":    false,
-    "<CHAME>":  false,
-    "<RADIO>":  false,
-    "<SERVER>": true
+    "STP":  false,
+    "STA":  false,
+    "RT":   false,
+    "TM":   true,
+    "ST":   false,
+    "ST1":  false
 }

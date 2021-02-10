@@ -8,7 +8,7 @@ public Plugin myinfo =
 	name = "[CCP] RTCP <VIP>",
 	author = "nullent?",
 	description = "Realtime color processing",
-	version = "1.3.0",
+	version = "1.3.1",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -55,7 +55,7 @@ public Action OnToogleFeature(int iClient, const char[] szFeature, VIP_ToggleSta
     bEnabled[iClient] = eNewStatus == ENABLED;
 }
 
-public bool cc_proc_SkipColorsInMsg(const int mType, int iClient)
+public bool cc_proc_SkipColors(const char[] indent, int sender)
 {
-    return bEnabled[iClient];
+    return bEnabled[sender];
 }

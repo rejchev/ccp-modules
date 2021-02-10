@@ -1,120 +1,102 @@
-#pragma newdecls required
+// #pragma newdecls required
 
-#include <ccprocessor>
+// #include <ccprocessor>
 
-public Plugin myinfo = 
-{
-	name = "[CCP] Channels Filter",
-	author = "nu11ent",
-	description = "...",
-	version = "1.1.0",
-	url = "https://t.me/nyoood"
-};
+// public Plugin myinfo = 
+// {
+// 	name = "[CCP] Channels Filter",
+// 	author = "nu11ent",
+// 	description = "...",
+// 	version = "1.1.2",
+// 	url = "https://t.me/nyoood"
+// };
 
-bool g_chIgnore[MAXPLAYERS+1][eMsg_MAX];
+// // ...
+// char g_chIgnore[MAXPLAYERS+1][MESSAGE_LENGTH];
 
-int levels[2];
+// public void OnClientPutInServer(int iClient) {
+// 	g_chIgnore[iClient][i] = NULL_STRING;
+// }
 
-public void OnPluginStart()
-{
-	LoadTranslations("ccp_channels.phrases");
-	RegConsoleCmd("sm_channels", cmd);
+// Action cmd(int iClient, int args)
+// {
+// 	if(iClient && IsClientInGame(iClient))
+// 	{
+// 		Menu hMenu = new Menu(MenuCallBack);
 
-	CreateConVar("channels_prototype", "1000", "Template replacement priority", _, true, 1.0).AddChangeHook(OnProto);
-	CreateConVar("channels_msg", "1000", "Message replacement priority", _, true, 1.0).AddChangeHook(OnMessage);
+// 		hMenu.SetTitle("%T \n \n", "title", iClient);
 
-	AutoExecConfig(true, "channels", "ccprocessor");
-}
+// 		char szBuffer[MESSAGE_LENGTH];
+// 		for(int i; i < sizeof(keys); i++)
+// 		{
+// 			FormatEx(szBuffer, sizeof(szBuffer), "%T", (g_chIgnore[iClient][i]) ? "disabled" : "enabled", iClient);
+// 			Format(szBuffer, sizeof(szBuffer), "%c%T", i+1, keys[i], iClient, szBuffer);
 
-public void OnMapStart()
-{
-	OnProto(FindConVar("channels_prototype"), NULL_STRING, NULL_STRING);
-	OnMessage(FindConVar("channels_msg"), NULL_STRING, NULL_STRING);
-}
+// 			// [cell]Any words [Enabled/Disabled]
+// 			hMenu.AddItem(szBuffer, szBuffer[1]);
+// 		}
 
-public void OnProto(ConVar cvar, const char[] oldVal, const char[] newVal)
-{
-	levels[0] = cvar.IntValue;
-}
+// 		hMenu.Display(iClient, MENU_TIME_FOREVER);
+// 	}
 
-public void OnMessage(ConVar cvar, const char[] oldVal, const char[] newVal)
-{
-	levels[1] = cvar.IntValue;
-}
+// 	return Plugin_Handled;
+// }
 
-public void OnClientPutInServer(int iClient)
-{
-	for(int i; i < eMsg_MAX; i++)
-		g_chIgnore[iClient][i] = false;
-}
+// public int MenuCallBack(Menu hMenu, MenuAction action, int iClient, int option)
+// {
+// 	switch(action)
+// 	{
+// 		case MenuAction_End: delete hMenu;
+// 		case MenuAction_Select: 
+// 		{
+// 			char szBuffer[4];
+// 			hMenu.GetItem(option, szBuffer, sizeof(szBuffer));
 
-Action cmd(int iClient, int args)
-{
-	static const char keys[][] = {"team", "public", "changename", "radio", "server"};
+// 			int mType = szBuffer[0] - 1;
 
-	if(iClient && IsClientInGame(iClient))
-	{
-		Menu hMenu = new Menu(MenuCallBack);
+// 			g_chIgnore[iClient][mType] = !g_chIgnore[iClient][mType];
+// 			cmd(iClient, 0);
+// 		}
+// 	}
+// }
 
-		hMenu.SetTitle("%T \n \n", "title", iClient);
+// public Action  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
+// 	int i;
+// 	if((i = GetIndexOfIndent(indent)) != -1 && g_chIgnore[sender][i])
+// 		return Plugin_Stop;
 
-		char szBuffer[MESSAGE_LENGTH];
-		for(int i; i < eMsg_MAX; i++)
-		{
-			FormatEx(szBuffer, sizeof(szBuffer), "%T", (g_chIgnore[iClient][i]) ? "disabled" : "enabled", iClient);
-			Format(szBuffer, sizeof(szBuffer), "%c%T", i+1, keys[i], iClient, szBuffer);
+// 	return Plugin_Continue;
+// }
 
-			// [cell]Any words [Enabled/Disabled]
-			hMenu.AddItem(szBuffer, szBuffer[1]);
-		}
+// stock int GetIndexOfIndent(const char[] indent) {
+// 	for(int i; i < sizeof(keys); i++) {
+// 		if(!strcmp(keys[i], indent)) {
+// 			return i;
+// 		}
+// 	}
 
-		hMenu.Display(iClient, MENU_TIME_FOREVER);
-	}
+// 	return -1;
+// }
 
-	return Plugin_Handled;
-}
+// public void cc_proc_OnRebuildClients(
+//     int mid, const char[] indent, int sender, 
+//     const char[] msg_key, int[] players, int &playersNum 
+// ) {
+// 	RemoveFromRecepients(GetIndexOfIndent(indent), players, playersNum);
+// }
 
-public int MenuCallBack(Menu hMenu, MenuAction action, int iClient, int option)
-{
-	switch(action)
-	{
-		case MenuAction_End: delete hMenu;
-		case MenuAction_Select: 
-		{
-			char szBuffer[4];
-			hMenu.GetItem(option, szBuffer, sizeof(szBuffer));
+// void RemoveFromRecepients(const int mType, int[] clients, int &numClients)
+// {
+// 	if(mType == -1) {
+// 		return;
+// 	}
 
-			int mType = szBuffer[0] - 1;
+// 	int size = numClients;
+// 	numClients = 0;
 
-			g_chIgnore[iClient][mType] = !g_chIgnore[iClient][mType];
-			cmd(iClient, 0);
-		}
-	}
-}
-
-public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size)
-{
-	if(g_chIgnore[sender][mType])
-		return Plugin_Stop;
-
-	return Plugin_Continue;
-}
-
-public void cc_proc_RebuildClients(const int mType, int iClient, int[] clients, int &numClients)
-{
-	RemoveFromRecepients(mType, clients, numClients);
-}
-
-void RemoveFromRecepients(const int mType, int[] clients, int &numClients)
-{
-	// int players[MAXPLAYERS+1];
-
-	int size = numClients;
-	numClients = 0;
-
-	for(int i; i < size; i++)
-	{
-		if(!g_chIgnore[clients[i]][mType])
-			clients[numClients++] = clients[i];
-	}
-}
+// 	for(int i; i < size; i++)
+// 	{
+// 		if(!g_chIgnore[clients[i]][mType])
+// 			clients[numClients++] = clients[i];
+// 	}
+// }

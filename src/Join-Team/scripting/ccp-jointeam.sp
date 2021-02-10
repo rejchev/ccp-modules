@@ -9,7 +9,7 @@ public Plugin myinfo =
 	name = "[CCP] Join team",
 	author = "nullent?",
 	description = "...",
-	version = "1.0.4",
+	version = "1.0.5",
 	url = "https://t.me/nyoood"
 };
 
@@ -84,17 +84,23 @@ void TriggerUMessage(int iTeam, const char[] username, const char[] teamname)
     EndMessage();
 }
 
-public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size) {
-    if(mType != eMsg_SERVER || initiatorTeam == -1 || part != BIND_MSG)
-        return Plugin_Continue;
+public Action  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
+    char szIndent[64];
+    params.GetString(0, szIndent, sizeof(szIndent));
     
-    // after prepareDefMessage();
-    ReplaceStringEx(buffer, size, "%s2", GetTeamName(initiatorTeam, recipient));
+    if((szIndent[0] != 'T' && szIndent[1] != 'M' && strlen(szIndent) == 2) || part != BIND_MSG|| initiatorTeam == -1) {
+        return Plugin_Continue;
+    }  
+
+    ReplaceStringEx(value, size, "%s2", GetTeamName(initiatorTeam, props[2]));
     return Plugin_Continue;
 }
 
-public void cc_proc_MessageEnd(const int mType, const int sender, int msgId) {
-    if(mType == eMsg_SERVER && initiatorTeam != -1) {
+public void cc_proc_OnMessageEnd(const int[] props, int propsCount, ArrayList params) {
+    char szIndent[64];
+    params.GetString(0, szIndent, sizeof(szIndent));
+
+    if(strcmp(szIndent, "TM") == 0 && initiatorTeam != -1) {
         initiatorTeam = -1;
     }
 }

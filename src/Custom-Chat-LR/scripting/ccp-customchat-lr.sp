@@ -14,7 +14,7 @@ public Plugin myinfo =
     name = "[CCP] Custom Chat <LR>",
     author = "nullent?",
     description = "...",
-    version = "1.0.0",
+    version = "1.0.1",
     url = "discord.gg/ChTyPUG"
 };
 
@@ -362,29 +362,32 @@ public int RankInfo_CallBack(Menu hMenu, MenuAction action, int iClient, int opt
 
 JSONObject senderModel;
 
-public void cc_proc_MsgUniqueId(int mType, int sender, int msgId, const char[] message, const int[] clients, int count) {
+public bool cc_proc_OnNewMessage(int sender, ArrayList params) {
     delete senderModel;
 
-    if(mType > eMsg_ALL || !sender) {
-        return;
-    }
+    char szIndent[64];
+    params.GetString(0, szIndent, sizeof(szIndent));
+    
+    if((szIndent[0] != 'S' && szIndent[1] != 'T' && strlen(szIndent) < 3) || !sender) {
+        return true;
+    } 
 
     senderModel = asJSONO(ccp_GetPackage(sender));
     if(!senderModel.HasKey(pkgKey)) {
         senderModel = null;
-        return;
+        return true;
     }
 
     senderModel = asJSONO(senderModel.Get(pkgKey));
+    return true;
 }
 
-public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size)
-{
+public Action  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
     if(!senderModel) {
         return Plugin_Continue;
     }
 
-    if(levels[part] < pLevel) {
+    if(levels[part] < level) {
         return Plugin_Continue;
     }
 
@@ -394,11 +397,11 @@ public Action cc_proc_RebuildString(const int mType, int sender, int recipient, 
     }
 
     if(part == BIND_PREFIX) {
-        Format(szValue, sizeof(szValue), "%T", szValue, recipient);
+        Format(szValue, sizeof(szValue), "%T", szValue, props[2]);
     }
 
-    pLevel = levels[part];
-    FormatEx(buffer, size, szValue);
+    level = levels[part];
+    FormatEx(value, size, szValue);
 
     return Plugin_Continue;
 }

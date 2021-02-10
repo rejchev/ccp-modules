@@ -15,7 +15,7 @@ public Plugin myinfo =
 	name = "[CCP] Custom Chat <SHOP>",
 	author = "nullent?",
 	description = "...",
-	version = "1.5.2",
+	version = "1.5.4",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -271,23 +271,26 @@ public void OnClientDisconnect(int iClient)
 
 JSONObject senderModel;
 
-public void cc_proc_MsgUniqueId(int mType, int sender, int msgId, const char[] message, const int[] clients, int count) {
+public bool cc_proc_OnNewMessage(int sender, ArrayList params) {
     delete senderModel;
 
-    if(mType > eMsg_ALL || !sender) {
-        return;
+    char szIndent[64];
+    params.GetString(0, szIndent, sizeof(szIndent));
+    
+    if((szIndent[0] != 'S' && szIndent[1] != 'T' && strlen(szIndent) < 3) || !sender) {
+        return true;
     }
 
     senderModel = getClientModel(sender);
+    return true;
 }
 
-public Action cc_proc_RebuildString(const int mType, int sender, int recipient, int part, int &pLevel, char[] buffer, int size)
-{
+public Action  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
     if(!senderModel) {
         return Plugin_Continue;
     }
 
-    if(levels[part] < pLevel || !IsPartValid(senderModel, part)) {
+    if(levels[part] < level || !IsPartValid(senderModel, part)) {
         return Plugin_Continue;
     }
 
@@ -297,11 +300,11 @@ public Action cc_proc_RebuildString(const int mType, int sender, int recipient, 
     }
 
     if(part == BIND_PREFIX && TranslationPhraseExists(szValue)) {
-        Format(szValue, sizeof(szValue), "%T", szValue, recipient);
+        Format(szValue, sizeof(szValue), "%T", szValue, props[2]);
     }
 
-    pLevel = levels[part];
-    FormatEx(buffer, size, szValue);
+    level = levels[part];
+    FormatEx(value, size, szValue);
 
     return Plugin_Continue;
 }
