@@ -254,6 +254,7 @@ public int menuCallBack(Menu hMenu, MenuAction action, int iClient, int param) {
             int index = item[0];
             if(index == 'd') {
                 objClient.Remove(objKey);
+                coHandle.Set(iClient, NULL_STRING);
             } else {
                 index -= 1;
                 setTemplate(iClient, objClient, index);

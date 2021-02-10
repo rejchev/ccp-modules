@@ -88,11 +88,10 @@ public Action  cc_proc_OnRebuildString(const int[] props, int part, ArrayList pa
     char szIndent[64];
     params.GetString(0, szIndent, sizeof(szIndent));
     
-    if((szIndent[0] != 'T' && szIndent[1] != 'M' && strlen(szIndent) == 2)) {
+    if((szIndent[0] != 'T' && szIndent[1] != 'M' && strlen(szIndent) == 2) || part != BIND_MSG|| initiatorTeam == -1) {
         return Plugin_Continue;
     }  
 
-    // after prepareDefMessage();
     ReplaceStringEx(value, size, "%s2", GetTeamName(initiatorTeam, props[2]));
     return Plugin_Continue;
 }

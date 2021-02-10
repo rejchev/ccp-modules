@@ -4,8 +4,6 @@
 
 #include <cstrike>
 
-#define SENDER(%0) (%0 >> 3)
-
 public Plugin myinfo = 
 {
 	name = "[CCP] Clan Tag as Chat Tag",
@@ -40,7 +38,7 @@ public Action  cc_proc_OnRebuildString(const int[] props, int part, ArrayList pa
     char szIndent[64];
     params.GetString(0, szIndent, sizeof(szIndent));
 
-    if((szIndent[0] != 'S' && szIndent[1] != 'T' && strlen(szIndent) < 3) || !SENDER(props[1])) {
+    if((szIndent[0] != 'S' && szIndent[1] != 'T' && strlen(szIndent) < 3) || !SENDER_INDEX(props[1])) {
         return Plugin_Continue;
     } 
 
@@ -48,7 +46,7 @@ public Action  cc_proc_OnRebuildString(const int[] props, int part, ArrayList pa
         return Plugin_Continue;
     
     char szPrefix[PREFIX_LENGTH];
-    szPrefix = GetClientClanTag(SENDER(props[1]));
+    szPrefix = GetClientClanTag(SENDER_INDEX(props[1]));
 
     if(!szPrefix[0])
         return Plugin_Continue;

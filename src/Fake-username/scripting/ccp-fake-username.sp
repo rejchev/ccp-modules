@@ -87,14 +87,14 @@ public Action  cc_proc_OnRebuildString(const int[] props, int part, ArrayList pa
     char szIndent[64];
     params.GetString(0, szIndent, sizeof(szIndent));
     
-    if((szIndent[0] != 'S' && szIndent[1] != 'T' && strlen(szIndent) < 3) || !SENDER(props[1])) {
+    if((szIndent[0] != 'S' && szIndent[1] != 'T' && strlen(szIndent) < 3) || !SENDER_INDEX(props[1])) {
         return Plugin_Continue;
     } 
 
-    if(part == BIND_NAME && fakename[SENDER(props[1])][0] && level < nLevel)
+    if(part == BIND_NAME && fakename[SENDER_INDEX(props[1])][0] && level < nLevel)
     {
         level = nLevel;
-        FormatEx(value, size, fakename[SENDER(props[1])]);
+        FormatEx(value, size, fakename[SENDER_INDEX(props[1])]);
     }  
 
     return Plugin_Continue

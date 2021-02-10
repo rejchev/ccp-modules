@@ -20,7 +20,7 @@ env:
 install:
     - wget --input-file=http://sourcemod.net/smdrop/$SMVERSION/sourcemod-latest-linux
     - tar -xzf $(cat sourcemod-latest-linux)
-    - git clone -b v3.4.0 https://github.com/nyood/ccprocessor.git $SOURCES_CORE
+    - git clone -b main https://github.com/nyood/ccprocessor.git $SOURCES_CORE
 
 before_script:
     - cp -R -f $INCLUDES $SOURCES_SM
