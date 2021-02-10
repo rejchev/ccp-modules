@@ -1,9 +1,10 @@
 #pragma newdecls required
 
-#include <ccprocessor>
 #if defined INCLUDE_DEBUG
     #define DEBUG "[Packager]"
 #endif
+
+#include <ccprocessor>
 
 #undef REQUIRE_EXTENSIONS
 #include <ripext_m>
