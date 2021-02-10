@@ -12,13 +12,49 @@
         "en"                "[From player]"
     }
 
-    "team_admin"
+    "team_admins"
     {
         "ru"                "[Администраторы]"
         "en"                "[Admins]"
     }
 
-    "team_color"
+    "team_color_admins"
+    {
+        "en"                "{G}"
+        "ru"                "{G}"
+    }
+
+    "team_color_to_admins"
+    {
+        "ru"                "{R}"
+        "en"                "{R}"
+    }
+
+    "team_color_from_player"
+    {
+        "ru"                "{PI}"
+        "en"                "{PI}"
+    }
+
+    "status_died"
+    {
+        "en"                "-"
+        "ru"                "-"
+    }
+
+    "status_alive"
+    {
+        "en"                "+"
+        "ru"                "+"
+    }
+
+    "status_color_died"
+    {
+        "en"                "{R}"
+        "ru"                "{R}"
+    }
+
+    "status_color_alive"
     {
         "en"                "{G}"
         "ru"                "{G}"

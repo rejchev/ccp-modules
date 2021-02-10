@@ -1,0 +1,30 @@
+{
+    "identificator":        "ST1",
+    "channelTrigger":       "#",
+
+    "useLog":               true,
+    "playersCanComplain":   true,
+
+    "accessFlag":           "a",
+
+    "{PROTOTYPE}":          "team_template",
+    "{STATUS}": [
+                            "status_died",
+                            "status_alive"
+    ],
+    "{STATUSCO}":[
+                            "status_color_died",
+                            "status_color_alive"
+    ],
+    "{TEAM}": [
+                            "team_admins",
+                            "from_player",
+                            "to_admins"
+    ],
+
+    "{TEAMCO}": [
+                            "team_color_admins",
+                            "team_color_from_player",
+                            "team_color_to_admins"
+    ]
+}
