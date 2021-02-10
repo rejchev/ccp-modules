@@ -1,5 +1,6 @@
 #pragma newdecls required
 
+#include <ccprocessor>
 #if defined INCLUDE_DEBUG
     #define DEBUG "[Packager]"
 #endif
