@@ -24,6 +24,19 @@ bool IsMenuDisabled;
 
 static const char objKey[] = "ccm";
 
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max) {
+    if(late) {
+        Handle obj;
+        for(int i; i <= MaxClients; i++) {
+            if((obj = ccp_GetPackage(i)) != null) {
+                ccp_OnPackageAvailable(i, obj);
+            }
+        }
+    }
+
+    return APLRes_Success;
+}
+
 public void OnPluginStart()
 {
     LoadTranslations("ccp_customchat.phrases");
@@ -278,7 +291,7 @@ public bool cc_proc_OnNewMessage(int sender, ArrayList params) {
     }
 
     senderModel = asJSONO(ccp_GetPackage(sender));
-    if(!senderModel.HasKey(objKey) || senderModel.IsNull(objKey)) {
+    if(!senderModel || !senderModel.HasKey(objKey) || senderModel.IsNull(objKey)) {
         senderModel = null;
         return true;
     }

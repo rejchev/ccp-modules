@@ -32,6 +32,19 @@ enum
 
 JSONObject jConfig;
 
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max) {
+    if(late) {
+        Handle obj;
+        for(int i; i <= MaxClients; i++) {
+            if((obj = ccp_GetPackage(i)) != null) {
+                ccp_OnPackageAvailable(i, obj);
+            }
+        }
+    }
+
+    return APLRes_Success;
+}
+
 public void OnPluginStart() {
     LoadTranslations("admin-channel.phrases");
 }

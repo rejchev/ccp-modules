@@ -24,8 +24,21 @@ int levels[BIND_MAX];
 
 Cookie g_cLEVEL;
 
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max) {
+    if(late) {
+        Handle obj;
+        for(int i; i <= MaxClients; i++) {
+            if((obj = ccp_GetPackage(i)) != null) {
+                ccp_OnPackageAvailable(i, obj);
+            }
+        }
+    }
+
+    return APLRes_Success;
+}
+
 public void OnPluginStart() {
-    LoadTranslations("ccproc.phrases");
+    LoadTranslations("ccp_core.phrases");
     LoadTranslations("ccp_lvlranks.phrases");
 
     LR_Hook(LR_OnPlayerLoaded, OnPlayerLoaded);

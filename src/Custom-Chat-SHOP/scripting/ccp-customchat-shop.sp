@@ -25,9 +25,22 @@ static const char pkgKey[] = "shop_chat";
 
 int levels[BIND_MAX];
 
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max) {
+    if(late) {
+        Handle obj;
+        for(int i; i <= MaxClients; i++) {
+            if((obj = ccp_GetPackage(i)) != null) {
+                ccp_OnPackageAvailable(i, obj);
+            }
+        }
+    }
+
+    return APLRes_Success;
+}
+
 public void OnPluginStart()
 {    
-    LoadTranslations("ccproc.phrases");
+    LoadTranslations("ccp_core.phrases");
     LoadTranslations("ccp_shop.phrases");
 
     manageConVars();
