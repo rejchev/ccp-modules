@@ -15,7 +15,7 @@ public Plugin myinfo =
 	name = "[CCP] JSON Packager",
 	author = "nyoood?",
 	description = "...",
-	version = "1.0.2",
+	version = "1.0.3",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -32,10 +32,10 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
     RegPluginLibrary("ccprocessor_pkg");
 
     if(late) {
-        for(int i =1; i <= MaxClients; i++) {
-            if(IsClientInGame(i)) {
+        for(int i = 1; i <= MaxClients; i++) {
+            if(IsClientConnected(i) && IsClientAuthorized(i)) {
                 OnClientDisconnect(i);
-                OnClientPutInServer(i);
+                OnClientAuthorized(i, GetClientAuthIdEx(i));
             }
         }
     }
@@ -53,11 +53,11 @@ public void OnMapEnd() {
     Call_pkgClear(0);
 }
 
-public void OnClientPutInServer(int iClient) {
+public void OnClientAuthorized(int iClient, const char[] auth) {
     if(IsFakeClient(iClient) || IsClientSourceTV(iClient))
         return;
 
-    Call_pkgReady(iClient);
+    Call_pkgReady(iClient, auth);
 }
 
 public void OnClientDisconnect(int iClient) {
@@ -126,11 +126,22 @@ void packageReady(int iClient) {
     Call_Finish();
 }
 
-void Call_pkgReady(int iClient) {
-    pkgInit(iClient);
+void Call_pkgReady(int iClient, const char[] auth = "STEAM_ID_SERVER") {
+    pkgInit(iClient, auth);
 
     packageReady_Pre(iClient);
-    packageReady(iClient);
+    RequestFrame(OnNextFrame, GetClientUserId(iClient) << 1|view_as<int>(iClient == 0));
+}
+
+public void OnNextFrame(int data) {
+    bool IsServer = view_as<bool>(data & 0x01);
+    data = GetClientOfUserId(data >> 1);
+
+    if(!jClients[data] || (!IsServer && (!data || !IsClientInGame(data)))) {
+        return;
+    }
+
+    packageReady(data);
 }
 
 void Call_pkgClear(int iClient) {
@@ -146,10 +157,12 @@ void Call_pkgClear(int iClient) {
     pkgClear(iClient);
 }
 
-void pkgInit(int iClient) {
+void pkgInit(int iClient, const char[] auth = "STEAM_ID_SERVER") {
     if(!jClients[iClient]) {
         jClients[iClient] = new JSONObject();
     }
+
+    jClients[iClient].SetString("auth", auth);
 }
 
 void pkgClear(int iClient) {
@@ -166,4 +179,13 @@ void pkgUpdated(int iClient, Handle hInitiator) {
     Call_PushCell(jClients[iClient]);
     Call_PushCell(hInitiator);
     Call_Finish();
+}
+
+stock char[] GetClientAuthIdEx(int iClient) {
+    char szBuffer[66];
+    if(!GetClientAuthId(iClient, AuthId_Steam2, szBuffer, sizeof(szBuffer))) {
+        szBuffer = NULL_STRING;
+    }
+
+    return szBuffer;
 }

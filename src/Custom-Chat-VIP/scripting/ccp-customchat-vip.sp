@@ -102,6 +102,10 @@ public void OnMapStart()
 }
 
 public void ccp_OnPackageAvailable(int iClient, Handle objClient) {
+    if(!objClient) {
+        return;
+    }
+
     JSONObject pkg = asJSONO(objClient);
 
     if(!iClient) {
@@ -277,9 +281,9 @@ Menu FeatureMenu(int iClient, const char[] szFeature)
     VIP_GetClientVIPGroup(iClient, szBuffer, sizeof(szBuffer));
     
     JSONObject  model    =   getClientModel(iClient);
-    JSONObject  pkg      =   (model) ? asJSONO(asJSONO(ccp_GetPackage(0)).Get(pkgKey)) : null;
-    JSONObject  group    =   (pkg)   ? asJSONO(pkg.Get(szBuffer)) : null;
-    JSONArray   items    =   (group) ? asJSONA(group.Get(szBinds[iBind])) : null;
+    JSONObject  pkg      =   (model)                                    ? asJSONO(asJSONO(ccp_GetPackage(0)).Get(pkgKey)) : null;
+    JSONObject  group    =   (pkg && pkg.HasKey(szBuffer))              ? asJSONO(pkg.Get(szBuffer)) : null;
+    JSONArray   items    =   (group && group.HasKey(szBinds[iBind]))    ? asJSONA(group.Get(szBinds[iBind])) : null;
 
     delete group;
 
@@ -514,7 +518,7 @@ stock JSONObject getClientModel(int iClient) {
     JSONObject obj;
     obj = asJSONO(ccp_GetPackage(iClient));
 
-    if(!obj || !obj.HasKey(pkgKey))
+    if(!obj || !obj.HasKey(pkgKey) || !obj.HasKey("auth"))
         return null;
     
     obj = asJSONO(obj.Get(pkgKey));

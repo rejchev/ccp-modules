@@ -195,17 +195,20 @@ public Action Cmd_Prefix(int iClient, int args) {
     if(iClient && IsClientInGame(iClient) && !IsFakeClient(iClient))
     {
         JSONObject objClient = asJSONO(ccp_GetPackage(iClient));
-        if(objClient) {
-            if(IsMenuDisabled) {
-                if(!objClient.HasKey(objKey)) {
-                    setTemplate(iClient, objClient);
-                } else {
-                    objClient.Remove(objKey);
-                    coHandle.Set(iClient, NULL_STRING);
-                }
+        if(!objClient || !objClient.HasKey("auth")) {
+            PrintToChat(iClient, "%T", "auth_failed", iClient);
+            return Plugin_Handled;
+        }
+
+        if(IsMenuDisabled) {
+            if(!objClient.HasKey(objKey)) {
+                setTemplate(iClient, objClient);
             } else {
-                menuTemplates(iClient);
+                objClient.Remove(objKey);
+                coHandle.Set(iClient, NULL_STRING);
             }
+        } else {
+            menuTemplates(iClient);
         }
     }
     

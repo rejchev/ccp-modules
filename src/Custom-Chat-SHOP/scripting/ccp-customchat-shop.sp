@@ -77,6 +77,10 @@ public void onChange(ConVar convar, const char[] oldVal, const char[] newVal)
 }
 
 public void ccp_OnPackageAvailable(int iClient, Handle hPkg) {
+    if(!hPkg) {
+        return;
+    }
+
     JSONObject pkg = asJSONO(hPkg);
     JSONObject obj;
 
@@ -96,7 +100,7 @@ public void ccp_OnPackageAvailable(int iClient, Handle hPkg) {
     
         if(Shop_IsStarted())
             RegisterCategorys();
-    } else {
+    } else if(pkg.HasKey("auth")) {
         obj = new JSONObject();
         for(int i; i < BIND_MAX; i++)
             obj.SetNull(szBinds[i]);
@@ -326,7 +330,7 @@ stock JSONObject getClientModel(int iClient) {
     JSONObject obj;
     obj = asJSONO(ccp_GetPackage(iClient));
 
-    if(!obj || !obj.HasKey(pkgKey))
+    if(!obj || !obj.HasKey(pkgKey) || !obj.HasKey("auth"))
         return null;
     
     obj = asJSONO(obj.Get(pkgKey));

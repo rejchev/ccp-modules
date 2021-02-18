@@ -106,7 +106,7 @@ public void ccp_OnPackageAvailable(int iClient, Handle hPkg) {
         pkg.Set(pkgKey, objArr);
 
         delete objArr;
-    } else {
+    } else if(pkg.HasKey("auth")) {
         JSONObject obj;
 
         if(pkg.HasKey(pkgKey) && pkg.HasKey("cloud")) {
@@ -181,9 +181,18 @@ public void OnMapStart() {
 Action cmduse(int iClient, int args) {
     Menu hMenu;
 
+    if(!iClient || !IsClientConnected(iClient)) {
+        return Plugin_Handled;
+    }
+
+    if(!ccp_GetPackage(iClient)) {
+        PrintToChat(iClient, "%T", "auth_failed", iClient);
+        return Plugin_Handled;
+    }
+
     JSONArray objItems = asJSONA(asJSONO(ccp_GetPackage(0)).Get(pkgKey));
 
-    if(iClient && IsClientInGame(iClient) && !IsFakeClient(iClient) && (hMenu = RankMenu(iClient, objItems))) {
+    if((hMenu = RankMenu(iClient, objItems))) {
         hMenu.Display(iClient, MENU_TIME_FOREVER);
     }
 
@@ -386,7 +395,7 @@ public bool cc_proc_OnNewMessage(int sender, ArrayList params) {
     } 
 
     senderModel = asJSONO(ccp_GetPackage(sender));
-    if(!senderModel.HasKey(pkgKey)) {
+    if(!senderModel || !senderModel.HasKey(pkgKey)) {
         senderModel = null;
         return true;
     }

@@ -1,5 +1,11 @@
 "Phrases"
 {
+    "auth_failed" 
+    {
+        "ru"                "Вы не прошли авторизацию на сервере. Доступ отклонен"
+        "ru"                "You are not authorized on the server. Access denied "
+    }
+
     "only_for_u"
     {
         //"#format"           ""
