@@ -11,7 +11,7 @@ public Plugin myinfo =
 	name = "[CCP] EngineMsg Cleaner",
 	author = "nu11ent",
 	description = "...",
-	version = "1.0.0",
+	version = "1.0.1",
 	url = "https://t.me/nyoood"
 };
 
@@ -53,9 +53,9 @@ public void OnMapStart() {
     delete hFile;
 }
 
-public bool    cc_proc_OnNewMessage(int sender, ArrayList params) {
+public bool cc_proc_HandleEngineMsg(const int[] props, int propsCount, ArrayList params) {
     char szBuffer[MESSAGE_LENGTH];
-    params.GetString(2, szBuffer, sizeof(szBuffer));
+    params.GetString(0, szBuffer, sizeof(szBuffer));
 
-    return szBuffer[0] != '#' || g_aEngineMsgList.FindString(szBuffer) == -1;
+    return g_aEngineMsgList.FindString(szBuffer) == -1;
 }
