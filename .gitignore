@@ -42,15 +42,7 @@
 *.smx
 
 # Private stage
-/src/ccp-mimic/
-/src/ccp-chat-ext/
-/src/ccp-chat-flood/
-/src/ccp-web-chat/
-/src/ccp-vipchat-sql/
-/src/ccp-lr-chat/
-/src/ccp-hint/
-/src/distant-chat/
-/modules/*
+/private/*
 
 #hidden-includes
 /include/vip_core.inc
