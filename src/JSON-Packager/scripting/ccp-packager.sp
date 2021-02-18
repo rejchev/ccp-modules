@@ -130,14 +130,11 @@ void Call_pkgReady(int iClient, const char[] auth = "STEAM_ID_SERVER") {
     pkgInit(iClient, auth);
 
     packageReady_Pre(iClient);
-    RequestFrame(OnNextFrame, GetClientUserId(iClient) << 1|view_as<int>(iClient == 0));
+    RequestFrame(OnNextFrame, iClient);
 }
 
 public void OnNextFrame(int data) {
-    bool IsServer = view_as<bool>(data & 0x01);
-    data = GetClientOfUserId(data >> 1);
-
-    if(!jClients[data] || (!IsServer && (!data || !IsClientInGame(data)))) {
+    if(!jClients[data]) {
         return;
     }
 
