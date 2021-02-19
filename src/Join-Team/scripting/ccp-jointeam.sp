@@ -9,7 +9,7 @@ public Plugin myinfo =
 	name = "[CCP] Join team",
 	author = "nullent?",
 	description = "...",
-	version = "1.0.5",
+	version = "1.0.6",
 	url = "https://t.me/nyoood"
 };
 
@@ -84,16 +84,16 @@ void TriggerUMessage(int iTeam, const char[] username, const char[] teamname)
     EndMessage();
 }
 
-public Action  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
+public Processing  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
     char szIndent[64];
     params.GetString(0, szIndent, sizeof(szIndent));
     
     if((szIndent[0] != 'T' && szIndent[1] != 'M' && strlen(szIndent) == 2) || part != BIND_MSG|| initiatorTeam == -1) {
-        return Plugin_Continue;
+        return Proc_Continue;
     }  
 
     ReplaceStringEx(value, size, "%s2", GetTeamName(initiatorTeam, props[2]));
-    return Plugin_Continue;
+    return Proc_Change;
 }
 
 public void cc_proc_OnMessageEnd(const int[] props, int propsCount, ArrayList params) {

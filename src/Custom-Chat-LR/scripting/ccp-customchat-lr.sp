@@ -14,7 +14,7 @@ public Plugin myinfo =
     name = "[CCP] Custom Chat <LR>",
     author = "nullent?",
     description = "...",
-    version = "1.0.1",
+    version = "1.0.2",
     url = "discord.gg/ChTyPUG"
 };
 
@@ -24,16 +24,10 @@ int levels[BIND_MAX];
 
 Cookie g_cLEVEL;
 
-public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max) {
-    if(late) {
-        Handle obj;
-        for(int i; i <= MaxClients; i++) {
-            if((obj = ccp_GetPackage(i)) != null) {
-                ccp_OnPackageAvailable(i, obj);
-            }
-        }
-    }
+bool g_bLate;
 
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max) {
+    g_bLate = late;
     return APLRes_Success;
 }
 
@@ -176,6 +170,17 @@ JSONObject ReadCookieValue(int iClient) {
 public void OnMapStart() {
     cc_proc_APIHandShake(cc_get_APIKey());
     manageConVars(false);
+
+    if(g_bLate) {
+        g_bLate = false;
+        ccp_OnPackageAvailable(0, ccp_GetPackage(0));
+
+        for(int i = 1; i <= MaxClients; i++) {
+            if(IsClientInGame(i) && !IsFakeClient(i)) {
+                OnPlayerLoaded(i, LR_GetClientInfo(i, ST_RANK));
+            }
+        }
+    }
 }
 
 Action cmduse(int iClient, int args) {
@@ -384,38 +389,36 @@ public int RankInfo_CallBack(Menu hMenu, MenuAction action, int iClient, int opt
 
 JSONObject senderModel;
 
-public bool cc_proc_OnNewMessage(int sender, ArrayList params) {
-    delete senderModel;
-
+public Processing cc_proc_OnNewMessage(int sender, ArrayList params) {
     char szIndent[64];
     params.GetString(0, szIndent, sizeof(szIndent));
     
     if((szIndent[0] != 'S' && szIndent[1] != 'T' && strlen(szIndent) < 3) || !sender) {
-        return true;
+        return Proc_Continue;
     } 
 
     senderModel = asJSONO(ccp_GetPackage(sender));
     if(!senderModel || !senderModel.HasKey(pkgKey)) {
         senderModel = null;
-        return true;
+        return Proc_Continue;
     }
 
     senderModel = asJSONO(senderModel.Get(pkgKey));
-    return true;
+    return Proc_Continue;
 }
 
-public Action  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
+public Processing  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
     if(!senderModel) {
-        return Plugin_Continue;
+        return Proc_Continue;
     }
 
     if(levels[part] < level) {
-        return Plugin_Continue;
+        return Proc_Continue;
     }
 
     static char szValue[MESSAGE_LENGTH];
     if(!senderModel.GetString(szBinds[part], szValue, sizeof(szValue)) || !szValue[0]) {
-        return Plugin_Continue;
+        return Proc_Continue;
     }
 
     if(part == BIND_PREFIX) {
@@ -425,5 +428,11 @@ public Action  cc_proc_OnRebuildString(const int[] props, int part, ArrayList pa
     level = levels[part];
     FormatEx(value, size, szValue);
 
-    return Plugin_Continue;
+    return Proc_Change;
+}
+
+public void cc_proc_OnMessageEnd(const int[] props, int propsCount, ArrayList params) {
+    if(senderModel) {
+        delete senderModel;
+    }
 }

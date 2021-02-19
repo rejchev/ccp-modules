@@ -14,7 +14,7 @@ public Plugin myinfo =
 	name = "[CCP] Custom Chat",
 	author = "nullent?",
 	description = "...",
-	version = "3.3.4",
+	version = "3.3.5",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -24,16 +24,10 @@ bool IsMenuDisabled;
 
 static const char objKey[] = "ccm";
 
-public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max) {
-    if(late) {
-        Handle obj;
-        for(int i; i <= MaxClients; i++) {
-            if((obj = ccp_GetPackage(i)) != null) {
-                ccp_OnPackageAvailable(i, obj);
-            }
-        }
-    }
+bool g_bLate;
 
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max) {
+    g_bLate = late;
     return APLRes_Success;
 }
 
@@ -92,6 +86,16 @@ public void disableMenu(ConVar convar, const char[] oldVal, const char[] newVal)
 public void OnMapStart() {
     cc_proc_APIHandShake(cc_get_APIKey());
     manageConVars(false);
+
+    if(g_bLate) {
+        g_bLate = false;
+        Handle obj;
+        for(int i; i <= MaxClients; i++) {
+            if((obj = ccp_GetPackage(i)) != null) {
+                ccp_OnPackageAvailable(i, obj);
+            }
+        }
+    }
 }
 
 public void ccp_OnPackageAvailable(int iClient, Handle objClient) {
@@ -283,42 +287,40 @@ public int menuCallBack(Menu hMenu, MenuAction action, int iClient, int param) {
 
 JSONObject senderModel;
 
-public bool cc_proc_OnNewMessage(int sender, ArrayList params) {
-    delete senderModel;
-
+public Processing cc_proc_OnNewMessage(int sender, ArrayList params) {
     char szIndent[64];
     params.GetString(0, szIndent, sizeof(szIndent));
     
     if((szIndent[0] != 'S' && szIndent[1] != 'T' && strlen(szIndent) < 3) || !sender) {
-        return true;
+        return Proc_Continue;
     }
 
     senderModel = asJSONO(ccp_GetPackage(sender));
     if(!senderModel || !senderModel.HasKey(objKey) || senderModel.IsNull(objKey)) {
         senderModel = null;
-        return true;
+        return Proc_Continue;
     }
 
     senderModel = asJSONO(senderModel.Get(objKey));
-    return true;
+    return Proc_Continue;
 }
 
-public Action  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
+public Processing  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
     if(!senderModel)
-        return Plugin_Continue;
+        return Proc_Continue;
     
     int index = indexPart(part);
     if(index == -1 || LEVEL[index] < level)
-        return Plugin_Continue;
+        return Proc_Continue;
 
     if(!senderModel.HasKey(szBinds[part]))
-        return Plugin_Continue;
+        return Proc_Continue;
     
     static char szValue[MESSAGE_LENGTH];
     senderModel.GetString(szBinds[part], szValue, sizeof(szValue));
 
     if(!szValue[0])
-        return Plugin_Continue;
+        return Proc_Continue;
     
     if(part == BIND_PREFIX)
         Format(szValue, sizeof(szValue), "%T", szValue, props[2]);
@@ -326,7 +328,13 @@ public Action  cc_proc_OnRebuildString(const int[] props, int part, ArrayList pa
     level = LEVEL[index];
     FormatEx(value, size, szValue);
 
-    return Plugin_Continue;  
+    return Proc_Change;  
+}
+
+public void cc_proc_OnMessageEnd(const int[] props, int propsCount, ArrayList params) {
+    if(senderModel) {
+        delete senderModel;
+    }
 }
 
 bool HasAccess(JSONObject objClient, JSONObject jsonModel) {

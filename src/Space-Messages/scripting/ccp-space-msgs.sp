@@ -11,7 +11,7 @@ public Plugin myinfo =
 	name = "[CCP] Space Messages",
 	author = "nullent?",
 	description = "...",
-	version = "1.0.2",
+	version = "1.0.3",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -31,9 +31,9 @@ public void OnMapStart() {
     objConfig = JSONObject.FromFile(szBuffer, 0);
 }
 
-public bool    cc_proc_OnRebuildString_Post(const int[] props, int part, ArrayList params, int level, const char[] value) {
+public Processing cc_proc_OnRebuildString_Post(const int[] props, int part, ArrayList params, int level, const char[] value) {
     if(part != BIND_MSG) {
-        return false;
+        return Proc_Continue;
     }
 
     char szIndent[64];
@@ -42,13 +42,13 @@ public bool    cc_proc_OnRebuildString_Post(const int[] props, int part, ArrayLi
     if(!objConfig.GetBool(szIndent)) {
         for(int i; i < strlen(value); i++) {
             if(value[i] >= 33) {
-                return false;
+                return Proc_Continue;
             }
         }
 
-        return true;
+        return Proc_Stop;
     }
 
-    return false;
+    return Proc_Continue;
 }
 

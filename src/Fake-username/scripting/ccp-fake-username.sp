@@ -9,7 +9,7 @@ public Plugin myinfo =
 	name = "[CCP] Fake Username",
 	author = "nullent?",
 	description = "Ability to set a fake username in chat msgs",
-	version = "1.5.1",
+	version = "1.5.2",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -83,21 +83,23 @@ public void OnClientPostAdminCheck(int iClient)
     ClientFlags[iClient] = GetUserFlagBits(iClient);
 }
 
-public Action  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
+public Processing  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
     char szIndent[64];
     params.GetString(0, szIndent, sizeof(szIndent));
     
     if((szIndent[0] != 'S' && szIndent[1] != 'T' && strlen(szIndent) < 3) || !SENDER_INDEX(props[1])) {
-        return Plugin_Continue;
+        return Proc_Continue;
     } 
 
     if(part == BIND_NAME && fakename[SENDER_INDEX(props[1])][0] && level < nLevel)
     {
         level = nLevel;
         FormatEx(value, size, fakename[SENDER_INDEX(props[1])]);
+
+        return Proc_Change
     }  
 
-    return Plugin_Continue
+    return Proc_Continue
 }
 
 bool IsValidClient(int iClient)

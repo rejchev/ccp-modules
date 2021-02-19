@@ -21,7 +21,7 @@ public Plugin myinfo =
     name        = "[CCP] Teammate color <Competitve>",
     author      = "nullent?",
     description = "Competitve teammate color into chat",
-    version     = "1.5.1",
+    version     = "1.5.2",
     url         = "discord.gg/ChTyPUG"
 };
 
@@ -86,17 +86,17 @@ public void OnThinkPost(int entity)
     GetEntDataArray(entity, m_iCompTeammateColor, ColorArray, sizeof(ColorArray));
 }
 
-public Action  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
+public Processing  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
     char szIndent[64];
     params.GetString(0, szIndent, sizeof(szIndent));
 
     if((szIndent[0] != 'S' && szIndent[1] != 'T' && strlen(szIndent) < 3) 
     || (part != BIND_STATUS && part != BIND_STATUS_CO) 
     || level > Level)
-        return Plugin_Continue;
+        return Proc_Continue;
 
     if((part == BIND_STATUS && !szStatusSmb[0]) || (part == BIND_STATUS_CO && !EnColor))
-        return Plugin_Continue;
+        return Proc_Continue;
 
     level = Level;
 
@@ -105,7 +105,7 @@ public Action  cc_proc_OnRebuildString(const int[] props, int part, ArrayList pa
     
     else FormatEx(value, size, "%c", GetColor(SENDER(props[1])));
 
-    return Plugin_Continue;
+    return Proc_Change;
 }
 
 int GetColor(int iClient)

@@ -14,7 +14,7 @@ public Plugin myinfo =
 	name = "[CCP] Custom Chat <VIP>",
 	author = "nullent?",
 	description = "...",
-	version = "2.0.5",
+	version = "2.0.6",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -464,33 +464,31 @@ public Action OnClientSayCommand(int iClient, const char[] command, const char[]
 
 JSONObject senderModel;
 
-public bool cc_proc_OnNewMessage(int sender, ArrayList params) {
-    delete senderModel;
-
+public Processing cc_proc_OnNewMessage(int sender, ArrayList params) {
     char szIndent[64];
     params.GetString(0, szIndent, sizeof(szIndent));
     
     if((szIndent[0] != 'S' && szIndent[1] != 'T' && strlen(szIndent) < 3) || !sender) {
-        return true;
+        return Proc_Continue;
     }
 
     senderModel = getClientModel(sender);
-    return true;
+    return Proc_Continue;
 }
 
-public Action  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &plevel, char[] value, int size) {
+public Processing  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &plevel, char[] value, int size) {
     if(!senderModel) {
-        return Plugin_Continue;
+        return Proc_Continue;
     }
 
     int idx = IsValidPart(part);
     if(idx == -1 || level[idx] < plevel || !IsPartValid(senderModel, part)) {
-        return Plugin_Continue;
+        return Proc_Continue;
     }
 
     static char szValue[MESSAGE_LENGTH];
     if(!senderModel.GetString(szBinds[part], szValue, sizeof(szValue)) || !szValue[0]) {
-        return Plugin_Continue;
+        return Proc_Continue;
     }
 
     if(part == BIND_PREFIX && TranslationPhraseExists(szValue)) {
@@ -500,7 +498,13 @@ public Action  cc_proc_OnRebuildString(const int[] props, int part, ArrayList pa
     plevel = level[idx];
     FormatEx(value, size, szValue);
 
-    return Plugin_Continue;
+    return Proc_Change;
+}
+
+public void    cc_proc_OnMessageEnd(const int[] props, int propsCount, ArrayList params) {
+    if(senderModel) {
+        delete senderModel;
+    }
 }
 
 stock int IsValidPart(const int part)

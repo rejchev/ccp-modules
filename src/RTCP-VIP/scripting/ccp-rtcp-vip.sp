@@ -8,7 +8,7 @@ public Plugin myinfo =
 	name = "[CCP] RTCP <VIP>",
 	author = "nullent?",
 	description = "Realtime color processing",
-	version = "1.3.1",
+	version = "1.3.2",
 	url = "discord.gg/ChTyPUG"
 };
 

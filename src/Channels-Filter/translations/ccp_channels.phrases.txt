@@ -18,38 +18,55 @@
         "en"            "Enabled"
     }
 
+    "item_channel"
+    {
+        "#format"       "{1:s},{2:s}"
+
+        "ru"            "{1}: [{2}]"
+        "en"            "{1}: [{2}]"
+    }
+
+    "chat_setvalue"
+    {
+        "#format"       "{1:s},{2:s}"
+
+        "ru"            "{G}{1} {W}теперь {G}{2}"
+        "en"            "{G}{1} {W}is {G}{2} {W}now"
+    }
+
     "STP"
     {
-        "#format"       "{1:s}"
-        "ru"            "Командый канал [{1}]"
-        "en"            "Team channel [{1}]"
+        "ru"            "Командный канал"
+        "en"            "Team channel"
     }
 
     "STA"
     {
-        "#format"       "{1:s}"
-        "ru"            "Общий канал [{1}]"
-        "en"            "Public channel [{1}]"
+        "ru"            "Общий канал"
+        "en"            "Public channel"
     }
 
     "RT"
     {
-        "#format"       "{1:s}"
-        "ru"            "Радио канал [{1}]"
-        "en"            "Radio channel [{1}]"
+        "ru"            "Радио канал"
+        "en"            "Radio channel"
     }
 
     "TM"
     {
-        "#format"       "{1:s}"
-        "ru"            "Серверный канал [{1}]"
-        "en"            "Server channel [{1}]"
+        "ru"            "Серверный канал"
+        "en"            "Server channel"
     }
 
     "ST"
     {
-        "#format"       "{1:s}"
-        "ru"            "LR канал [{1}]"
-        "en"            "LR channel [{1}]"
+        "ru"            "LR канал"
+        "en"            "LR channel"
+    }
+
+    "ST1"
+    {
+        "ru"            "Канал администраторов"
+        "en"            "Admin channel"
     }
 }

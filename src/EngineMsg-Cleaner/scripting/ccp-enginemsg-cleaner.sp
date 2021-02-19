@@ -43,7 +43,7 @@ public void OnMapStart() {
     while(!hFile.EndOfFile() && hFile.ReadLine(szBuffer, sizeof(szBuffer))) {
         TrimString(szBuffer);
 
-        if(!szBuffer[0]) {
+        if(!szBuffer[0] || (szBuffer[0] == '/' && szBuffer[1] == '/')) {
             continue;
         }
 
@@ -53,9 +53,9 @@ public void OnMapStart() {
     delete hFile;
 }
 
-public bool cc_proc_HandleEngineMsg(const int[] props, int propsCount, ArrayList params) {
+public Processing cc_proc_HandleEngineMsg(const int[] props, int propsCount, ArrayList params) {
     char szBuffer[MESSAGE_LENGTH];
     params.GetString(0, szBuffer, sizeof(szBuffer));
 
-    return g_aEngineMsgList.FindString(szBuffer) == -1;
+    return g_aEngineMsgList.FindString(szBuffer) == -1 ? Proc_Continue : Proc_Stop;
 }

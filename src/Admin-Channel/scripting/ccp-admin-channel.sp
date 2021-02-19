@@ -32,8 +32,18 @@ enum
 
 JSONObject jConfig;
 
+bool g_bLate;
+
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max) {
-    if(late) {
+    g_bLate = late;
+    return APLRes_Success;
+}
+
+public void OnPluginStart() {
+    LoadTranslations("admin-channel.phrases");
+
+    if(g_bLate) {
+        g_bLate = false;
         Handle obj;
         for(int i; i <= MaxClients; i++) {
             if((obj = ccp_GetPackage(i)) != null) {
@@ -41,12 +51,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
             }
         }
     }
-
-    return APLRes_Success;
-}
-
-public void OnPluginStart() {
-    LoadTranslations("admin-channel.phrases");
 }
 
 public void ccp_OnPackageAvailable(int iClient, Handle jsonObj) {
@@ -73,7 +77,7 @@ public void ccp_OnPackageAvailable(int iClient, Handle jsonObj) {
 
 bool HasAccess;
 
-public bool cc_proc_OnNewMessage(int sender, ArrayList params) {
+public Processing cc_proc_OnNewMessage(int sender, ArrayList params) {
     static const char parentChannels[][] = {"STA", "STP"};
     static const char ROOT[] = "z";
 
@@ -81,7 +85,7 @@ public bool cc_proc_OnNewMessage(int sender, ArrayList params) {
     params.GetString(0, szBuffer, sizeof(szBuffer));
     
     if(!InChannels(szBuffer, parentChannels, sizeof(parentChannels)) || !sender) {
-        return true;
+        return Proc_Continue;
     } 
 
     jConfig.GetString("channelTrigger", szBuffer, sizeof(szBuffer));
@@ -98,7 +102,7 @@ public bool cc_proc_OnNewMessage(int sender, ArrayList params) {
 
         HasAccess = ValidClient(flags, access, root);
         if(!HasAccess && !jConfig.GetBool("playersCanComplain")) {
-            return true;
+            return Proc_Continue;
         }
 
         jConfig.GetString("identificator", szBuffer, sizeof(szBuffer));
@@ -110,12 +114,14 @@ public bool cc_proc_OnNewMessage(int sender, ArrayList params) {
         if(jConfig.GetBool("useLog") && !IsClientSourceTV(players[0])) {
             LogAction(sender, -1, "\"%L\" (%s) used admin channel (text %s)", sender, HasAccess ? "Admin" : "Player", szMessage[1]);
         }
+
+        return Proc_Change;
     }    
 
-    return true;
+    return Proc_Continue;
 }
 
-public Action cc_proc_OnRebuildClients(const int[] props, int propsCount, ArrayList params) {
+public Processing cc_proc_OnRebuildClients(const int[] props, int propsCount, ArrayList params) {
     char szIndent[64];
     params.GetString(0, szIndent, sizeof(szIndent));
 
@@ -123,7 +129,7 @@ public Action cc_proc_OnRebuildClients(const int[] props, int propsCount, ArrayL
     jConfig.GetString("identificator", szBuffer, sizeof(szBuffer));
 
     if(strcmp(szIndent, szBuffer)) {
-        return Plugin_Continue;
+        return Proc_Continue;
     }
 
     int playersNum = params.Get(3);
@@ -131,7 +137,7 @@ public Action cc_proc_OnRebuildClients(const int[] props, int propsCount, ArrayL
     params.GetArray(2, players, playersNum);
 
     if(!playersNum || IsClientSourceTV(players[0])) {
-        return Plugin_Continue;
+        return Proc_Continue;
     }
 
     jConfig.GetString("accessFlag", szBuffer, sizeof(szBuffer));
@@ -146,10 +152,10 @@ public Action cc_proc_OnRebuildClients(const int[] props, int propsCount, ArrayL
     params.SetArray(2, players, playersNum);
     params.Set(3, playersNum);
 
-    return Plugin_Continue;
+    return Proc_Change;
 }
 
-public Action cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
+public Processing cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
     char szIndent[64];
     params.GetString(0, szIndent, sizeof(szIndent));
 
@@ -157,7 +163,7 @@ public Action cc_proc_OnRebuildString(const int[] props, int part, ArrayList par
     jConfig.GetString("identificator", szBuffer, sizeof(szBuffer));
 
     if(strcmp(szIndent, szBuffer)) {
-        return Plugin_Continue;
+        return Proc_Continue;
     }
 
     JSONArray jValues;
@@ -165,7 +171,7 @@ public Action cc_proc_OnRebuildString(const int[] props, int part, ArrayList par
     switch(part) {
         case BIND_PROTOTYPE: {
             if(jConfig.HasKey(szBinds[part]) && jConfig.GetString(szBinds[part], value, size)) {
-                FormatEx(value, size, "%c %T", 1, value, SENDER_INDEX(props[1]));
+                Format(value, size, "%c %T", 1, value, SENDER_INDEX(props[1]));
             }
         }
 
@@ -203,7 +209,7 @@ public Action cc_proc_OnRebuildString(const int[] props, int part, ArrayList par
     }
 
     delete jValues;
-    return Plugin_Continue;
+    return Proc_Change;
 }
 
 stock bool InChannels(const char[] channel, const char[][] channels, int count) {
