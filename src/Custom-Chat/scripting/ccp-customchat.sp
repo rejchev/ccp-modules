@@ -287,40 +287,37 @@ public int menuCallBack(Menu hMenu, MenuAction action, int iClient, int param) {
 
 JSONObject senderModel;
 
-public Processing cc_proc_OnNewMessage(int sender, ArrayList params) {
+public Processing  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
+    static char channels[][] = {"ST1", "STA", "STP"};
+
     char szIndent[64];
     params.GetString(0, szIndent, sizeof(szIndent));
     
-    if((szIndent[0] != 'S' && szIndent[1] != 'T' && strlen(szIndent) < 3) || !sender) {
+    if(!InChannels(channels, sizeof(channels), szIndent) || !SENDER_INDEX(props[1])) {
         return Proc_Continue;
     }
 
-    senderModel = asJSONO(ccp_GetPackage(sender));
+    senderModel = asJSONO(ccp_GetPackage(SENDER_INDEX(props[1])));
     if(!senderModel || !senderModel.HasKey(objKey) || senderModel.IsNull(objKey)) {
         senderModel = null;
         return Proc_Continue;
     }
 
     senderModel = asJSONO(senderModel.Get(objKey));
-    return Proc_Continue;
-}
-
-public Processing  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
-    if(!senderModel)
-        return Proc_Continue;
     
     int index = indexPart(part);
-    if(index == -1 || LEVEL[index] < level)
+    if(index == -1 || LEVEL[index] < level || !senderModel.HasKey(szBinds[part])) {
+        delete senderModel;
         return Proc_Continue;
-
-    if(!senderModel.HasKey(szBinds[part]))
-        return Proc_Continue;
+    }
     
     static char szValue[MESSAGE_LENGTH];
     senderModel.GetString(szBinds[part], szValue, sizeof(szValue));
 
-    if(!szValue[0])
+    if(!szValue[0]) {
+        delete senderModel;
         return Proc_Continue;
+    }
     
     if(part == BIND_PREFIX)
         Format(szValue, sizeof(szValue), "%T", szValue, props[2]);
@@ -328,13 +325,8 @@ public Processing  cc_proc_OnRebuildString(const int[] props, int part, ArrayLis
     level = LEVEL[index];
     FormatEx(value, size, szValue);
 
+    delete senderModel;
     return Proc_Change;  
-}
-
-public void cc_proc_OnMessageEnd(const int[] props, int propsCount, ArrayList params) {
-    if(senderModel) {
-        delete senderModel;
-    }
 }
 
 bool HasAccess(JSONObject objClient, JSONObject jsonModel) {
@@ -421,4 +413,14 @@ JSONObject FindInObjects(const char[] szName) {
     
     delete jsonItems;
     return obj;
+}
+
+stock bool InChannels(const char[][] channels, int count, const char[] channel) {
+    for(int i; i < count; i++) {
+        if(!strcmp(channels[i], channel)) {
+            return true;
+        }
+    }
+
+    return false;
 }

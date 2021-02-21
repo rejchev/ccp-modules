@@ -284,31 +284,37 @@ public bool OnItemSell(int client, CategoryId category_id, const char[] category
     return true;
 }
 
-JSONObject senderModel;
-
-public Processing cc_proc_OnNewMessage(int sender, ArrayList params) {
-    char szIndent[64];
-    params.GetString(0, szIndent, sizeof(szIndent));
-    
-    if((szIndent[0] != 'S' && szIndent[1] != 'T' && strlen(szIndent) < 3) || !sender) {
-        return Proc_Continue;
-    }
-
-    senderModel = getClientModel(sender);
-    return Proc_Continue;
-}
+JSONObject objModel;
 
 public Processing  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
-    if(!senderModel) {
+    if(!SENDER_INDEX(props[1]) || level > levels[part]) {
         return Proc_Continue;
     }
 
-    if(levels[part] < level || !IsPartValid(senderModel, part)) {
+    objModel = asJSONO(asJSONO(ccp_GetPackage(0)).Get(pkgKey));
+    if(!objModel.HasKey("channels")) {
+        delete objModel;
+        return Proc_Continue;
+    }
+
+    JSONArray channels = asJSONA(objModel.Get("channels"));
+    delete objModel;
+
+    char szIndent[64];
+    params.GetString(0, szIndent, sizeof(szIndent));
+    if(!InChannels(channels, szIndent)) {
+        return Proc_Continue;
+    }
+
+    objModel = getClientModel(SENDER_INDEX(props[1]));
+    if(!objModel || !IsPartValid(objModel, part)) {
+        delete objModel;
         return Proc_Continue;
     }
 
     static char szValue[MESSAGE_LENGTH];
-    if(!senderModel.GetString(szBinds[part], szValue, sizeof(szValue)) || !szValue[0]) {
+    if(!objModel.GetString(szBinds[part], szValue, sizeof(szValue)) || !szValue[0]) {
+        delete objModel;
         return Proc_Continue;
     }
 
@@ -319,13 +325,8 @@ public Processing  cc_proc_OnRebuildString(const int[] props, int part, ArrayLis
     level = levels[part];
     FormatEx(value, size, szValue);
 
+    delete objModel;
     return Proc_Change;
-}
-
-public void    cc_proc_OnMessageEnd(const int[] props, int propsCount, ArrayList params) {
-    if(senderModel) {
-        delete senderModel;
-    }
 }
 
 stock JSONObject getClientModel(int iClient) {
@@ -341,4 +342,21 @@ stock JSONObject getClientModel(int iClient) {
 
 stock bool IsPartValid(JSONObject model, int part) {
     return model.HasKey(szBinds[part]) && !model.IsNull(szBinds[part]);
+}
+
+stock bool InChannels(JSONArray channels, const char[] channel) {
+    static char szChannel[64];
+    static bool bIn;
+
+    bIn = false;
+    for(int i; i < channels.Length; i++) {
+        channels.GetString(i, szChannel, sizeof(szChannel));
+        if(!strcmp(szChannel, channel)) {
+            bIn = true
+            break;
+        }
+    }
+
+    delete channels;
+    return bIn;
 }

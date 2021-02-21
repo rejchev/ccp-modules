@@ -1,4 +1,8 @@
 {
+    "channels": [
+        "ST1", "STA", "STP"
+    ],
+    
     "{PREFIXCO}": [
         {
             "value": "{R}",

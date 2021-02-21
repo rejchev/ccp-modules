@@ -1,4 +1,8 @@
 {
+    "channels": [
+        "ST1", "STA", "STP"
+    ],
+    
     "vip1":
     {
         "{PREFIXCO}": ["custom", "disable", "{W}", "{R}"],

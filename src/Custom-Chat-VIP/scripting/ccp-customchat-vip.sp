@@ -462,32 +462,38 @@ public Action OnClientSayCommand(int iClient, const char[] command, const char[]
     return Plugin_Continue;
 }
 
-JSONObject senderModel;
+JSONObject objModel;
 
-public Processing cc_proc_OnNewMessage(int sender, ArrayList params) {
+public Processing  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &pLevel, char[] value, int size) {
+    int idx = IsValidPart(part);
+    if(!SENDER_INDEX(props[1]) || pLevel > level[idx]) {
+        return Proc_Continue;
+    }
+
+    objModel = asJSONO(asJSONO(ccp_GetPackage(0)).Get(pkgKey));
+    if(!objModel.HasKey("channels")) {
+        delete objModel;
+        return Proc_Continue;
+    }
+
+    JSONArray channels = asJSONA(objModel.Get("channels"));
+    delete objModel;
+
     char szIndent[64];
     params.GetString(0, szIndent, sizeof(szIndent));
-    
-    if((szIndent[0] != 'S' && szIndent[1] != 'T' && strlen(szIndent) < 3) || !sender) {
+    if(!InChannels(channels, szIndent)) {
         return Proc_Continue;
     }
 
-    senderModel = getClientModel(sender);
-    return Proc_Continue;
-}
-
-public Processing  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &plevel, char[] value, int size) {
-    if(!senderModel) {
-        return Proc_Continue;
-    }
-
-    int idx = IsValidPart(part);
-    if(idx == -1 || level[idx] < plevel || !IsPartValid(senderModel, part)) {
+    objModel = getClientModel(SENDER_INDEX(props[1]));
+    if(!objModel || !IsPartValid(objModel, part)) {
+        delete objModel;
         return Proc_Continue;
     }
 
     static char szValue[MESSAGE_LENGTH];
-    if(!senderModel.GetString(szBinds[part], szValue, sizeof(szValue)) || !szValue[0]) {
+    if(!objModel.GetString(szBinds[part], szValue, sizeof(szValue)) || !szValue[0]) {
+        delete objModel;
         return Proc_Continue;
     }
 
@@ -495,16 +501,11 @@ public Processing  cc_proc_OnRebuildString(const int[] props, int part, ArrayLis
         Format(szValue, sizeof(szValue), "%T", szValue, props[2]);
     }
 
-    plevel = level[idx];
+    pLevel = level[idx];
     FormatEx(value, size, szValue);
 
+    delete objModel;
     return Proc_Change;
-}
-
-public void    cc_proc_OnMessageEnd(const int[] props, int propsCount, ArrayList params) {
-    if(senderModel) {
-        delete senderModel;
-    }
 }
 
 stock int IsValidPart(const int part)
@@ -541,4 +542,21 @@ stock JSONObject asJSONOEx(const char[] key, JSONObject obj, bool dlt = true) {
     if(dlt) delete obj;
 
     return out;
+}
+
+stock bool InChannels(JSONArray channels, const char[] channel) {
+    static char szChannel[64];
+    static bool bIn;
+
+    bIn = false;
+    for(int i; i < channels.Length; i++) {
+        channels.GetString(i, szChannel, sizeof(szChannel));
+        if(!strcmp(szChannel, channel)) {
+            bIn = true
+            break;
+        }
+    }
+
+    delete channels;
+    return bIn;
 }
