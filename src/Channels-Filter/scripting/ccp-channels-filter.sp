@@ -20,42 +20,73 @@ public Plugin myinfo =
     url = "https://t.me/nyoood"
 };
 
-// ...
-char g_chIgnore[MAXPLAYERS+1][MESSAGE_LENGTH];
-
 static const char pkgKey[] = "channels_filter";
+
+bool g_bLate;
+
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max) {
+    g_bLate = late;
+    return APLRes_Success;
+}
 
 public void OnPluginStart() {
     LoadTranslations("ccp_channels.phrases");
     RegConsoleCmd("sm_channels", cmd);
 }
 
+public void OnMapStart() {
+    // Handshake
+    cc_proc_APIHandShake(cc_get_APIKey());
+
+    // late load
+    if(g_bLate) {
+        g_bLate = false;
+
+        for(int i; i <= MaxClients; i++) {
+            if(!i || (IsClientInGame(i) && !IsFakeClient(i) && IsClientAuthorized(i))) {
+                ccp_OnPackageAvailable(i, ccp_GetPackage(i));
+            }
+        }
+    }
+}
+
 public void ccp_OnPackageAvailable(int iClient, Handle jsonObj) {
-    if(!jsonObj) {
+    static const char cloud[]           = "cloud";
+    static char config[MESSAGE_LENGTH]  = "configs/ccprocessor/channels-filter/channels.json";
+
+    JSONObject objPackage = asJSONO(jsonObj);
+
+    if(!objPackage || !objPackage.HasKey("auth")) {
         return;
     }
 
-    JSONObject objPackage = asJSONO(jsonObj);
-    JSONArray objBuffer;
-    if(!iClient) {
-        static char config[MESSAGE_LENGTH] = "configs/ccprocessor/channels-filter/channels.json";
-        if(config[0] == 'c') {
-            BuildPath(Path_SM, config, sizeof(config), config);
-        }
-
-        if(!FileExists(config)) {
-            SetFailState("Where is my config?: %s", config);
-        }
-
-        objBuffer = JSONArray.FromFile(config, 0);
-        objPackage.Set(pkgKey, objBuffer);
-    } else if(objPackage.HasKey("auth") 
-    && !(objPackage.HasKey("cloud") && objPackage.GetBool("cloud")
-    && !objPackage.HasKey(pkgKey))) {
-        objPackage.SetNull(pkgKey);
+    // Loaded from cloud
+    if(objPackage.HasKey(pkgKey) && objPackage.HasKey(cloud) && objPackage.GetBool(cloud)) {
+        return;
     }
 
-    delete objBuffer;
+    JSONArray objChannels;
+
+    if(!iClient) {
+        // Load from local
+        if(config[0] == 'c') {
+            BuildPath(Path_SM, config, sizeof(config), config);
+        } 
+        
+        if(!FileExists(config)) {
+            SetFailState("Config file is not exists: %s", config);
+        }
+
+        objChannels = JSONArray.FromFile(config, 0);
+    }
+
+    if(!objChannels) {
+        objChannels = new JSONArray();
+    }
+
+    objPackage.Set(pkgKey, objChannels);
+
+    delete objChannels;
 }
 
 Action cmd(int iClient, int args) {

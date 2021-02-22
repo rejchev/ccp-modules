@@ -41,38 +41,63 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart() {
     LoadTranslations("admin-channel.phrases");
+}
 
+public void OnMapStart() {
+    // Handshake
+    cc_proc_APIHandShake(cc_get_APIKey());
+
+    // late load
     if(g_bLate) {
         g_bLate = false;
-        Handle obj;
+
         for(int i; i <= MaxClients; i++) {
-            if((obj = ccp_GetPackage(i)) != null) {
-                ccp_OnPackageAvailable(i, obj);
+            if(!i || (IsClientInGame(i) && !IsFakeClient(i) && IsClientAuthorized(i))) {
+                ccp_OnPackageAvailable(i, ccp_GetPackage(i));
             }
         }
     }
 }
 
 public void ccp_OnPackageAvailable(int iClient, Handle jsonObj) {
-    JSONObject pkg = asJSONO(jsonObj);
-    if(!pkg || iClient) {
+    static const char cloud[]           = "cloud";
+    static char config[MESSAGE_LENGTH]  = "configs/ccprocessor/admins-channel/settings.json";
+
+    JSONObject objPackage = asJSONO(jsonObj);
+
+    if(!objPackage || !objPackage.HasKey("auth") || !iClient) {
         return;
     }
 
-    static char config[MESSAGE_LENGTH] = "configs/ccprocessor/admins-channel/settings.json";
+    if(jConfig) {
+        delete jConfig;
+    }
 
+    // Loaded from cloud
+    if(objPackage.HasKey(pkgKey) && objPackage.HasKey(cloud) && objPackage.GetBool(cloud)) {
+        if(!iClient) {
+            jConfig = asJSONO(objPackage.Get(pkgKey));    
+        }
+
+        return;
+    }
+
+    // Load from local
     if(config[0] == 'c') {
         BuildPath(Path_SM, config, sizeof(config), config);
     } 
-
+    
     if(!FileExists(config)) {
         SetFailState("Config file is not exists: %s", config);
     }
 
-    delete jConfig;
-    jConfig = JSONObject.FromFile(config, 0);
+    objPackage.Set(pkgKey, (jConfig = JSONObject.FromFile(config, 0)));
+}
 
-    pkg.Set(pkgKey, jConfig);
+public void ccp_OnPackageRemove(int iClient, Handle jsonObj) {
+    if(!iClient) {
+        delete (asJSONO(jConfig));
+    }
 }
 
 bool HasAccess;
