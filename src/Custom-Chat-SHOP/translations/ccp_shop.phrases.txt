@@ -30,16 +30,13 @@
     "input_value_invalid"
     {
         "#format"       "{1:s}"
-        "ru"            "{W}Цвет {G}{1} {W}не существует в доступной палитре"
+        "ru"            "{W}Цвет {G}{1} {W}не существует в доступной палитре. Повторите ввод"
         "en"            "{W}Color {G}{1} {W}does not exist in the available palette "
     }
 
-    "tag_display"
+    "input_custom_value"
     {
-        "#format"       "{1:s}"
-        "ru"            "Префикс: {1}"
-        "en"            "Chat Tag: {1}"
+        "ru"            "{W}Введите свое значение ниже:"
+        "en"            "{W}Input new value next:"
     }
-    
-
 }
