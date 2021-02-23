@@ -19,11 +19,15 @@ public Plugin myinfo =
 	url = "discord.gg/ChTyPUG"
 };
 
-const ItemType g_IType = Item_Togglable;
-
 static const char pkgKey[] = "shop_chat";
 
+const ItemType g_IType = Item_Togglable;
+
+int g_iPart[MAXPLAYERS+1] = {BIND_MAX, ...};
+
 int levels[BIND_MAX];
+
+ArrayList g_aPalette;
 
 bool g_bLate;
 
@@ -70,52 +74,58 @@ public void onChange(ConVar convar, const char[] oldVal, const char[] newVal)
     levels[part] = convar.IntValue;
 }
 
-public void ccp_OnPackageAvailable(int iClient, Handle hPkg) {
-    if(!hPkg) {
+public void ccp_OnPackageAvailable(int iClient, Handle jsonObj) {
+    static const char cloud[]           = "cloud";
+    static char config[MESSAGE_LENGTH]  = "configs/shop/ccprocessor/shop_chat.json";
+
+    JSONObject objPackage = asJSONO(jsonObj);
+
+    if(!objPackage || !objPackage.HasKey("auth")) {
         return;
     }
 
-    JSONObject pkg = asJSONO(hPkg);
-    JSONObject obj;
+    // Loaded from cloud
+    if(objPackage.HasKey(pkgKey) && objPackage.HasKey(cloud) && objPackage.GetBool(cloud)) {
+        return;
+    }
+
+    JSONObject objData;
 
     if(!iClient) {
-        static char config[MESSAGE_LENGTH] = "configs/shop/ccprocessor/shop_chat.json";
-
+        // Load from local
         if(config[0] == 'c') {
             BuildPath(Path_SM, config, sizeof(config), config);
-        }
-
+        } 
+        
         if(!FileExists(config)) {
             SetFailState("Config file is not exists: %s", config);
         }
-        
-        obj = JSONObject.FromFile(config, 0);
-        pkg.Set(pkgKey, obj);
-    
-        if(Shop_IsStarted())
-            RegisterCategorys();
-    } else if(pkg.HasKey("auth")) {
-        obj = new JSONObject();
-        for(int i; i < BIND_MAX; i++)
-            obj.SetNull(szBinds[i]);
-        
-        pkg.Set(pkgKey, obj);
+
+        objData = JSONObject.FromFile(config, 0);
     }
 
-    delete obj;
+    if(!objData) {
+        objData = new JSONObject();
+    }
+
+    objPackage.Set(pkgKey, objData);
+
+    delete objData;
 }
 
-public void OnMapStart()
-{
+public void OnMapStart() {
+    // Handshake
     cc_proc_APIHandShake(cc_get_APIKey());
+
     manageConVars(false);
 
+    // late load
     if(g_bLate) {
         g_bLate = false;
-        Handle obj;
+
         for(int i; i <= MaxClients; i++) {
-            if((obj = ccp_GetPackage(i)) != null) {
-                ccp_OnPackageAvailable(i, obj);
+            if(!i || (IsClientInGame(i) && !IsFakeClient(i) && IsClientAuthorized(i))) {
+                ccp_OnPackageAvailable(i, ccp_GetPackage(i));
             }
         }
 
@@ -139,6 +149,10 @@ public void OnMapEnd()
 public void OnPluginEnd()
 {
     OnMapEnd();
+}
+
+public void cc_config_parsed() {
+    g_aPalette = cc_drop_palette();
 }
 
 void RegisterCategorys() {
@@ -225,8 +239,20 @@ public ShopAction OnItemToogle(int iClient, CategoryId category_id, const char[]
 
     if(szValue[0])
     {
-        if(!StrEqual(item, szValue))
-            Shop_ToggleClientItem(iClient, Shop_GetItemId(category_id, szValue), Toggle_Off);
+        if(strcmp(item, szValue) != 0) {
+            ItemId now;
+            
+            // Searching current value
+            if((now = Shop_GetItemId(category_id, szValue)) == INVALID_ITEM) {
+
+                // Is it custom?
+                if((now = Shop_GetItemId(category_id, "custom")) == INVALID_ITEM) {
+                    SetFailState("You are genius... and i really don't know what is it....");
+                }
+            }
+
+            Shop_ToggleClientItem(iClient, now, Toggle_Off);
+        }
 
         szValue = NULL_STRING;
     }
@@ -234,7 +260,14 @@ public ShopAction OnItemToogle(int iClient, CategoryId category_id, const char[]
     if(!(isOn || elapsed))
         strcopy(szValue, sizeof(szValue), item);
     
-    if(szValue[0]) {
+    if(!strcmp(szValue, "custom")) {
+        PrintToChat(iClient, "%T", "input_custom_value", iClient);
+
+        g_iPart[iClient] = part;
+        
+        delete obj;
+        return Shop_UseOn;
+    } else if(szValue[0]) {
         obj.SetString(szBinds[part], szValue);
     } else obj.SetNull(szBinds[part]);
 
@@ -242,6 +275,10 @@ public ShopAction OnItemToogle(int iClient, CategoryId category_id, const char[]
     delete obj;
 
     return (isOn || elapsed) ? Shop_UseOff : Shop_UseOn;
+}
+
+public bool Shop_OnItemDisplay(int client, ShopMenu menu_action, CategoryId category_id, ItemId item_id, const char[] display, char[] buffer, int maxlength) {
+    g_iPart[client] = BIND_MAX;
 }
 
 public bool OnItemDisplay(int client, CategoryId category_id, const char[] category, ItemId item_id, const char[] item, ShopMenu menu, bool &disabled, const char[] name, char[] buffer, int maxlen)
@@ -274,7 +311,7 @@ public bool OnItemSell(int client, CategoryId category_id, const char[] category
         obj.GetString(szBinds[part], szValue, sizeof(szValue));
     }
 
-    if(szValue[0] && StrEqual(szValue, item, false)) {
+    if(szValue[0] && (!strcmp(szValue, item, false) || !strcmp(item, "custom"))) {
         obj.SetNull(szBinds[part]);
     }
 
@@ -282,6 +319,30 @@ public bool OnItemSell(int client, CategoryId category_id, const char[] category
     delete obj;
 
     return true;
+}
+
+public Action OnClientSayCommand(int iClient, const char[] command, const char[] args) {
+    if(iClient && !IsChatTrigger() && g_iPart[iClient] != BIND_MAX) {
+        static char szValue[MESSAGE_LENGTH];
+        FormatEx(szValue, sizeof(szValue), "%s", args);
+
+        if(!szValue[0] || (g_iPart[iClient] != BIND_PREFIX && g_aPalette.FindString(szValue) == -1)) {
+            PrintToChat(iClient, "%T", "input_value_invalid", iClient, szValue);
+            return Plugin_Stop;
+        }
+
+        JSONObject objClient = getClientModel(iClient);
+        objClient.SetString(szBinds[g_iPart[iClient]], szValue);
+
+        asJSONO(ccp_GetPackage(iClient)).Set(pkgKey, objClient);
+        delete objClient;
+
+        g_iPart[iClient] = BIND_MAX;
+        PrintToChat(iClient, "%T", "input_value_set", iClient, szValue);
+        return Plugin_Stop;
+    }
+
+    return Plugin_Continue;
 }
 
 JSONObject objModel;
@@ -359,4 +420,8 @@ stock bool InChannels(JSONArray channels, const char[] channel) {
 
     delete channels;
     return bIn;
+}
+
+stock bool IsCustomItem(int part, const char[] item) {
+
 }

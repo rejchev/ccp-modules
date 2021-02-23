@@ -20,7 +20,26 @@
         "en"            "~~~"
     }
 
+    "input_value_set"
+    {
+        "#format"       "{1:s}"
+        "ru"            "{W}Было установлено {G}{1} {W}в качестве значения!"
+        "en"            "{G}{1} {W}was set as the value "
+    }
 
+    "input_value_invalid"
+    {
+        "#format"       "{1:s}"
+        "ru"            "{W}Цвет {G}{1} {W}не существует в доступной палитре"
+        "en"            "{W}Color {G}{1} {W}does not exist in the available palette "
+    }
+
+    "tag_display"
+    {
+        "#format"       "{1:s}"
+        "ru"            "Префикс: {1}"
+        "en"            "Chat Tag: {1}"
+    }
     
 
 }

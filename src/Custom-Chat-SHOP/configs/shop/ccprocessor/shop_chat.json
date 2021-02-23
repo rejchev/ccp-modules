@@ -17,6 +17,13 @@
             "price": 1000,
             "sellprice": 500,
             "duration": 86400
+        },
+        {
+            "value": "custom",
+
+            "price": 1000,
+            "sellprice": 500,
+            "duration": 86400
         }
     ],
 

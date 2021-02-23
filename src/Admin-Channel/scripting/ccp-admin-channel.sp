@@ -65,7 +65,7 @@ public void ccp_OnPackageAvailable(int iClient, Handle jsonObj) {
 
     JSONObject objPackage = asJSONO(jsonObj);
 
-    if(!objPackage || !objPackage.HasKey("auth") || !iClient) {
+    if(!objPackage || !objPackage.HasKey("auth") || iClient) {
         return;
     }
 
