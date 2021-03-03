@@ -13,6 +13,11 @@ env:
     - SOURCES=$TRAVIS_BUILD_DIR/src
     - SOURCES_SM=$TRAVIS_BUILD_DIR/addons/sourcemod/scripting
     - SOURCES_CORE=$TRAVIS_BUILD_DIR/ccprocessor
+    - SOURCES_RIP=$TRAVIS_BUILD_DIR/ripext
+    - SOURCES_JANSSON=$TRAVIS_BUILD_DIR/jansson
+    - SOURCES_SHOP=$TRAVIS_BUILD_DIR/shop
+    - SOURCES_VIP=$TRAVIS_BUILD_DIR/vip
+    - SOURCES_LR=$TRAVIS_BUILD_DIR/lr
     - INCLUDES=$TRAVIS_BUILD_DIR/include
   jobs:
     - SMVERSION=1.10
@@ -21,10 +26,20 @@ install:
     - wget --input-file=http://sourcemod.net/smdrop/$SMVERSION/sourcemod-latest-linux
     - tar -xzf $(cat sourcemod-latest-linux)
     - git clone -b main https://github.com/nyood/ccprocessor.git $SOURCES_CORE
+    - git clone -b main https://github.com/nyood/sm-jansson.git $SOURCES_JANSSON
+    - git clone -b main https://github.com/ErikMinekus/sm-ripext.git $SOURCES_RIP
+    - git clone -b master https://github.com/FD-Forks/Shop-Core.git $SOURCES_SHOP
+    - git clone -b master https://github.com/R1KO/VIP-Core.git $SOURCES_VIP
+    - git clone -b master https://github.com/levelsranks/levels-ranks-core.git $SOURCES_LR
 
 before_script:
     - cp -R -f $INCLUDES $SOURCES_SM
     - cp -R -f $SOURCES_CORE/include $SOURCES_SM
+    - cp -R -f $SOURCES_RIP/pawn/scripting/include $SOURCES_SM
+    - cp -R -f $SOURCES_JANSSON/pawn/scripting/include $SOURCES_SM
+    - cp -R -f $SOURCES_SHOP/addons/sourcemod/scripting/include $SOURCES_SM
+    - cp -R -f $SOURCES_VIP/addons/sourcemod/scripting/include $SOURCES_SM
+    - cp -R -f $SOURCES_LR/Game Server/addons/sourcemod/scripting/include $SOURCES_SM
     - chmod +x $SOURCES_SM/spcomp
     - chmod +x $TRAVIS_BUILD_DIR/travis/compile.sh
     - chmod +x $TRAVIS_BUILD_DIR/travis/package.sh
