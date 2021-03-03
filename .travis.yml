@@ -39,7 +39,7 @@ before_script:
     - cp -R -f $SOURCES_JANSSON/pawn/scripting/include $SOURCES_SM
     - cp -R -f $SOURCES_SHOP/addons/sourcemod/scripting/include $SOURCES_SM
     - cp -R -f $SOURCES_VIP/addons/sourcemod/scripting/include $SOURCES_SM
-    - cp -R -f $SOURCES_LR/Game Server/addons/sourcemod/scripting/include $SOURCES_SM
+    - cp -R -f $SOURCES_LR/\"Game Server\"/addons/sourcemod/scripting/include $SOURCES_SM
     - chmod +x $SOURCES_SM/spcomp
     - chmod +x $TRAVIS_BUILD_DIR/travis/compile.sh
     - chmod +x $TRAVIS_BUILD_DIR/travis/package.sh
