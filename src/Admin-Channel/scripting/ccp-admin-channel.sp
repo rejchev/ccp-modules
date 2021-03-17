@@ -211,7 +211,7 @@ public Processing cc_proc_OnRebuildString(const int[] props, int part, ArrayList
             if(jConfig.HasKey(szBinds[part]) && (jValues = asJSONA(jConfig.Get(szBinds[part]))) && jValues.Length) {
                 jValues.GetString(
                     (HasAccess) ? 0 :
-                    (!HasAccess && SENDER_INDEX(props[1]) == props[2]) ? 2 : 3, 
+                    (!HasAccess && SENDER_INDEX(props[1]) == props[2]) ? 1 : 2, 
                     value, size
                 );
 
