@@ -387,15 +387,15 @@ public int RankInfo_CallBack(Menu hMenu, MenuAction action, int iClient, int opt
 
 JSONObject senderModel;
 
-public Processing cc_proc_OnNewMessage(int sender, ArrayList params) {
+public Processing cc_proc_OnNewMessage(const int[] props, int propsCount, ArrayList params) {
     char szIndent[64];
     params.GetString(0, szIndent, sizeof(szIndent));
     
-    if((szIndent[0] != 'S' && szIndent[1] != 'T' && strlen(szIndent) < 3) || !sender) {
+    if(StrContains("ST", szIndent) != 0 || strlen(szIndent) != 3 || !props[0]) {
         return Proc_Continue;
     } 
 
-    senderModel = asJSONO(ccp_GetPackage(sender));
+    senderModel = asJSONO(ccp_GetPackage(props[0]));
     if(!senderModel || !senderModel.HasKey(pkgKey)) {
         senderModel = null;
         return Proc_Continue;
