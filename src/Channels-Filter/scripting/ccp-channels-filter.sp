@@ -1,15 +1,13 @@
 #pragma newdecls required
 
+#define INCLUDE_RIPJSON
+
 #if defined INCLUDE_DEBUG
     #define DEBUG "[Channels-Filter]"
 #endif
 
 #include <ccprocessor>
 #include <ccprocessor_pkg>
-
-#undef REQUIRE_EXTENSIONS
-#include <ripext_m>
-#define REQUIRE_EXTENSIONS
 
 public Plugin myinfo = 
 {
@@ -188,71 +186,33 @@ public int MenuCallBack(Menu hMenu, MenuAction action, int iClient, int option)
     }
 }
 
-public Processing cc_proc_OnNewMessage(int sender, ArrayList params) {
+public Processing cc_proc_OnNewMessage(const int[] props, int propsCount, ArrayList params) {
     static char szIndent[64];
-    if(sender) {
-        JSONObject senderObj = asJSONO(ccp_GetPackage(sender));
-        JSONArray senderFilter; 
-        senderFilter = (senderObj && senderObj.HasKey(pkgKey))
-                     ? asJSONA(senderObj.Get(pkgKey))
-                     : null;
+    params.GetString(0, szIndent, sizeof(szIndent));
 
-        
-        if(senderFilter) {
-            params.GetString(0, szIndent, sizeof(szIndent));
+    JSONObject pkg;
+    JSONArray channelList;
 
-            if(GetIndexOfIndent(senderFilter, szIndent) != -1) {
-                delete senderFilter;
-                return Proc_Reject;
-            }
+    for(int i; i < propsCount; i++) {
+        if(!props[i]) {
+            return Proc_Continue;
         }
 
-        delete senderFilter;
-    }
+        pkg = asJSONO(ccp_GetPackage(props[i]));
+        if(!pkg || !pkg.HasKey(pkgKey) || pkg.IsNull(pkgKey)) {
+            continue;
+        }
+
+        channelList = asJSONA(pkg.Get(pkgKey));
+        if(channelList && channelList.Length && GetIndexOfIndent(channelList, szIndent) == -1) {
+            delete channelList;
+            return Proc_Reject;
+        }
+
+        delete channelList;
+    } 
 
     return Proc_Continue;
-}
-
-public Processing  cc_proc_OnRebuildClients(const int[] props, int propsCount, ArrayList params) {
-    static int count, out;
-    static int players[MAXPLAYERS+1];
-    static char szIndent[64];
-    static JSONArray recipientFilter;
-    static JSONObject recipientObj;
-
-    if(!(count = params.Get(3))) {
-        return Proc_Continue;
-    }
-
-    params.GetArray(2, players, count);
-    if(IsClientSourceTV(players[0])) {
-        return Proc_Continue;
-    }
-
-    out = 0;
-    params.GetString(0, szIndent, sizeof(szIndent));
-    for(int i; i < count; i++) {
-        recipientObj = asJSONO(ccp_GetPackage(players[i]));
-        if(recipientObj && recipientObj.HasKey(pkgKey)) {
-            recipientFilter = asJSONA(recipientObj.Get(pkgKey));
-            if(recipientFilter && GetIndexOfIndent(recipientFilter, szIndent) != -1) {
-                delete recipientFilter;
-                continue;
-            }
-
-            delete recipientFilter;
-        }
-
-        players[out++] = players[i];
-    }
-
-    if(out != count) {
-        params.SetArray(2, players, out);
-        params.Set(3, out);
-    }
-    
-    recipientObj = null;
-    return (!out) ? Proc_Reject : (out != count) ? Proc_Change : Proc_Continue;
 }
 
 stock int GetIndexOfIndent(JSONArray obj, const char[] indent) {

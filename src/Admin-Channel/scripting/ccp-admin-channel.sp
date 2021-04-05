@@ -1,5 +1,7 @@
 #pragma newdecls required
 
+#define INCLUDE_RIPJSON
+
 #if defined INCLUDE_DEBUG
     #define DEBUG "[Admin-Channel]"
 #endif
@@ -7,16 +9,12 @@
 #include <ccprocessor>
 #include <ccprocessor_pkg>
 
-#undef REQUIRE_EXTENSIONS
-#include <ripext_m>
-#define REQUIRE_EXTENSIONS
-
 public Plugin myinfo = 
 {
 	name = "[CCP] Admin channel",
 	author = "nu11ent",
 	description = "...",
-	version = "1.0.5",
+	version = "1.0.6",
 	url = "https://t.me/nyoood"
 };
 
@@ -34,7 +32,14 @@ JSONObject jConfig;
 
 bool g_bLate;
 
+bool g_IsMessageInAChannel[MAXPLAYERS+1];
+bool g_IsTrue[MAXPLAYERS+1];
+
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max) {
+    #if defined DEBUG
+        DBUILD()
+    #endif
+
     g_bLate = late;
     return APLRes_Success;
 }
@@ -43,7 +48,16 @@ public void OnPluginStart() {
     LoadTranslations("admin-channel.phrases");
 }
 
+public void OnClientPutInServer(int iClient) {
+    g_IsMessageInAChannel[iClient] =
+        g_IsTrue[iClient] = false;
+}
+
 public void OnMapStart() {
+    #if defined DEBUG
+        DBUILD()
+    #endif
+
     // Handshake
     cc_proc_APIHandShake(cc_get_APIKey());
 
@@ -91,7 +105,8 @@ public void ccp_OnPackageAvailable(int iClient, Handle jsonObj) {
         SetFailState("Config file is not exists: %s", config);
     }
 
-    objPackage.Set(pkgKey, (jConfig = JSONObject.FromFile(config, 0)));
+    jConfig = JSONObject.FromFile(config, 0);
+    objPackage.Set(pkgKey, jConfig);
 }
 
 public void ccp_OnPackageRemove(int iClient, Handle jsonObj) {
@@ -100,16 +115,19 @@ public void ccp_OnPackageRemove(int iClient, Handle jsonObj) {
     }
 }
 
-bool HasAccess;
 
-public Processing cc_proc_OnNewMessage(int sender, ArrayList params) {
+public Processing cc_proc_OnNewMessage(const int[] props, int propsCount, ArrayList params) {
     static const char parentChannels[][] = {"STA", "STP"};
     static const char ROOT[] = "z";
+
+    g_IsMessageInAChannel[props[1]] = 
+        g_IsTrue[props[0]] = 
+            g_IsTrue[props[1]] = false;
 
     char szBuffer[MESSAGE_LENGTH];
     params.GetString(0, szBuffer, sizeof(szBuffer));
     
-    if(!InChannels(szBuffer, parentChannels, sizeof(parentChannels)) || !sender) {
+    if(!InChannels(szBuffer, parentChannels, sizeof(parentChannels)) || !props[0] || IsClientSourceTV(props[1])) {
         return Proc_Continue;
     } 
 
@@ -121,23 +139,30 @@ public Processing cc_proc_OnNewMessage(int sender, ArrayList params) {
     if(szMessage[0] == szBuffer[0]) {
         jConfig.GetString("accessFlag", szBuffer, sizeof(szBuffer));
 
-        int flags = GetUserFlagBits(sender);
+        // int flags = GetUserFlagBits(sender);
         int access = ReadFlagString(szBuffer);
         int root = ReadFlagString(ROOT);
 
-        HasAccess = ValidClient(flags, access, root);
-        if(!HasAccess && !jConfig.GetBool("playersCanComplain")) {
+        // Is sender has premissions
+        g_IsTrue[props[0]] = ValidClient(GetUserFlagBits(props[0]), access, root);
+        if(!g_IsTrue[props[0]] && !jConfig.GetBool("playersCanComplain")) {
             return Proc_Continue;
         }
+
+        // Is recipient an admin
+        if(!(g_IsTrue[props[1]] = ValidClient(GetUserFlagBits(props[1]), access, root)) && props[1] != props[0]) {
+            g_IsTrue[props[0]] = false;
+            return Proc_Reject;
+        }
+
+        // Yeah, this is admin channel....
+        g_IsMessageInAChannel[props[1]] = true;
 
         jConfig.GetString("identificator", szBuffer, sizeof(szBuffer));
         params.SetString(0, szBuffer);
 
-        int players[MAXPLAYERS+1];
-        params.GetArray(3, players, sizeof(players));
-
-        if(jConfig.GetBool("useLog") && !IsClientSourceTV(players[0])) {
-            LogAction(sender, -1, "\"%L\" (%s) used admin channel (text %s)", sender, HasAccess ? "Admin" : "Player", szMessage[1]);
+        if(jConfig.GetBool("useLog")) {
+            LogAction(props[0], -1, "\"%L\" (%s) used admin channel (text %s)", props[0], g_IsTrue[props[0]] ? "Admin" : "Player", szMessage[1]);
         }
 
         return Proc_Change;
@@ -146,41 +171,11 @@ public Processing cc_proc_OnNewMessage(int sender, ArrayList params) {
     return Proc_Continue;
 }
 
-public Processing cc_proc_OnRebuildClients(const int[] props, int propsCount, ArrayList params) {
-    char szIndent[64];
-    params.GetString(0, szIndent, sizeof(szIndent));
-
-    char szBuffer[64];
-    jConfig.GetString("identificator", szBuffer, sizeof(szBuffer));
-
-    if(strcmp(szIndent, szBuffer)) {
-        return Proc_Continue;
-    }
-
-    int playersNum = params.Get(3);
-    int players[MAXPLAYERS+1];
-    params.GetArray(2, players, playersNum);
-
-    if(!playersNum || IsClientSourceTV(players[0])) {
-        return Proc_Continue;
-    }
-
-    jConfig.GetString("accessFlag", szBuffer, sizeof(szBuffer));
-    playersNum = 0;
-
-    for(int i = 1, a = ReadFlagString(szBuffer), b = ReadFlagString("z"); i <= MaxClients; i++) {
-        if(IsClientInGame(i) && !IsFakeClient(i) && (props[1] == i || ValidClient(GetUserFlagBits(i), a, b))) {
-            players[playersNum++] = i;
-        }
-    }
-
-    params.SetArray(2, players, playersNum);
-    params.Set(3, playersNum);
-
-    return Proc_Change;
-}
-
 public Processing cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
+    if(!SENDER_INDEX(props[1]) || (!g_IsTrue[props[2]] && props[SENDER_INDEX(props[1])] != props[2])) {
+        return Proc_Continue;
+    }
+
     char szIndent[64];
     params.GetString(0, szIndent, sizeof(szIndent));
 
@@ -210,8 +205,8 @@ public Processing cc_proc_OnRebuildString(const int[] props, int part, ArrayList
         case BIND_TEAM, BIND_TEAM_CO: {
             if(jConfig.HasKey(szBinds[part]) && (jValues = asJSONA(jConfig.Get(szBinds[part]))) && jValues.Length) {
                 jValues.GetString(
-                    (HasAccess) ? 0 :
-                    (!HasAccess && SENDER_INDEX(props[1]) == props[2]) ? 1 : 2, 
+                    (g_IsTrue[SENDER_INDEX(props[1])] && g_IsTrue[props[2]]) ? 0 :
+                    (!g_IsTrue[SENDER_INDEX(props[1])] && SENDER_INDEX(props[1]) == props[2]) ? 2 : 1, 
                     value, size
                 );
 
@@ -248,5 +243,9 @@ stock bool InChannels(const char[] channel, const char[][] channels, int count) 
 }
 
 stock bool ValidClient(int flags, int access, int root) {
-    return (flags && ((access && (flags & access)) || (flags & root)));
+    if(!flags) {
+        return false;
+    }
+
+    return ((access && (flags & access)) || (flags & root));
 }

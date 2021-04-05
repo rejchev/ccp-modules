@@ -1,122 +1,129 @@
-#include <UTF-8-string>
+// #include <UTF-8-string>
 
-#pragma newdecls required
+// #pragma newdecls required
 
-#include <ccprocessor>
+// #include <ccprocessor>
 
-public Plugin myinfo = 
-{
-	name = "[CCP] Join team",
-	author = "nullent?",
-	description = "...",
-	version = "1.0.6",
-	url = "https://t.me/nyoood"
-};
+// public Plugin myinfo = 
+// {
+// 	name = "[CCP] Join team",
+// 	author = "nullent?",
+// 	description = "...",
+// 	version = "1.0.7",
+// 	url = "https://t.me/nyoood"
+// };
 
-// Imitation
-// params: {1} - name, {2} - team
-#define KEY "#Game_team_change"
+// UserMessageType umType;
 
-UserMessageType umType;
+// stock const char template[] = "#Game_Chat_Radio"
 
-int initiatorTeam;
+// static const char szTeams[][] = 
+// {
+//     "#CCP_Join_Dark", 
+//     "#CCP_Join_Spec", 
+//     "#CCP_Join_Red",
+//     "#CCP_Join_Blue"
+// };
 
-public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
-{ 
-    umType = GetUserMessageType();
-    return APLRes_Success;
-}
+// public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
+// { 
+//     umType = GetUserMessageType();
+//     return APLRes_Success;
+// }
 
-public void OnPluginStart() {
-    // Temporary solution
-    LoadTranslations("ccp-jointeam.phrases");
+// public void OnPluginStart() {
+//     // Temporary solution
+//     LoadTranslations("ccp-jointeam.phrases");
 
-    HookEvent("player_team", EventTeam, EventHookMode_Pre);
-}
+//     HookEvent("player_team", EventTeam, EventHookMode_Pre);
+// }
 
-Action EventTeam(Event event, const char[] name, bool dbc) {
-    event.BroadcastDisabled = true;
+// Action EventTeam(Event event, const char[] name, bool dbc) {
+//     static const char um[] = "RadioText";
 
-    if(event.GetInt("disconnect")) {
-        return Plugin_Changed;
-    }
+//     event.BroadcastDisabled = true;
 
-    int iClient = GetClientOfUserId(event.GetInt("userid"));
-    int iTeam = event.GetInt("team");
+//     if(event.GetInt("disconnect")) {
+//         return Plugin_Changed;
+//     }
 
-    char szName[NAME_LENGTH];
-    GetClientName(iClient, szName, sizeof(szName));
+//     int iClient;
+//     iClient = GetClientOfUserId(event.GetInt("userid"));
 
-    // {1} - username
-    // {2} - team key
-    TriggerUMessage(iTeam, szName, (iTeam < 2) ? "spectators" : (iTeam == 2) ? "terrorists" : "counter-terrorists");
+//     int iTeam;
+//     iTeam = event.GetInt("team");
 
-    return Plugin_Changed;
-}
+//     char szName[NAME_LENGTH];
+//     GetClientName(iClient, szName, sizeof(szName));
 
-void TriggerUMessage(int iTeam, const char[] username, const char[] teamname)
-{
-    static const char um[] = "TextMsg";
+//     int i = 1;
+//     int players[1];
+//     Handle msg;
+//     while(i <= MaxClients) {
+//         if(IsClientConnected(i)) {
+//             players[0] = i;
 
-    Handle msg;
-    if(!(msg = StartMessageAll(um, USERMSG_RELIABLE))) {
-        return;
-    }
+//             if((msg = StartMessage(um, players, 1, USERMSG_RELIABLE)) != null) {
+//                 if(!umType) {
+//                     BfWriteByte(msg, 3);
+//                     BfWriteByte(msg, iClient);
+//                     BfWriteString(msg, "#Game_Radio");
+//                     BfWriteString(msg, szName);
+//                     BfWriteString(msg, szTeams[iTeam]);
+//                 } else {
+//                     // 5 params = max
+//                     PbSetInt(msg, "msg_dst", 3);
+//                     PbSetInt(msg, "client", iClient);
+//                     PbSetString(msg, "msg_name", "#Game_Radio");
 
-    initiatorTeam = iTeam;
+//                     PbAddString(msg, "params", szName);
+//                     PbAddString(msg, "params", szTeams[iTeam]);
+//                     PbAddString(msg, "params", NULL_STRING);
+//                     PbAddString(msg, "params", NULL_STRING);
+//                 }
 
-    if(!umType) {
-        BfWriteByte(msg, 3);
-        BfWriteString(msg, KEY);
-        BfWriteString(msg, username);
-        BfWriteString(msg, teamname);
-    } else {
-        // 5 params = max
-        PbSetInt(msg, "msg_dst", 3);
-        PbAddString(msg, "params", KEY);
-        PbAddString(msg, "params", username);
-        PbAddString(msg, "params", teamname);
+//                 EndMessage();
+//             }
+//         }
 
-        PbAddString(msg, "params", NULL_STRING);
-        PbAddString(msg, "params", NULL_STRING);
-    }
-
-    EndMessage();
-}
-
-public Processing  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
-    char szIndent[64];
-    params.GetString(0, szIndent, sizeof(szIndent));
+//         i++;
+//     }
     
-    if((szIndent[0] != 'T' && szIndent[1] != 'M' && strlen(szIndent) == 2) || part != BIND_MSG|| initiatorTeam == -1) {
-        return Proc_Continue;
-    }  
+//     return Plugin_Changed;
+// }
 
-    ReplaceStringEx(value, size, "%s2", GetTeamName(initiatorTeam, props[2]));
-    return Proc_Change;
-}
+// // public Processing  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
+// //     static const char channel[] = "TM";
 
-public void cc_proc_OnMessageEnd(const int[] props, int propsCount, ArrayList params) {
-    char szIndent[64];
-    params.GetString(0, szIndent, sizeof(szIndent));
+// //     char szIdent[64];
+// //     params.GetString(0, szIdent, sizeof(szIdent));
 
-    if(strcmp(szIndent, "TM") == 0 && initiatorTeam != -1) {
-        initiatorTeam = -1;
-    }
-}
+// //     char szTemplate[64];
+// //     params.GetString(1, szTemplate, sizeof(szTemplate));
 
-char[] GetTeamName(int team, int lang)
-{
-    char szTeam[TEAM_LENGTH];
+// //     LogMessage("Ident: %s, Template: %s, Sender: %d, Rec: %d, Team: %d, Value: %s", szIdent, szTemplate, SENDER_INDEX(props[1]), props[2], joinTeam[SENDER_INDEX(props[1])], value);
+    
+// //     if(strcmp(szIdent, channel) != 0 || part != BIND_MSG || joinTeam[SENDER_INDEX(props[1])] == -1) {
+// //         return Proc_Continue;
+// //     }  
 
-    FormatEx(szTeam, sizeof(szTeam), "%T",
-        (team < 2)
-            ? "spectators"
-            : (team == 2)
-                ? "terrorists"
-                : "counter-terrorists",
-        lang
-    );
+// //     if(strcmp(szTemplate, KEY) != 0 && joinTeam[SENDER_INDEX(props[1])] != -1) {
+// //         joinTeam[SENDER_INDEX(props[1])] = -1;
+// //         return Proc_Continue;
+// //     }
 
-    return szTeam;
-}
+// //     ReplaceStringEx(value, size, "%s2", GetTeamName(joinTeam[SENDER_INDEX(props[1])], props[2]));
+// //     return Proc_Change;
+// // }
+
+// // char[] GetTeamName(int team, int lang)
+// // {
+// //     char szTeam[TEAM_LENGTH];
+
+// //     FormatEx(szTeam, sizeof(szTeam), "%T",
+// //         szTeams[team],
+// //         lang
+// //     );
+
+// //     return szTeam;
+// // }

@@ -1,13 +1,11 @@
 #pragma newdecls required
 
+#define INCLUDE_RIPJSON
+
 #include <vip_core>
 #include <ccprocessor>
 #include <clientprefs>
 #include <ccprocessor_pkg>
-
-#undef REQUIRE_EXTENSIONS
-#include <ripext_m>
-#define REQUIRE_EXTENSIONS
 
 public Plugin myinfo = 
 {
@@ -466,7 +464,7 @@ JSONObject objModel;
 
 public Processing  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &pLevel, char[] value, int size) {
     int idx = IsValidPart(part);
-    if(!SENDER_INDEX(props[1]) || pLevel > level[idx]) {
+    if(idx == -1 || !SENDER_INDEX(props[1]) || pLevel > level[idx]) {
         return Proc_Continue;
     }
 

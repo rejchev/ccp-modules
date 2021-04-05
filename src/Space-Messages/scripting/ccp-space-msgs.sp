@@ -1,10 +1,8 @@
 #pragma newdecls required
 
-#include <ccprocessor>
+#define INCLUDE_RIPJSON
 
-#undef REQUIRE_EXTENSIONS
-#include <ripext_m>
-#define REQUIRE_EXTENSIONS
+#include <ccprocessor>
 
 public Plugin myinfo = 
 {

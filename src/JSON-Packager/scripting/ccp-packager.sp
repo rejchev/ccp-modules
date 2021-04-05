@@ -1,14 +1,12 @@
 #pragma newdecls required
 
+#define INCLUDE_RIPJSON
+
 #if defined INCLUDE_DEBUG
     #define DEBUG "[Packager]"
 #endif
 
 #include <ccprocessor>
-
-#undef REQUIRE_EXTENSIONS
-#include <ripext_m>
-#define REQUIRE_EXTENSIONS
 
 public Plugin myinfo = 
 {
@@ -18,6 +16,8 @@ public Plugin myinfo =
 	version = "1.0.3",
 	url = "discord.gg/ChTyPUG"
 };
+
+bool g_bLate;
 
 JSONObject jClients[MAXPLAYERS+1];
 
@@ -31,7 +31,13 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
     
     RegPluginLibrary("ccprocessor_pkg");
 
-    if(late) {
+    g_bLate = late;
+}
+
+public void OnPluginStart()
+{
+    if(g_bLate) {
+        g_bLate = false;
         for(int i = 1; i <= MaxClients; i++) {
             if(IsClientConnected(i) && IsClientAuthorized(i)) {
                 OnClientDisconnect(i);
@@ -46,11 +52,8 @@ public void OnMapStart() {
     DBUILD()
     #endif
 
-    Call_pkgReady(0);
-}
-
-public void OnMapEnd() {
     Call_pkgClear(0);
+    Call_pkgReady(0);
 }
 
 public void OnClientAuthorized(int iClient, const char[] auth) {
@@ -130,15 +133,7 @@ void Call_pkgReady(int iClient, const char[] auth = "STEAM_ID_SERVER") {
     pkgInit(iClient, auth);
 
     packageReady_Pre(iClient);
-    RequestFrame(OnNextFrame, iClient);
-}
-
-public void OnNextFrame(int data) {
-    if(!jClients[data]) {
-        return;
-    }
-
-    packageReady(data);
+    packageReady(iClient);
 }
 
 void Call_pkgClear(int iClient) {

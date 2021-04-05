@@ -1,12 +1,10 @@
 #pragma newdecls required
 
+#define INCLUDE_RIPJSON
+
 #include <ccprocessor>
 #include <shop>
 #include <ccprocessor_pkg>
-
-#undef REQUIRE_EXTENSIONS
-#include <ripext_m>
-#define REQUIRE_EXTENSIONS
 
 #define SZ(%0) %0, sizeof(%0)
 
