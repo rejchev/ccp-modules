@@ -10,9 +10,9 @@
 public Plugin myinfo = 
 {
 	name = "[CCP] Custom Chat <VIP>",
-	author = "nullent?",
+	author = "nyood",
 	description = "...",
-	version = "2.0.6",
+	version = "2.0.6a",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -415,7 +415,7 @@ public void OnClientPutInServer(int iClient) {
 
 public Action OnClientSayCommand(int iClient, const char[] command, const char[] args)
 {
-    if(!IsClientInGame(iClient) || IsFakeClient(iClient) || IsChatTrigger())
+    if(!iClient || !IsClientInGame(iClient) || IsFakeClient(iClient) || IsChatTrigger())
         return Plugin_Continue;
 
     if(g_iBindNow[iClient] != BIND_MAX)
