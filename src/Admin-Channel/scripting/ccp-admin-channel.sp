@@ -12,28 +12,20 @@
 public Plugin myinfo = 
 {
 	name = "[CCP] Admin channel",
-	author = "nu11ent",
+	author = "nyood",
 	description = "...",
-	version = "1.0.6",
+	version = "1.0.7",
 	url = "https://t.me/nyoood"
 };
 
 
 static const char pkgKey[] = "admin_channel";
 
-enum 
-{
-    ADMIN_TO_ADMINS = 0,
-    PLAYER_TO_ADMINS,
-    PLAYER_FROM_HIMSELF
-};
-
 JSONObject jConfig;
 
 bool g_bLate;
 
-bool g_IsMessageInAChannel[MAXPLAYERS+1];
-bool g_IsTrue[MAXPLAYERS+1];
+static const char ROOT[] = "z";
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max) {
     #if defined DEBUG
@@ -46,11 +38,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart() {
     LoadTranslations("admin-channel.phrases");
-}
-
-public void OnClientPutInServer(int iClient) {
-    g_IsMessageInAChannel[iClient] =
-        g_IsTrue[iClient] = false;
 }
 
 public void OnMapStart() {
@@ -115,14 +102,10 @@ public void ccp_OnPackageRemove(int iClient, Handle jsonObj) {
     }
 }
 
-
 public Processing cc_proc_OnNewMessage(const int[] props, int propsCount, ArrayList params) {
     static const char parentChannels[][] = {"STA", "STP"};
-    static const char ROOT[] = "z";
-
-    g_IsMessageInAChannel[props[1]] = 
-        g_IsTrue[props[0]] = 
-            g_IsTrue[props[1]] = false;
+    
+    int iROOT = ReadFlagString(ROOT);
 
     char szBuffer[MESSAGE_LENGTH];
     params.GetString(0, szBuffer, sizeof(szBuffer));
@@ -135,34 +118,54 @@ public Processing cc_proc_OnNewMessage(const int[] props, int propsCount, ArrayL
 
     char szMessage[MESSAGE_LENGTH];
     params.GetString(2, szMessage, sizeof(szMessage));
+    TrimString(szMessage);
 
     if(szMessage[0] == szBuffer[0]) {
         jConfig.GetString("accessFlag", szBuffer, sizeof(szBuffer));
+        
+#if defined DEBUG
+        DWRITE("%s: cc_proc_OnNewMessage(trigger): \
+                    \n\t\t\t\tSender: %N \
+                    \n\t\t\t\tRecipient: %N \
+                    \n\t\t\t\tTrigger: used \
+                    \n\t\t\t\tMessage: %s", \
+        DEBUG, props[0], props[1], szMessage);
+#endif
 
-        // int flags = GetUserFlagBits(sender);
-        int access = ReadFlagString(szBuffer);
-        int root = ReadFlagString(ROOT);
-
-        // Is sender has premissions
-        g_IsTrue[props[0]] = ValidClient(GetUserFlagBits(props[0]), access, root);
-        if(!g_IsTrue[props[0]] && !jConfig.GetBool("playersCanComplain")) {
+        if(!szBuffer[0]) {
             return Proc_Continue;
         }
 
-        // Is recipient an admin
-        if(!(g_IsTrue[props[1]] = ValidClient(GetUserFlagBits(props[1]), access, root)) && props[1] != props[0]) {
-            g_IsTrue[props[0]] = false;
+        int flag = ReadFlagString(szBuffer);
+        bool isSenderAdmin = ValidClient(GetUserFlagBits(props[0]), flag, iROOT);
+
+        if(!jConfig.GetBool("playersCanComplain") && !isSenderAdmin) {
+#if defined DEBUG
+            DWRITE("%s: cc_proc_OnNewMessage(msg continue): \
+                        \n\t\t\t\tSender: %N \
+                        \n\t\t\t\tComplain: false \
+                        \n\t\t\t\tAdmin: false", \
+            DEBUG, props[0]);
+#endif
+            return Proc_Continue;
+        }
+
+        if(!ValidClient(GetUserFlagBits(props[1]), flag, iROOT)) {
+#if defined DEBUG
+            DWRITE("%s: cc_proc_OnNewMessage(msg rejected): \
+                        \n\t\t\t\tRecipient: %N \
+                        \n\t\t\t\tAdmin: false", \
+            DEBUG, props[1]);
+#endif
             return Proc_Reject;
         }
 
-        // Yeah, this is admin channel....
-        g_IsMessageInAChannel[props[1]] = true;
-
+        // now all rights...
         jConfig.GetString("identificator", szBuffer, sizeof(szBuffer));
         params.SetString(0, szBuffer);
 
         if(jConfig.GetBool("useLog")) {
-            LogAction(props[0], -1, "\"%L\" (%s) used admin channel (text %s)", props[0], g_IsTrue[props[0]] ? "Admin" : "Player", szMessage[1]);
+            LogAction(props[0], -1, "\"%L\" (%s) used admin channel (text %s)", props[0], isSenderAdmin ? "Admin" : "Player", szMessage[1]);
         }
 
         return Proc_Change;
@@ -172,7 +175,9 @@ public Processing cc_proc_OnNewMessage(const int[] props, int propsCount, ArrayL
 }
 
 public Processing cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
-    if(!SENDER_INDEX(props[1]) || (!g_IsTrue[props[2]] && props[SENDER_INDEX(props[1])] != props[2])) {
+    int iROOT = ReadFlagString(ROOT);
+
+    if(!SENDER_INDEX(props[1])) {
         return Proc_Continue;
     }
 
@@ -203,10 +208,22 @@ public Processing cc_proc_OnRebuildString(const int[] props, int part, ArrayList
         }
 
         case BIND_TEAM, BIND_TEAM_CO: {
+            jConfig.GetString("accessFlag", szBuffer, sizeof(szBuffer));
+
+            int flag = ReadFlagString(szBuffer);
+            bool isSenderAdmin = ValidClient(GetUserFlagBits(SENDER_INDEX(props[1])), flag, iROOT);
+            bool isRecipientAdmin = ValidClient(GetUserFlagBits(props[2]), flag, iROOT);
+
             if(jConfig.HasKey(szBinds[part]) && (jValues = asJSONA(jConfig.Get(szBinds[part]))) && jValues.Length) {
                 jValues.GetString(
-                    (g_IsTrue[SENDER_INDEX(props[1])] && g_IsTrue[props[2]]) ? 0 :
-                    (!g_IsTrue[SENDER_INDEX(props[1])] && SENDER_INDEX(props[1]) == props[2]) ? 2 : 1, 
+                    // view: admin to admin
+                    (isSenderAdmin && isRecipientAdmin) 
+                        ? 0 :
+                        // view: sender - user and how he sees this msg
+                        (!isSenderAdmin && SENDER_INDEX(props[1]) == props[2]) 
+                            ? 2 
+                            // view: other options
+                            : 1, 
                     value, size
                 );
 
@@ -243,6 +260,16 @@ stock bool InChannels(const char[] channel, const char[][] channels, int count) 
 }
 
 stock bool ValidClient(int flags, int access, int root) {
+#if defined DEBUG
+    DWRITE("%s: ValidClient(): \
+                \n\t\t\t\tFlags: %d \
+                \n\t\t\t\tAccess: %d \
+                \n\t\t\t\tRoot: %d \
+                \n\t\t\t\tExpected Result: %d \
+                \n\t\t\t\tResult: %d", \
+    DEBUG, flags, access, root, flags && ((access && (flags & access)) || (flags & root)), !flags ? false : ((access && (flags & access)) || (flags & root)));
+#endif
+
     if(!flags) {
         return false;
     }
