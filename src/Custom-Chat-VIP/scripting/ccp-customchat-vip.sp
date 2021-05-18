@@ -149,19 +149,11 @@ public void VIP_OnVIPLoaded()
 
 public void OnPluginEnd()
 {
-    if(!CanTestFeatures() || GetFeatureStatus(FeatureType_Native, "VIP_UnregisterFeature") != FeatureStatus_Available)
+    if(!CanTestFeatures() 
+    || GetFeatureStatus(FeatureType_Native, "VIP_UnregisterFeature") != FeatureStatus_Available)
         return;
-    
-    char szFeature[64];
 
-    for(int i; i < BIND_MAX; i++)
-    {
-        if(IsValidPart(i) == -1)
-            continue;
-        
-        FormatBind("vip_chat_", i, 'l', szFeature, sizeof(szFeature));
-        VIP_UnregisterFeature(szFeature);
-    }
+    VIP_UnregisterMe();
 }
 
 public bool OnSelected_Feature(int iClient, const char[] szFeature)

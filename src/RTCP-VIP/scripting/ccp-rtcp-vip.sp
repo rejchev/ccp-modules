@@ -8,7 +8,7 @@ public Plugin myinfo =
 	name = "[CCP] RTCP <VIP>",
 	author = "nullent?",
 	description = "Realtime color processing",
-	version = "1.3.2",
+	version = "1.3.3",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -34,10 +34,11 @@ public void OnMapStart()
 
 public void OnPluginEnd()
 {
-    if(!CanTestFeatures() || GetFeatureStatus(FeatureType_Native, "VIP_UnregisterFeature") != FeatureStatus_Available)
+    if(!CanTestFeatures() 
+    || GetFeatureStatus(FeatureType_Native, "VIP_UnregisterFeature") != FeatureStatus_Available)
         return;
 
-    VIP_UnregisterFeature(g_szFeature);
+    VIP_UnregisterMe();
 }
 
 public void OnClientPutInServer(int iClient)
