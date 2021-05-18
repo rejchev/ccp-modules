@@ -4,6 +4,7 @@ SOURCES=$1
 SOURCES_SM=$2
 INCLUDES_SM=$SOURCES_SM'/include'
 ERROR=1
+DISABLED='disabled'
 
 cd $SOURCES
 
@@ -12,6 +13,11 @@ derictories=($(ls -d */))
 for dir in "${derictories[@]}"; do
     module=$(basename -- "$dir")
     echo "Module name: ${module}"
+
+    # disabled modules (do not compile)
+    if [ ${module} = ${DISABLED} ]; then
+        continue;
+    fi
 
     module_path=$SOURCES'/'$module
     echo "Module path: ${module_path}"
