@@ -9,8 +9,11 @@
     <a href="https://github.com/nyood/ccp-modules/releases" title="Releases">
         <img src="https://img.shields.io/github/v/release/nyood/ccp-modules" />
     </a>
-     <a href = "https://discord.gg/ChTyPUG" title = "Online support">
+     <a href = "https://discord.gg/ChTyPUG" title = "Discord">
         <img src="https://img.shields.io/discord/494942123548868609" />
+    </a>
+    <a href = "#" title = "Total Downloads">
+        <img src="https://img.shields.io/github/downloads/nyood/ccp-modules/total" />
     </a>
 </p>
 
