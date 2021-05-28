@@ -28,6 +28,8 @@ int counter;
 
 bool g_bLate;
 
+char g_szNameColor[MAXPLAYERS+1][STATUS_LENGTH];
+
 static const char ROOT[] = "z";
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max) {
@@ -41,6 +43,8 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart() {
     LoadTranslations("admin-channel.phrases");
+
+    CreateTimer(5.0, PseudoBuild, _, TIMER_REPEAT);
 }
 
 public void OnMapStart() {
@@ -183,6 +187,34 @@ public Action OnClientSayCommand(int iClient, const char[] cmd, const char[] arg
 
 char nextMessage[MESSAGE_LENGTH];
 
+Action PseudoBuild(Handle hTimer) {
+    static int rootFlag;
+    if(!rootFlag) {
+        rootFlag = ReadFlagString(ROOT);
+    }
+
+    char szBuffer[4];
+
+    static int accessFlag;
+    if(jConfig) {
+        jConfig.GetString("accessFlag", szBuffer, sizeof(szBuffer));
+
+        accessFlag = ReadFlagString(szBuffer);
+    }
+
+    ArrayList arr = new ArrayList(MESSAGE_LENGTH, 0);
+    for(int i = 1, a; i <= MaxClients; i++) {
+        if(IsClientInGame(i)) {
+            a = GetUserFlagBits(i);
+            if((a & accessFlag) || (a & rootFlag)) {
+                stock_RebuildMsg(arr, -1, i<<3|GetClientTeam(i)<<1|view_as<int>(IsPlayerAlive(i)), i, "STA", NULL_STRING, szBuffer, szBuffer, szBuffer);
+            }
+        }
+    }
+
+    delete arr;
+}
+
 public Processing cc_proc_OnNewMessage(const int[] props, int propsCount, ArrayList params) {
     static const char parentChannel[] = "TM";
     
@@ -191,7 +223,7 @@ public Processing cc_proc_OnNewMessage(const int[] props, int propsCount, ArrayL
 
     nextMessage = NULL_STRING;
     
-    if(strcmp(szBuffer, parentChannel) != 0 || !props[0] || IsClientSourceTV(props[1])) {
+    if(strcmp(szBuffer, parentChannel) != 0 ||  IsClientSourceTV(props[1])) {
         return Proc_Continue;
     }
 
@@ -254,7 +286,13 @@ public Processing cc_proc_OnRebuildString(const int[] props, int part, ArrayList
     static bool isSenderAlive;
     isSenderAlive = senderId && IsClientInGame(senderId) && IsPlayerAlive(senderId);
 
+    if(jConfig.HasKey("priority")) {
+        level = jConfig.GetInt("priority");
+    }
+
     JSONArray jValues;
+
+    // level = 99;
 
     switch(part) {
         case BIND_PROTOTYPE: {
@@ -271,10 +309,11 @@ public Processing cc_proc_OnRebuildString(const int[] props, int part, ArrayList
         }
 
         case BIND_TEAM, BIND_TEAM_CO: {
+
             if(jConfig.HasKey(szBinds[part]) && (jValues = asJSONA(jConfig.Get(szBinds[part]))) && jValues.Length) {
                 jValues.GetString(
                     // view: admin to admin
-                    (isSenderAdmin && senderId != props[2]) 
+                    (isSenderAdmin) 
                         ? 0 :
                         // view: sender - user and how he sees this msg
                         (!isSenderAdmin && senderId == props[2]) 
@@ -296,6 +335,10 @@ public Processing cc_proc_OnRebuildString(const int[] props, int part, ArrayList
             FormatEx(value, size, "%s", msgBody);
         }
 
+        case BIND_NAME_CO: {
+            FormatEx(value, size, "%s", g_szNameColor[senderId]);
+        }
+
         default: {
             if(jConfig.HasKey(szBinds[part]) && jConfig.GetString(szBinds[part], value, size)) {
                 FormatEx(value, size, "%T", value, props[2]);
@@ -305,4 +348,19 @@ public Processing cc_proc_OnRebuildString(const int[] props, int part, ArrayList
 
     delete jValues;
     return Proc_Change;
+}
+
+public Processing cc_proc_OnRebuildString_Post(const int[] props, int part, ArrayList params, int level, const char[] value) {
+    if(part != BIND_NAME_CO) {
+        return Proc_Continue;
+    }
+
+    char ident[64];
+    params.GetString(0, ident, sizeof(ident));
+
+    if(!strcmp(ident, "STA")) {
+        FormatEx(g_szNameColor[SENDER_INDEX(props[1])], sizeof(g_szNameColor[]), "%s", value);
+    }
+
+    return Proc_Continue;
 }

@@ -7,6 +7,8 @@
 
     "accessFlag":           "a",
 
+    "priority":             3,
+
     "{PROTOTYPE}":          "team_template",
     "{STATUS}": [
                             "status_died",
