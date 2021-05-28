@@ -14,7 +14,7 @@ public Plugin myinfo =
 	name = "[CCP] Admin channel",
 	author = "nyood",
 	description = "...",
-	version = "1.0.7",
+	version = "1.0.8",
 	url = "https://t.me/nyoood"
 };
 
@@ -22,6 +22,9 @@ public Plugin myinfo =
 static const char pkgKey[] = "admin_channel";
 
 JSONObject jConfig;
+JSONObject jMessager;
+
+int counter;
 
 bool g_bLate;
 
@@ -58,6 +61,11 @@ public void OnMapStart() {
             }
         }
     }
+
+    counter = 0;
+
+    delete jMessager;
+    jMessager = new JSONObject();
 }
 
 public void ccp_OnPackageAvailable(int iClient, Handle jsonObj) {
@@ -102,83 +110,119 @@ public void ccp_OnPackageRemove(int iClient, Handle jsonObj) {
     }
 }
 
-public Processing cc_proc_OnNewMessage(const int[] props, int propsCount, ArrayList params) {
-    static const char parentChannels[][] = {"STA", "STP"};
-    
-    int iROOT = ReadFlagString(ROOT);
+public Action OnClientSayCommand(int iClient, const char[] cmd, const char[] args) {
+    static int rootFlag;
+    if(!rootFlag) {
+        rootFlag = ReadFlagString(ROOT);
+    }
 
+    if(!iClient || !IsClientInGame(iClient) || IsChatTrigger()) {
+        return Plugin_Continue;
+    }
+
+    static char buffer[MAX_LENGTH];
+    FormatEx(buffer, sizeof(buffer), "%s", args);
+
+    TrimString(buffer);
+
+    static char trigger[4];
+    jConfig.GetString("channelTrigger", trigger, sizeof(trigger));
+
+    if(buffer[0] == trigger[0]) {
+        Format(buffer, sizeof(buffer), "%s", buffer[1]);
+            
+        TrimString(buffer);
+        
+        if(!buffer[0]) {
+            return Plugin_Continue;
+        }
+
+        static int clientFlags;
+        clientFlags = GetUserFlagBits(iClient);
+
+        static int accessFlag;
+        jConfig.GetString("accessFlag", trigger, sizeof(trigger));
+        accessFlag = ReadFlagString(trigger);
+
+        static bool playersCanComplain;
+        playersCanComplain = jConfig.GetBool("playersCanComplain");
+
+        if(accessFlag && ((clientFlags & accessFlag) || (clientFlags & rootFlag) || playersCanComplain)) {
+            JSONObject message = new JSONObject();
+
+            static char clientName[NAME_LENGTH];
+            GetClientName(iClient, clientName, sizeof(clientName));
+
+            message.SetInt("senderId", GetClientUserId(iClient));
+            message.SetString("senderName", clientName);
+            message.SetBool("isAdmin", ((clientFlags & accessFlag) || (clientFlags & rootFlag)));
+            message.SetString("body", buffer);
+
+            static char msgPointer[MESSAGE_LENGTH];
+            FormatEx(msgPointer, sizeof(msgPointer), "msgObject@%d", counter++);
+
+            jMessager.Set(msgPointer, message);
+            delete message;
+
+            for(int i = 1, a; i <= MaxClients; i++) {
+                if(IsClientInGame(i)) {
+                    a = GetUserFlagBits(i);
+                    if((a & accessFlag) || (a & rootFlag)) {
+                        PrintToChat(i, msgPointer);
+                    }
+                }
+            }
+
+            // don't post call
+            return Plugin_Stop;
+        }
+    }
+
+    return Plugin_Continue;
+}
+
+char nextMessage[MESSAGE_LENGTH];
+
+public Processing cc_proc_OnNewMessage(const int[] props, int propsCount, ArrayList params) {
+    static const char parentChannel[] = "TM";
+    
     char szBuffer[MESSAGE_LENGTH];
     params.GetString(0, szBuffer, sizeof(szBuffer));
+
+    nextMessage = NULL_STRING;
     
-    if(!InChannels(szBuffer, parentChannels, sizeof(parentChannels)) || !props[0] || IsClientSourceTV(props[1])) {
+    if(strcmp(szBuffer, parentChannel) != 0 || !props[0] || IsClientSourceTV(props[1])) {
+        return Proc_Continue;
+    }
+
+    // message body
+    params.GetString(2, szBuffer, sizeof(szBuffer));
+    if(!jMessager.HasKey(szBuffer)) {
         return Proc_Continue;
     } 
 
-    jConfig.GetString("channelTrigger", szBuffer, sizeof(szBuffer));
+    FormatEx(nextMessage, sizeof(nextMessage), "%s", szBuffer);
 
-    char szMessage[MESSAGE_LENGTH];
-    params.GetString(2, szMessage, sizeof(szMessage));
-    TrimString(szMessage);
+    JSONObject msg = asJSONO(jMessager.Get(szBuffer));
+    int sender = GetClientOfUserId(msg.GetInt("senderId"));    
 
-    if(szMessage[0] == szBuffer[0]) {
-        jConfig.GetString("accessFlag", szBuffer, sizeof(szBuffer));
-        
-#if defined DEBUG
-        DWRITE("%s: cc_proc_OnNewMessage(trigger): \
-                    \n\t\t\t\tSender: %N \
-                    \n\t\t\t\tRecipient: %N \
-                    \n\t\t\t\tTrigger: used \
-                    \n\t\t\t\tMessage: %s", \
-        DEBUG, props[0], props[1], szMessage);
-#endif
+    jConfig.GetString("identificator", szBuffer, sizeof(szBuffer));
+    params.SetString(0, szBuffer);
 
-        if(!szBuffer[0]) {
-            return Proc_Continue;
-        }
+    msg.GetString("body", szBuffer, sizeof(szBuffer));
 
-        int flag = ReadFlagString(szBuffer);
-        bool isSenderAdmin = ValidClient(GetUserFlagBits(props[0]), flag, iROOT);
+    if(jConfig.GetBool("useLog")) {
+        LogAction(sender, -1, "\"%L\" (%s) used admin channel (text %s)", sender, msg.GetBool("isAdmin") ? "Admin" : "Player", szBuffer);
+    }
 
-        if(!jConfig.GetBool("playersCanComplain") && !isSenderAdmin) {
-#if defined DEBUG
-            DWRITE("%s: cc_proc_OnNewMessage(msg continue): \
-                        \n\t\t\t\tSender: %N \
-                        \n\t\t\t\tComplain: false \
-                        \n\t\t\t\tAdmin: false", \
-            DEBUG, props[0]);
-#endif
-            return Proc_Continue;
-        }
-
-        if(!ValidClient(GetUserFlagBits(props[1]), flag, iROOT)) {
-#if defined DEBUG
-            DWRITE("%s: cc_proc_OnNewMessage(msg rejected): \
-                        \n\t\t\t\tRecipient: %N \
-                        \n\t\t\t\tAdmin: false", \
-            DEBUG, props[1]);
-#endif
-            return Proc_Reject;
-        }
-
-        // now all rights...
-        jConfig.GetString("identificator", szBuffer, sizeof(szBuffer));
-        params.SetString(0, szBuffer);
-
-        if(jConfig.GetBool("useLog")) {
-            LogAction(props[0], -1, "\"%L\" (%s) used admin channel (text %s)", props[0], isSenderAdmin ? "Admin" : "Player", szMessage[1]);
-        }
-
-        return Proc_Change;
-    }    
-
-    return Proc_Continue;
+    delete msg;
+    return Proc_Change;
 }
 
 public Processing cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
-    int iROOT = ReadFlagString(ROOT);
-
-    if(!SENDER_INDEX(props[1])) {
-        return Proc_Continue;
+    static int rootFlag;
+    if(!rootFlag) {
+        rootFlag = ReadFlagString(ROOT);
     }
 
     char szIndent[64];
@@ -187,40 +231,53 @@ public Processing cc_proc_OnRebuildString(const int[] props, int part, ArrayList
     char szBuffer[MESSAGE_LENGTH];
     jConfig.GetString("identificator", szBuffer, sizeof(szBuffer));
 
-    if(strcmp(szIndent, szBuffer)) {
+    if(strcmp(szIndent, szBuffer) || !nextMessage[0] || !jMessager.HasKey(nextMessage)) {
         return Proc_Continue;
     }
+
+    JSONObject message = asJSONO(jMessager.Get(nextMessage));
+
+    static int senderId;
+    senderId = GetClientOfUserId(message.GetInt("senderId"));
+
+    static bool isSenderAdmin;
+    isSenderAdmin = message.GetBool("isAdmin");
+
+    static char senderName[NAME_LENGTH];
+    message.GetString("senderName", senderName, sizeof(senderName));
+
+    static char msgBody[MESSAGE_LENGTH];
+    message.GetString("body", msgBody, sizeof(msgBody));
+
+    delete message;
+
+    static bool isSenderAlive;
+    isSenderAlive = senderId && IsClientInGame(senderId) && IsPlayerAlive(senderId);
 
     JSONArray jValues;
 
     switch(part) {
         case BIND_PROTOTYPE: {
             if(jConfig.HasKey(szBinds[part]) && jConfig.GetString(szBinds[part], value, size)) {
-                Format(value, size, "%c %T", 1, value, SENDER_INDEX(props[1]));
+                Format(value, size, "%c %T", 1, value, senderId);
             }
         }
 
         case BIND_STATUS, BIND_STATUS_CO: {
             if(jConfig.HasKey(szBinds[part]) && (jValues = asJSONA(jConfig.Get(szBinds[part]))) && jValues.Length) {
-                jValues.GetString(view_as<int>(SENDER_ALIVE(props[1])), value, size);
+                jValues.GetString(view_as<int>(isSenderAlive), value, size);
                 Format(value, size, "%T", value, props[2]);
             }
         }
 
         case BIND_TEAM, BIND_TEAM_CO: {
-            jConfig.GetString("accessFlag", szBuffer, sizeof(szBuffer));
-
-            int flag = ReadFlagString(szBuffer);
-            bool isSenderAdmin = ValidClient(GetUserFlagBits(SENDER_INDEX(props[1])), flag, iROOT);
-            bool isRecipientAdmin = ValidClient(GetUserFlagBits(props[2]), flag, iROOT);
-
             if(jConfig.HasKey(szBinds[part]) && (jValues = asJSONA(jConfig.Get(szBinds[part]))) && jValues.Length) {
                 jValues.GetString(
                     // view: admin to admin
-                    (isSenderAdmin && isRecipientAdmin) 
+                    (isSenderAdmin && senderId != props[2]) 
                         ? 0 :
                         // view: sender - user and how he sees this msg
-                        (!isSenderAdmin && SENDER_INDEX(props[1]) == props[2]) 
+                        (!isSenderAdmin && senderId == props[2]) 
                             ? 2 
                             // view: other options
                             : 1, 
@@ -231,11 +288,12 @@ public Processing cc_proc_OnRebuildString(const int[] props, int part, ArrayList
             }
         }
 
+        case BIND_NAME: {
+            FormatEx(value, size, "%s", senderName);
+        }
+
         case BIND_MSG: {
-            jConfig.GetString("channelTrigger", szBuffer, sizeof(szBuffer));
-            if(ReplaceStringEx(value, size, szBuffer, "", -1, -1, false) != -1) {
-                TrimString(value);
-            }
+            FormatEx(value, size, "%s", msgBody);
         }
 
         default: {
@@ -247,32 +305,4 @@ public Processing cc_proc_OnRebuildString(const int[] props, int part, ArrayList
 
     delete jValues;
     return Proc_Change;
-}
-
-stock bool InChannels(const char[] channel, const char[][] channels, int count) {
-    for(int i; i < count; i++) {
-        if(!strcmp(channel, channels[i], true)) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-stock bool ValidClient(int flags, int access, int root) {
-#if defined DEBUG
-    DWRITE("%s: ValidClient(): \
-                \n\t\t\t\tFlags: %d \
-                \n\t\t\t\tAccess: %d \
-                \n\t\t\t\tRoot: %d \
-                \n\t\t\t\tExpected Result: %d \
-                \n\t\t\t\tResult: %d", \
-    DEBUG, flags, access, root, flags && ((access && (flags & access)) || (flags & root)), !flags ? false : ((access && (flags & access)) || (flags & root)));
-#endif
-
-    if(!flags) {
-        return false;
-    }
-
-    return ((access && (flags & access)) || (flags & root));
 }
