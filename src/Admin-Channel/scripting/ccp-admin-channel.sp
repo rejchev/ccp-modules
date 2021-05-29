@@ -15,9 +15,8 @@ public Plugin myinfo =
 	author = "nyood",
 	description = "...",
 	version = "1.0.8",
-	url = "https://t.me/nyoood"
+	url = "https://discord.gg/cFZ97Mzrjy"
 };
-
 
 static const char pkgKey[] = "admin_channel";
 
@@ -28,7 +27,10 @@ int counter;
 
 bool g_bLate;
 
-char g_szNameColor[MAXPLAYERS+1][STATUS_LENGTH];
+char syncNameColor[MAXPLAYERS+1][STATUS_LENGTH];
+char syncChatTag[MAXPLAYERS+1][PREFIX_LENGTH];
+char syncChatTagColor[MAXPLAYERS+1][STATUS_LENGTH];
+char syncMessageColor[MAXPLAYERS+1][STATUS_LENGTH];
 
 static const char ROOT[] = "z";
 
@@ -287,7 +289,13 @@ public Processing cc_proc_OnRebuildString(const int[] props, int part, ArrayList
     isSenderAlive = senderId && IsClientInGame(senderId) && IsPlayerAlive(senderId);
 
     if(jConfig.HasKey("priority")) {
-        level = jConfig.GetInt("priority");
+        int prio = jConfig.GetInt("priority");
+
+        if(prio < level) {
+            return Proc_Continue;
+        }
+
+        level = prio;
     }
 
     JSONArray jValues;
@@ -335,13 +343,24 @@ public Processing cc_proc_OnRebuildString(const int[] props, int part, ArrayList
             FormatEx(value, size, "%s", msgBody);
         }
 
-        case BIND_NAME_CO: {
-            FormatEx(value, size, "%s", g_szNameColor[senderId]);
-        }
-
         default: {
             if(jConfig.HasKey(szBinds[part]) && jConfig.GetString(szBinds[part], value, size)) {
                 FormatEx(value, size, "%T", value, props[2]);
+            }
+
+            // Delegating values from the main message thread
+            if(part == BIND_PREFIX) 
+                FormatEx(value, size, "%s", syncChatTag[senderId]);
+
+            if(jConfig.GetBool("delegate")) {
+                if(part == BIND_PREFIX_CO) 
+                    FormatEx(value, size, "%s", syncChatTagColor[senderId]);
+
+                else if(part == BIND_NAME_CO)
+                    FormatEx(value, size, "%s", syncNameColor[senderId]);
+
+                else if(part == BIND_MSG_CO)
+                    FormatEx(value, size, "%s", syncMessageColor[senderId]);
             }
         }
     }
@@ -351,15 +370,16 @@ public Processing cc_proc_OnRebuildString(const int[] props, int part, ArrayList
 }
 
 public Processing cc_proc_OnRebuildString_Post(const int[] props, int part, ArrayList params, int level, const char[] value) {
-    if(part != BIND_NAME_CO) {
-        return Proc_Continue;
-    }
-
     char ident[64];
     params.GetString(0, ident, sizeof(ident));
 
     if(!strcmp(ident, "STA")) {
-        FormatEx(g_szNameColor[SENDER_INDEX(props[1])], sizeof(g_szNameColor[]), "%s", value);
+        switch(part) {
+            case BIND_PREFIX_CO:    FormatEx(syncChatTagColor[SENDER_INDEX(props[1])], sizeof(syncChatTagColor[]), "%s", value);
+            case BIND_PREFIX:       FormatEx(syncChatTag[SENDER_INDEX(props[1])], sizeof(syncChatTag[]), "%s", value);
+            case BIND_NAME_CO:      FormatEx(syncNameColor[SENDER_INDEX(props[1])], sizeof(syncNameColor[]), "%s", value);
+            case BIND_MSG_CO:       FormatEx(syncMessageColor[SENDER_INDEX(props[1])], sizeof(syncMessageColor[]), "%s", value);
+        }
     }
 
     return Proc_Continue;

@@ -60,6 +60,24 @@
         "ru"                "{G}"
     }
 
+    "native_chattag_color"
+    {
+        "en"                "{B}"
+        "ru"                "{B}"
+    }
+
+    "native_name_color"
+    {
+        "en"                "{G}"
+        "ru"                "{G}"
+    }
+
+    "native_msg_color"
+    {
+        "en"                "{W}"
+        "ru"                "{W}"
+    }
+
     "team_template"
     {
         "en"                "{STATUSCO}{STATUS} {TEAMCO}{TEAM} {NAMECO}{NAME}{W}: {MSGCO}{MSG}"

@@ -7,7 +7,9 @@
 
     "accessFlag":           "a",
 
-    "priority":             3,
+    "priority":             1,
+
+    "delegate":             true,
 
     "{PROTOTYPE}":          "team_template",
     "{STATUS}": [
@@ -28,5 +30,9 @@
                             "team_color_admins",
                             "team_color_from_player",
                             "team_color_to_admins"
-    ]
+    ],
+
+    "{PREFIXCO}":           "native_chattag_color",
+    "{NAMECO}":             "native_name_color",
+    "{MSGCO}":              "native_msg_color"
 }
