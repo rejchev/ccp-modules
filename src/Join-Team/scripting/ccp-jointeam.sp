@@ -147,7 +147,7 @@ Action EventTeam(Event event, const char[] name, bool dbc) {
     delete message;
 
     for(int i = 1; i <= MaxClients; i++) {
-        if(IsClientConnected(i)) {
+        if(IsClientInGame(i)) {
             PrintToChat(i, szName);
         }
     }    
