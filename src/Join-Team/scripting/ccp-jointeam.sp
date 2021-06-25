@@ -133,6 +133,14 @@ Action EventTeam(Event event, const char[] name, bool dbc) {
     int iTeam;
     iTeam = event.GetInt("team");
 
+    JSONArray teamVisibility = asJSONA(jConfig.Get("hide"));
+    if(teamVisibility.Length > iTeam && iTeam >= 0 && teamVisibility.GetBool(iTeam)) {
+        delete teamVisibility;
+        return Plugin_Changed;
+    }
+
+    delete teamVisibility;
+
     char szName[NAME_LENGTH];
     GetClientName(GetClientOfUserId(userId), szName, sizeof(szName));
 

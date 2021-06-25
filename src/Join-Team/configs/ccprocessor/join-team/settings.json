@@ -8,6 +8,13 @@
 
     "priority":             1,
 
+    "hide": [
+                            true, 
+                            false, 
+                            false, 
+                            false
+    ],
+
     "{PROTOTYPE}":          "team_template",
     "{STATUS}": [
                             "status_died",
