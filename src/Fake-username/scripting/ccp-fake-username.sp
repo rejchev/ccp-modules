@@ -90,7 +90,7 @@ public Processing  cc_proc_OnRebuildString(const int[] props, int part, ArrayLis
     char buffer[64];
     params.GetString(0, buffer, sizeof(buffer));
 
-    if(FindChannelInChannels(channels, buffer, true) == -1 || !liars[SENDER_INDEX(props[1])][0])
+    if(FindChannelInChannels(channels, sizeof(channels), buffer, true) == -1 || !liars[SENDER_INDEX(props[1])][0])
         return Proc_Continue; 
 
     level = replacementLevel;
