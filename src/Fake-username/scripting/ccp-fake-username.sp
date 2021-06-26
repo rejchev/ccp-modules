@@ -2,108 +2,108 @@
 
 #include <ccprocessor>
 
-#define SENDER(%0) (%0 >> 3)
+#if defined INCLUDE_DEBUG
+    #define DEBUG "[Fake-Username]"
+#endif
 
 public Plugin myinfo = 
 {
 	name = "[CCP] Fake Username",
 	author = "nullent?",
 	description = "Ability to set a fake username in chat msgs",
-	version = "1.5.2",
+	version = "1.5.3",
 	url = "discord.gg/ChTyPUG"
 };
 
-#define SZ(%0)	%0, sizeof(%0)
-#define _CVAR_INIT_CHANGE(%0,%1) %0(FindConVar(%1), NULL_STRING, NULL_STRING)
-#define _CVAR_ON_CHANGE(%0) public void %0(ConVar cvar, const char[] szOldVal, const char[] szNewVal)
+int replacementLevel;
+int ROOT;
+int accessFlag;
 
-#define PMP PLATFORM_MAX_PATH
-#define MPL MAXPLAYERS+1
+char liars[MAXPLAYERS+1][NAME_LENGTH];
 
-char fakename[MPL][NAME_LENGTH];
-
-int AccessFlag, ROOT;
-int ClientFlags[MPL];
-
-int nLevel;
-
-public void OnPluginStart()
-{    
+public void OnPluginStart() {    
     ROOT = ReadFlagString("z");
 
     RegConsoleCmd("sm_fakename", OnCmdUse);
-
-    CreateConVar("ccp_fakename_accessflag", "a", "Access flag or empty, other than the 'z' flag").AddChangeHook(OnAccessChanged);
-    CreateConVar("ccp_fakename_priority", "9", "The priority level to change the username", _, true, 0.0).AddChangeHook(OnChangePName);
-
-    AutoExecConfig(true, "ccp_fakename", "ccprocessor");
 }
 
-public void OnMapStart()
-{
+public void OnMapStart() {
+    #if defined DEBUG
+        DBUILD()
+    #endif
+
     cc_proc_APIHandShake(cc_get_APIKey());
+
+    static char config[MESSAGE_LENGTH]  = "configs/ccprocessor/fake-username/settings.ini";
+
+    if(config[0] == 'c')
+        BuildPath(Path_SM, config, sizeof(config), config);
     
-    _CVAR_INIT_CHANGE(OnAccessChanged, "ccp_fakename_accessflag");
-    _CVAR_INIT_CHANGE(OnChangePName, "ccp_fakename_priority");
-}
+    if(!FileExists(config))
+        SetFailState("Where is my config: %s", config);
 
-_CVAR_ON_CHANGE(OnAccessChanged)
-{
-    if(!cvar)
-        return;
+    KeyValues kv;
     
-    char szFlag[4];
-    cvar.GetString(SZ(szFlag));
+    if((kv = new KeyValues("settings")) && kv.ImportFromFile(config)) {
+        replacementLevel = kv.GetNum("level", 1);
 
-    AccessFlag = ReadFlagString(szFlag);
+        char buffer[8];
+        kv.GetString("access", buffer, sizeof(buffer), NULL_STRING);
+
+        accessFlag = ReadFlagString(buffer);
+    }
+
+    delete kv;
+
+    #if defined DEBUG
+    DWRITE("%s: OnMapStart():  \n
+            \t\t\t\tConfig: %s \n
+            \t\t\t\tLevel: %d  \n
+            \t\t\t\tFlag: %s", DEBUG, config, replacementLevel, accessFlag);
+    #endif
 }
 
-_CVAR_ON_CHANGE(OnChangePName)
-{
-    if(cvar)
-        nLevel = cvar.IntValue;
-}
+public Action OnCmdUse(int iClient, int args) {
+    if(args == 1 && iClient && IsClientInGame(iClient) && isValid(iClient)) {
+        GetCmdArg(1, liars[iClient], sizeof(liars[]));
 
-public Action OnCmdUse(int iClient, int args)
-{
-    if(args == 1 && iClient && IsClientInGame(iClient) && IsValidClient(iClient))
-        GetCmdArg(1, fakename[iClient], sizeof(fakename[]));
+        #if defined DEBUG
+        DWRITE("%s: OnCmdUse():    \n
+                \t\t\t\tClient: %N \n
+                \t\t\t\tValue: %s", DEBUG, iClient, liars[iClient]);
+        #endif
+    }
 
     return Plugin_Handled;
 }
 
-public void OnClientPutInServer(int iClient)
-{
-    fakename[iClient][0] = 0;
-    ClientFlags[iClient] = 0;
-}
-
-public void OnClientPostAdminCheck(int iClient)
-{
-    ClientFlags[iClient] = GetUserFlagBits(iClient);
+public void OnClientPutInServer(int iClient) {
+    liars[iClient] = NULL_STRING;
 }
 
 public Processing  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
-    char szIndent[64];
-    params.GetString(0, szIndent, sizeof(szIndent));
-    
-    if((szIndent[0] != 'S' && szIndent[1] != 'T' && strlen(szIndent) < 3) || !SENDER_INDEX(props[1])) {
+    static const char channels[][] = {"STA", "STP"};
+
+    if(part != BIND_NAME || replacementLevel < level) 
         return Proc_Continue;
-    } 
 
-    if(part == BIND_NAME && fakename[SENDER_INDEX(props[1])][0] && level < nLevel)
-    {
-        level = nLevel;
-        FormatEx(value, size, fakename[SENDER_INDEX(props[1])]);
+    char buffer[64];
+    params.GetString(0, buffer, sizeof(buffer));
 
-        return Proc_Change
-    }  
+    if(FindChannelInChannels(channels, buffer, true) == -1 || !liars[SENDER_INDEX(props[1])][0])
+        return Proc_Continue; 
 
-    return Proc_Continue
+    level = replacementLevel;
+    FormatEx(value, size, "%s", liars[SENDER_INDEX(props[1])]);
+
+    return Proc_Change
 }
 
-bool IsValidClient(int iClient)
-{    
-    return ((ClientFlags[iClient] && (ClientFlags[iClient] & ROOT)) || (AccessFlag && (ClientFlags[iClient] & AccessFlag)));
-}
+bool isValid(int iClient) {
+    if(!accessFlag)
+        return false;
 
+    int bits = GetUserFlagBits(iClient);
+
+    return (bits & accessFlag) || (bits & ROOT);
+}
