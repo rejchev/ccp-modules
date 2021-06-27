@@ -36,8 +36,8 @@ public Processing cc_proc_OnRebuildString_Post(const int[] props, int part, Arra
 
     char szIndent[64];
     params.GetString(0, szIndent, sizeof(szIndent));
-    if(!objConfig.HasKey(szIdent)) {
-        LogMessage("'%s' channel skipped. Add this channel to: configs/ccprocessor/space-msgs/settings.json", szIdent);
+    if(!objConfig.HasKey(szIndent)) {
+        LogMessage("'%s' channel skipped. Add this channel to: configs/ccprocessor/space-msgs/settings.json", szIndent);
         return Proc_Continue;
     }
 
