@@ -3,14 +3,30 @@
 #endif
 #define _ccprocessor_pkg_included
 
+#pragma deprecated "v1.0"
 forward void ccp_OnPackageAvailable_Pre(int iClient, Handle jsonObj);
+
+#pragma deprecated "v1.0"
 forward void ccp_OnPackageAvailable(int iClient, Handle jsonObj);
+
+#pragma deprecated "v1.0"
 forward void ccp_OnPackageRemove(int iClient, Handle jsonObj);
 
+#pragma deprecated "v1.0 -> use ccp_pkg_UpdateRequest()"
 forward void ccp_OnPackageUpdated(int iClient, Handle jsonObj, Handle hCaller);
 
-native Handle ccp_UpdatePackage(int iClient, Handle newValue);
-native Handle ccp_GetPackage(int iClient);
+#pragma deprecated "v1.0"
+native Handle   ccp_UpdatePackage(int iClient, Handle newValue);
+
+
+forward Processing ccp_pkg_UpdateRequest(Handle hPlugin, int iClient, const char[] artifact, Handle value, int &repLevel);
+
+native Handle   ccp_GetPackage(int iClient);
+native bool     ccp_SetPackage(int iClient, Handle value, int repLevel);
+native bool     ccp_HasPackage(int iClient);
+
+native bool     ccp_InsertArtifact(int iClient, const char[] artifact, Handle value, int repLevel);
+native bool     ccp_RemoveArtifact(int iClient, const char[] artifact, int repLevel);
 
 public SharedPlugin __pl_ccprocessor_pkg= 
 {
