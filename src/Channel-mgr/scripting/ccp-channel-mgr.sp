@@ -154,7 +154,8 @@ public any Native_RemoveChannel(Handle h, int a) {
         
         channels.Remove(index);
         
-        bool bSet = ccp_SetArtifact(0, pkgKey, channels, -1);
+        // TODO: replacement level from native params
+        bool bSet = ccp_SetArtifact(0, pkgKey, channels, 0x01);
         delete channels;
 
         return bSet;
@@ -174,7 +175,9 @@ public any Native_AddChannel(Handle h, int a) {
     if((channels = asJSONA(ccp_GetChannelList())) != null) {
         channels.PushString(szBuffer);
         
-        bool bSet = ccp_SetArtifact(0, pkgKey, channels, -1);
+        // TODO: replacement level from native params
+        // Dumb idea...
+        bool bSet = ccp_SetArtifact(0, pkgKey, channels, 0x01);
         delete channels;
 
         return bSet;
