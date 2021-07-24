@@ -8,6 +8,7 @@
 
 #include <ccprocessor>
 #include <ccprocessor_pkg>
+#include <ccprocessor_chls>
 
 public Plugin myinfo = 
 {
@@ -91,6 +92,13 @@ public void ccp_pkg_Available(int iClient) {
 public Processing ccp_pkg_UpdateRequest(Handle hPlugin, int iClient, const char[] artifact, Handle value, int &repLevel) {
     if(!iClient && repLevel == -1) {
         delete (asJSONO(jConfig));
+    }
+
+    if(!iClient && !strcmp(artifact, "channel_mgr") && repLevel == -1) {
+        char szBuffer[MESSAGE_LENGTH];
+
+        jConfig.GetString("identificator", szBuffer, sizeof(szBuffer));
+        ccp_AddChannel(szBuffer);
     }
 }
 
