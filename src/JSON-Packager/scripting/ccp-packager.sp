@@ -38,7 +38,8 @@ Pattern ::
 JSONObject packager;
 
 GlobalForward
-    fwdPackageUpdated;
+    fwdPackageUpdated,
+    fwdPackageAvailable;
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max) {
     #if defined DEBUG
@@ -48,8 +49,11 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
     CreateNative("ccp_GetPackage", Native_GetPackage);
     CreateNative("ccp_SetPackage", Native_SetPackage);
     CreateNative("ccp_HasPackage", Native_HasPackage);
-    CreateNative("ccp_InsertArtifact", Native_Insert);
+    CreateNative("ccp_IsVerified", Native_IsVerified);
+    CreateNative("ccp_SetArtifact", Native_Insert);
     CreateNative("ccp_RemoveArtifact", Native_Remove);
+    CreateNative("ccp_GetArtifact", Native_GetArtifact);
+    CreateNative("ccp_HasArtifact", Native_HasArtifact);
 
     // Processing(Handle initiator, int Client,const char[] artifact, Handle value, int repLevel = -1)
     // level = -1 is default replacement level for this plugin.
@@ -58,7 +62,13 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
         "ccp_pkg_UpdateRequest", 
         ET_Hook, Param_Cell, Param_Cell, Param_String, Param_Cell, Param_CellByRef
     );
-    
+
+    fwdPackageAvailable = new GlobalForward(
+        "ccp_pkg_Available", 
+        ET_Ignore, Param_Cell
+    );
+
+
     RegPluginLibrary("ccprocessor_pkg");
 
     g_bLate = late;
@@ -86,7 +96,7 @@ public any Native_SetPackage(Handle h, int a) {
         return false;
     }
 
-    return packager.Set(index, view_as<JSON>(value));
+    return (value) ? packager.Set(index, view_as<JSON>(value)) : packager.SetNull(index);
 }
 
 public any Native_HasPackage(Handle h, int a) {
@@ -94,6 +104,29 @@ public any Native_HasPackage(Handle h, int a) {
     FormatEx(index, sizeof(index), "%d", GetNativeCell(1));
 
     return packager.HasKey(index);
+}
+
+public any Native_IsVerified(Handle h, int a) {
+    int iClient = GetNativeCell(1);
+    bool ver;
+
+    static char index[4];
+    FormatEx(index, sizeof(index), "%d", iClient);
+
+    JSONObject obj;
+    if((obj = asJSONO(ccp_GetPackage(iClient))) != null && obj.HasKey("auth") && !obj.IsNull("auth")) {
+        char auth[64];
+        auth = GetClientAuthIdEx(iClient);
+
+        char buffer[64];
+        obj.GetString("auth", buffer, sizeof(buffer));
+
+        ver = auth[0] != 0 && strcmp(auth, buffer) == 0;
+    }
+
+    delete obj;
+    
+    return ver;
 }
 
 // bool(int iClient, const char[] artifact, Handle value, int repLevel)
@@ -152,6 +185,44 @@ public any Native_Remove(Handle h, int a) {
     return true;
 }
 
+public any Native_GetArtifact(Handle h, int a) {
+    int iClient = GetNativeCell(1);
+
+    if(!ccp_HasPackage(iClient))
+        return ThrowNativeError(-1, "Client package is null");
+
+    static char artifact[64];
+    GetNativeString(2, artifact, sizeof(artifact));
+
+    JSONObject client;
+    client = asJSONO(ccp_GetPackage(iClient));
+    
+    JSON obj;
+    if(client.HasKey(artifact) && !client.IsNull(artifact))
+        obj = client.Get(artifact);
+
+    delete client;
+    return obj;
+}
+
+public any Native_HasArtifact(Handle h, int a) {
+    int iClient = GetNativeCell(1);
+
+    if(!ccp_HasPackage(iClient))
+        return ThrowNativeError(-1, "Client package is null");
+
+    static char artifact[64];
+    GetNativeString(2, artifact, sizeof(artifact));
+
+    JSONObject client;
+    client = asJSONO(ccp_GetPackage(iClient));
+    
+    bool has = client.HasKey(artifact) && !client.IsNull(artifact);
+
+    delete client;
+    return has;
+}
+
 Processing updatePackage(Handle initiator, int iClient, const char[] artifact, Handle value, int repLevel) {
     Processing result = Proc_Continue;
 
@@ -176,7 +247,7 @@ bool Initialization(int iClient, const char[] auth = "STEAM_ID_SERVER") {
     
     obj = new JSONObject();
     obj.SetString("auth", auth);
-    obj.SetInt("uid", GetClientUserId(iClient));
+    obj.SetInt("uid", (iClient) ? GetClientUserId(iClient) : 0);
 
     bool success = ccp_SetPackage(iClient, obj, -1);
 
@@ -207,11 +278,15 @@ public void OnMapStart() {
 }
 
 public void OnClientAuthorized(int iClient, const char[] auth) {
-    if(IsFakeClient(iClient) || IsClientSourceTV(iClient))
+    if(iClient && (IsFakeClient(iClient) || IsClientSourceTV(iClient)))
         return;
 
     if(!ccp_SetPackage(iClient, null, -1) || !Initialization(iClient, auth))
         SetFailState("What the fuck are u doing?");
+
+    Call_StartForward(fwdPackageAvailable);
+    Call_PushCell(iClient);
+    Call_Finish();
 }
 
 char[] GetClientAuthIdEx(int iClient) {

@@ -19,14 +19,18 @@ forward void ccp_OnPackageUpdated(int iClient, Handle jsonObj, Handle hCaller);
 native Handle   ccp_UpdatePackage(int iClient, Handle newValue);
 
 
+forward void ccp_pkg_Available(int iClient);
 forward Processing ccp_pkg_UpdateRequest(Handle hPlugin, int iClient, const char[] artifact, Handle value, int &repLevel);
 
 native Handle   ccp_GetPackage(int iClient);
 native bool     ccp_SetPackage(int iClient, Handle value, int repLevel);
 native bool     ccp_HasPackage(int iClient);
+native bool     ccp_IsVerified(int iClient);
 
-native bool     ccp_InsertArtifact(int iClient, const char[] artifact, Handle value, int repLevel);
+native bool     ccp_SetArtifact(int iClient, const char[] artifact, Handle value, int repLevel);
 native bool     ccp_RemoveArtifact(int iClient, const char[] artifact, int repLevel);
+native Handle   ccp_GetArtifact(int iClient, const char[] artifact);
+native bool     ccp_HasArtifact(int iClient, const char[] artifact);
 
 public SharedPlugin __pl_ccprocessor_pkg= 
 {
@@ -43,6 +47,12 @@ public SharedPlugin __pl_ccprocessor_pkg=
 public void __pl_ccprocessor_pkg_SetNTVOptional()
 {
     MarkNativeAsOptional("ccp_GetPackage");
-    MarkNativeAsOptional("ccp_UpdatePackage");
+    MarkNativeAsOptional("ccp_SetPackage");
+    MarkNativeAsOptional("ccp_HasPackage");
+    MarkNativeAsOptional("ccp_IsVerified");
+    MarkNativeAsOptional("ccp_SetArtifact");
+    MarkNativeAsOptional("ccp_RemoveArtifact");
+    MarkNativeAsOptional("ccp_GetArtifact");
+    MarkNativeAsOptional("ccp_HasArtifact");
 }
 #endif
