@@ -74,7 +74,7 @@ public void OnThinkPost(int ent) {
 
     static char szBuffer[4];
 
-    if(currentTick >= nextSyncTick) {
+    if(currentTick <= nextSyncTick || !nextSyncTick) {
         JSONObject obj;
         if(!ccp_HasArtifact(0, pkgKey))
             return;
