@@ -55,7 +55,7 @@ public void OnMapStart() {
 
         for(int i; i <= MaxClients; i++)
             if(ccp_HasPackage(i))
-                ccp_pkg_Available(i);
+                ccp_OnPackageAvailable(i);
     }
 
     nextSyncTick = 0;
@@ -109,7 +109,7 @@ public void OnThinkPost(int ent) {
 }
 
 
-public void ccp_pkg_Available(int iClient) {
+public void ccp_OnPackageAvailable(int iClient) {
     static char config[MESSAGE_LENGTH]  
         = "configs/ccprocessor/synchronizer/settings.json";
     
@@ -129,7 +129,7 @@ public void ccp_pkg_Available(int iClient) {
         obj = new JSONObject();
     }
 
-    if(!ccp_SetArtifact(iClient, pkgKey, obj, 0x01)) {
+    if(!ccp_SetArtifact(iClient, pkgKey, obj, (!iClient) ? CALL_IGNORE : CALL_DEFAULT)) {
         SetFailState("Something went wrong: ...");
     }
 
@@ -162,7 +162,7 @@ public Processing cc_proc_OnRebuildString_Post(const int[] props, int part, Arra
     obj.Set(szBuffer, ch);
     delete ch;
 
-    ccp_SetArtifact(SENDER_INDEX(props[1]), pkgKey, obj, 0x01);
+    ccp_SetArtifact(SENDER_INDEX(props[1]), pkgKey, obj, CALL_DEFAULT);
     delete obj;
 
     return Proc_Continue;
