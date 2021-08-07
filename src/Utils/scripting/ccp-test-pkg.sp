@@ -72,7 +72,7 @@ public void ccp_OnPackageAvailable(int iClient) {
 
 }
 
-public Processing ccp_OnPackageUpdate(Handle ctx, int &level) {
+public Processing ccp_OnPackageUpdate(Handle ctx, any &level) {
     JSONObject obj = asJSONO(ctx);
     
     static char field[PREFIX_LENGTH];
@@ -97,6 +97,6 @@ public Processing ccp_OnPackageUpdate(Handle ctx, int &level) {
     delete value;
 }
 
-public void ccp_OnPackageUpdate_Post(Handle ctx, int level) {
+public void ccp_OnPackageUpdate_Post(Handle ctx, any level) {
 
 }

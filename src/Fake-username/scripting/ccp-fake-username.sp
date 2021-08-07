@@ -1,10 +1,10 @@
 #pragma newdecls required
 
-#include <ccprocessor>
-
 #if defined INCLUDE_DEBUG
     #define DEBUG "[Fake-Username]"
 #endif
+
+#include <ccprocessor>
 
 public Plugin myinfo = 
 {
@@ -56,10 +56,10 @@ public void OnMapStart() {
     delete kv;
 
     #if defined DEBUG
-    DWRITE("%s: OnMapStart():  \n
-            \t\t\t\tConfig: %s \n
-            \t\t\t\tLevel: %d  \n
-            \t\t\t\tFlag: %s", DEBUG, config, replacementLevel, accessFlag);
+    DWRITE("%s: OnMapStart():  \
+            \n\t\t\t\tConfig: %s \
+            \n\t\t\t\tLevel: %d  \
+            \n\t\t\t\tFlag: %s", DEBUG, config, replacementLevel, accessFlag);
     #endif
 }
 
@@ -68,9 +68,9 @@ public Action OnCmdUse(int iClient, int args) {
         GetCmdArg(1, liars[iClient], sizeof(liars[]));
 
         #if defined DEBUG
-        DWRITE("%s: OnCmdUse():    \n
-                \t\t\t\tClient: %N \n
-                \t\t\t\tValue: %s", DEBUG, iClient, liars[iClient]);
+        DWRITE("%s: OnCmdUse():    \
+                \n\t\t\t\tClient: %N \
+                \n\t\t\t\tValue: %s", DEBUG, iClient, liars[iClient]);
         #endif
     }
 
