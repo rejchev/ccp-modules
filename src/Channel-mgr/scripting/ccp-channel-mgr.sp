@@ -63,7 +63,7 @@ public void ccp_OnPackageAvailable(int iClient) {
         return;
     
     static const char handlers[4][] = {
-        "ccp-saytext2", "ccp-radiomsg", "ccp-textmsg", "ccp-saytext"
+        "ccp-saytext2.smx", "ccp-radiomsg.smx", "ccp-textmsg.smx", "ccp-saytext.smx"
     };
 
     static const char nativeChannels[4][PREFIX_LENGTH] = {
