@@ -46,7 +46,7 @@ Processing context(Handle plugin, int iClient, const char[] artifact, JSON value
             obj = (artifact[0]) ? view_as<JSON>(ccp_GetPackage(iClient)) : temp;
 
         if(artifact[0]) {
-            if(!value)
+            if(!temp)
                 asJSONO(obj).Remove(artifact);
 
             else asJSONO(obj).Set(artifact, temp);
@@ -58,6 +58,8 @@ Processing context(Handle plugin, int iClient, const char[] artifact, JSON value
                     \n\t\t\t\tClient: %N \
                     \n\t\t\t\tBuffer: %s", DEBUG, iClient, valve);
 #endif
+            if(temp)
+                delete temp;
         }
 
         if(!obj)
