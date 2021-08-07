@@ -8,7 +8,7 @@ enum ContextLevels {
     CALL_DEFAULT
 };
 
-forward void        ccp_pkg_Available(int iClient);
+forward void        ccp_OnPackageAvailable(int iClient);
 forward Processing  ccp_OnPackageUpdate(Handle ctx, int &level);
 forward void        ccp_OnPackageUpdate_Post(Handle ctx, int level);
 
