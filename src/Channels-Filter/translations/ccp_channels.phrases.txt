@@ -69,4 +69,10 @@
         "ru"            "Канал администраторов"
         "en"            "Admin channel"
     }
+
+    "CN"
+    {
+        "ru"            "Канал смена прозвеща"
+        "en"            "Change username channel"
+    }
 }
