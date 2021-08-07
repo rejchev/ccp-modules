@@ -53,12 +53,12 @@ public void OnMapStart() {
         g_bLate = false;
 
         if(ccp_HasPackage(0))
-            ccp_pkg_Available(0);
+            ccp_OnPackageAvailable(0);
     }
 
 }
 
-public void ccp_pkg_Available(int iClient) {
+public void ccp_OnPackageAvailable(int iClient) {
     if(iClient)
         return;
     
@@ -83,7 +83,7 @@ public void ccp_pkg_Available(int iClient) {
         }
     }
 
-    ccp_SetArtifact(iClient, pkgKey, channels, -1);
+    ccp_SetArtifact(iClient, pkgKey, channels, CALL_DEFAULT);
 
     delete channels;
 }
@@ -155,7 +155,7 @@ public any Native_RemoveChannel(Handle h, int a) {
         channels.Remove(index);
         
         // TODO: replacement level from native params
-        bool bSet = ccp_SetArtifact(0, pkgKey, channels, 0x01);
+        bool bSet = ccp_SetArtifact(0, pkgKey, channels, CALL_DEFAULT);
         delete channels;
 
         return bSet;
@@ -177,7 +177,7 @@ public any Native_AddChannel(Handle h, int a) {
         
         // TODO: replacement level from native params
         // Dumb idea...
-        bool bSet = ccp_SetArtifact(0, pkgKey, channels, 0x01);
+        bool bSet = ccp_SetArtifact(0, pkgKey, channels, CALL_DEFAULT);
         delete channels;
 
         return bSet;
