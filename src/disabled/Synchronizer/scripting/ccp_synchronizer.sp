@@ -95,7 +95,7 @@ public void OnThinkPost(int ent) {
         static char channel[PREFIX_LENGTH];
 
         for(int i = 1, a; i <= MaxClients; i++) {
-            if(ccp_HasPackage(i)) {
+            if(IsClientInGame(i) && ccp_HasPackage(i)) {
                 a = i<<3|GetClientTeam(i)<<1|view_as<int>(IsPlayerAlive(i));
                 for(int j; j < channels.Length; j++) {
                     channels.GetString(j, channel, sizeof(channel));
