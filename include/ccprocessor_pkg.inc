@@ -3,24 +3,14 @@
 #endif
 #define _ccprocessor_pkg_included
 
-#pragma deprecated "v1.0"
-forward void ccp_OnPackageAvailable_Pre(int iClient, Handle jsonObj);
+enum ContextLevels {
+    CALL_IGNORE = -1,
+    CALL_DEFAULT
+};
 
-#pragma deprecated "v1.0"
-forward void ccp_OnPackageAvailable(int iClient, Handle jsonObj);
-
-#pragma deprecated "v1.0"
-forward void ccp_OnPackageRemove(int iClient, Handle jsonObj);
-
-#pragma deprecated "v1.0 -> use ccp_pkg_UpdateRequest()"
-forward void ccp_OnPackageUpdated(int iClient, Handle jsonObj, Handle hCaller);
-
-#pragma deprecated "v1.0"
-native Handle   ccp_UpdatePackage(int iClient, Handle newValue);
-
-
-forward void ccp_pkg_Available(int iClient);
-forward Processing ccp_pkg_UpdateRequest(Handle hPlugin, int iClient, const char[] artifact, Handle value, int &repLevel);
+forward void        ccp_pkg_Available(int iClient);
+forward Processing  ccp_OnPackageUpdate(Handle ctx, int &level);
+forward void        ccp_OnPackageUpdate_Post(Handle ctx, int level);
 
 native Handle   ccp_GetPackage(int iClient);
 native bool     ccp_SetPackage(int iClient, Handle value, int repLevel);
