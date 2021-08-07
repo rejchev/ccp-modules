@@ -79,7 +79,6 @@ bool Initialization(int iClient, const char[] auth = "STEAM_ID_SERVER") {
     obj.SetInt("uid", (iClient) ? GetClientUserId(iClient) : 0);
 
     bool success = ccp_SetPackage(iClient, obj, -1);
-
     delete obj;
 
     return success;
