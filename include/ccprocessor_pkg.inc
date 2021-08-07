@@ -9,16 +9,16 @@ enum ContextLevels {
 };
 
 forward void        ccp_OnPackageAvailable(int iClient);
-forward Processing  ccp_OnPackageUpdate(Handle ctx, int &level);
-forward void        ccp_OnPackageUpdate_Post(Handle ctx, int level);
+forward Processing  ccp_OnPackageUpdate(Handle ctx, any &level);
+forward void        ccp_OnPackageUpdate_Post(Handle ctx, any level);
 
 native Handle   ccp_GetPackage(int iClient);
-native bool     ccp_SetPackage(int iClient, Handle value, int repLevel);
+native bool     ccp_SetPackage(int iClient, Handle value, any repLevel);
 native bool     ccp_HasPackage(int iClient);
 native bool     ccp_IsVerified(int iClient);
 
-native bool     ccp_SetArtifact(int iClient, const char[] artifact, Handle value, int repLevel);
-native bool     ccp_RemoveArtifact(int iClient, const char[] artifact, int repLevel);
+native bool     ccp_SetArtifact(int iClient, const char[] artifact, Handle value, any repLevel);
+native bool     ccp_RemoveArtifact(int iClient, const char[] artifact, any repLevel);
 native Handle   ccp_GetArtifact(int iClient, const char[] artifact);
 native bool     ccp_HasArtifact(int iClient, const char[] artifact);
 
