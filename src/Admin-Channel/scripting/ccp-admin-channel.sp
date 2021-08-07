@@ -57,7 +57,7 @@ public void OnMapStart() {
 
         for(int i; i <= MaxClients; i++)
             if(ccp_HasPackage(i))
-                ccp_pkg_Available(i);
+                ccp_OnPackageAvailable(i);
     }
 
     counter = 0;
@@ -66,7 +66,7 @@ public void OnMapStart() {
     jMessager = new JSONObject();
 }
 
-public void ccp_pkg_Available(int iClient) {
+public void ccp_OnPackageAvailable(int iClient) {
     static char config[MESSAGE_LENGTH]  
         = "configs/ccprocessor/admins-channel/settings.json";
 
@@ -84,22 +84,25 @@ public void ccp_pkg_Available(int iClient) {
 
     jConfig = JSONObject.FromFile(config, 0);
 
-    if(!ccp_SetArtifact(iClient, pkgKey, jConfig, -1)) {
+    if(!ccp_SetArtifact(iClient, pkgKey, jConfig, CALL_IGNORE)) {
         SetFailState("Something went wrong: ...");
     }
 }
 
-public Processing ccp_pkg_UpdateRequest(Handle hPlugin, int iClient, const char[] artifact, Handle value, int &repLevel) {
-    if(!iClient && repLevel == -1) {
-        delete (asJSONO(jConfig));
-    }
+public void ccp_OnPackageUpdate_Post(Handle ctx, any level) {
+    JSONObject obj = asJSONO(ctx);
+    
+    if(!obj.GetBool("isArtifact") || GetClientOfUserId(obj.GetInt("client")))
+        return;
+    
+    char szBuffer[PREFIX_LENGTH];
+    obj.GetString("field", szBuffer, sizeof(szBuffer));
 
-    if(!iClient && !strcmp(artifact, "channel_mgr") && repLevel == -1) {
-        char szBuffer[MESSAGE_LENGTH];
-
-        jConfig.GetString("identificator", szBuffer, sizeof(szBuffer));
-        ccp_AddChannel(szBuffer);
-    }
+    if(strcmp(szBuffer, "channel_mgr") || level != CALL_DEFAULT)
+        return;
+    
+    jConfig.GetString("identificator", szBuffer, sizeof(szBuffer));
+    ccp_AddChannel(szBuffer);
 }
 
 public Action OnClientSayCommand(int iClient, const char[] cmd, const char[] args) {
