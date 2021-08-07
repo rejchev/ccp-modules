@@ -7,19 +7,29 @@
 #endif
 
 #include <ccprocessor>
+#include <ccprocessor_pkg>
 
 public Plugin myinfo = 
 {
 	name = "[CCP] JSON Packager",
-	author = "nyoood?",
+	author = "rej.chev",
 	description = "...",
-	version = "1.0.3",
+	version = "1.1.0",
 	url = "discord.gg/ChTyPUG"
 };
 
 bool g_bLate;
 
-JSONObject jClients[MAXPLAYERS+1];
+JSONObject packager;
+
+GlobalForward
+    fwdPackageUpdate_Post,
+    fwdPackageUpdate,
+    fwdPackageAvailable;
+
+#include "packager/forwards.sp"
+#include "packager/context.sp"
+#include "packager/natives.sp"
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max) {
     #if defined DEBUG
@@ -27,20 +37,60 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
     #endif
 
     CreateNative("ccp_GetPackage", Native_GetPackage);
-    CreateNative("ccp_UpdatePackage", Native_UpdatePackage);
-    
+    CreateNative("ccp_SetPackage", Native_SetPackage);
+    CreateNative("ccp_HasPackage", Native_HasPackage);
+    CreateNative("ccp_IsVerified", Native_IsVerified);
+    CreateNative("ccp_SetArtifact", Native_SetArtifact);
+    CreateNative("ccp_RemoveArtifact", Native_Remove);
+    CreateNative("ccp_GetArtifact", Native_GetArtifact);
+    CreateNative("ccp_HasArtifact", Native_HasArtifact);
+
+    // Processing(Handle initiator, int Client,const char[] artifact, Handle value, int repLevel = -1)
+    // level = -1 is default replacement level for this plugin.
+    // don't change value with this replacement level...
+    fwdPackageUpdate = new GlobalForward(
+        "ccp_OnPackageUpdate", 
+        ET_Hook, Param_Cell, Param_CellByRef
+    );
+
+    fwdPackageUpdate_Post = new GlobalForward(
+        "ccp_OnPackageUpdate_Post", 
+        ET_Ignore, Param_Cell, Param_Cell
+    );
+
+    fwdPackageAvailable = new GlobalForward(
+        "ccp_OnPackageAvailable", 
+        ET_Ignore, Param_Cell
+    );
+
     RegPluginLibrary("ccprocessor_pkg");
 
     g_bLate = late;
 }
 
-public void OnPluginStart()
-{
+bool Initialization(int iClient, const char[] auth = "STEAM_ID_SERVER") {
+    JSONObject obj;
+
+    if(ccp_HasPackage(iClient))
+        ccp_SetPackage(iClient, obj, -1);
+    
+    obj = new JSONObject();
+    obj.SetString("auth", auth);
+    obj.SetInt("uid", (iClient) ? GetClientUserId(iClient) : 0);
+
+    bool success = ccp_SetPackage(iClient, obj, -1);
+    delete obj;
+
+    return success;
+}
+
+public void OnPluginStart() {
+    packager = new JSONObject();
+
     if(g_bLate) {
         g_bLate = false;
         for(int i = 1; i <= MaxClients; i++) {
             if(IsClientConnected(i) && IsClientAuthorized(i)) {
-                OnClientDisconnect(i);
                 OnClientAuthorized(i, GetClientAuthIdEx(i));
             }
         }
@@ -52,132 +102,33 @@ public void OnMapStart() {
     DBUILD()
     #endif
 
-    Call_pkgClear(0);
-    Call_pkgReady(0);
+    OnClientAuthorized(0, "STEAM_ID_SERVER");
 }
 
 public void OnClientAuthorized(int iClient, const char[] auth) {
-    if(IsFakeClient(iClient) || IsClientSourceTV(iClient))
+    if(iClient && (IsFakeClient(iClient) || IsClientSourceTV(iClient)))
         return;
 
-    Call_pkgReady(iClient, auth);
-}
+    if(!ccp_SetPackage(iClient, null, -1) || !Initialization(iClient, auth))
+        SetFailState("What the fuck are u doing?");
 
-public void OnClientDisconnect(int iClient) {
-    if(IsFakeClient(iClient) || IsClientSourceTV(iClient))
-        return;
-
-    Call_pkgClear(iClient);
-}
-
-public any Native_GetPackage(Handle h, int a) {
-    int iClient = GetNativeCell(1);
-
-    if(iClient < 0 || iClient >= MAXPLAYERS+1) {
-        ThrowNativeError(SP_ERROR_INDEX, "Invalid client '%d' index", iClient);
-    }
-
-    return jClients[iClient];
-}
-
-public any Native_UpdatePackage(Handle h, int a) {
-    int iClient = GetNativeCell(1);
-    if(iClient < 0 || iClient >= MAXPLAYERS+1) {
-        ThrowNativeError(SP_ERROR_INDEX, "Invalid client '%d' index", iClient);
-    }
-
-    if(jClients[iClient]) {
-        delete jClients[iClient];
-    }
-
-    char szBuffer[2048];
-    view_as<JSON>(GetNativeCell(2)).ToString(szBuffer, sizeof(szBuffer), 0);
-    
-    #if defined DEBUG
-    DWRITE("%s: Native(update): => \n%s", DEBUG, szBuffer);
-    #endif
-
-    jClients[iClient] = JSONObject.FromString(szBuffer);
-
-    GetPluginFilename(h, szBuffer, sizeof(szBuffer));
-    jClients[iClient].SetBool("cloud", StrContains(szBuffer, "ccp-cloud") != -1);
-
-    pkgUpdated(iClient, h); 
-
-    return jClients[iClient];
-}
-
-void packageReady_Pre(int iClient) {
-    static GlobalForward h;
-    if(!h)
-        h = new GlobalForward("ccp_OnPackageAvailable_Pre", ET_Ignore, Param_Cell, Param_Cell);
-
-    Call_StartForward(h);
+    Call_StartForward(fwdPackageAvailable);
     Call_PushCell(iClient);
-    Call_PushCell(jClients[iClient]);
     Call_Finish();
 }
 
-void packageReady(int iClient) {
-    static GlobalForward h;
-    if(!h)
-        h = new GlobalForward("ccp_OnPackageAvailable", ET_Ignore, Param_Cell, Param_Cell);
+char[] GetClientAuthIdEx(int iClient) {
+    static char auth[64];
 
-    Call_StartForward(h);
-    Call_PushCell(iClient);
-    Call_PushCell(jClients[iClient]);
-    Call_Finish();
+    if(!GetClientAuthId(iClient, AuthId_Steam2, auth, sizeof(auth)))
+        auth = NULL_STRING;
+
+    return auth;
 }
 
-void Call_pkgReady(int iClient, const char[] auth = "STEAM_ID_SERVER") {
-    pkgInit(iClient, auth);
+char[] IndexToChar(int iClient) {
+    static char index[4];
+    FormatEx(index, sizeof(index), "%d", iClient);
 
-    packageReady_Pre(iClient);
-    packageReady(iClient);
-}
-
-void Call_pkgClear(int iClient) {
-    static GlobalForward h;
-    if(!h)
-        h = new GlobalForward("ccp_OnPackageRemove", ET_Ignore, Param_Cell, Param_Cell);
-
-    Call_StartForward(h);
-    Call_PushCell(iClient);
-    Call_PushCell(jClients[iClient]);
-    Call_Finish();
-
-    pkgClear(iClient);
-}
-
-void pkgInit(int iClient, const char[] auth = "STEAM_ID_SERVER") {
-    if(!jClients[iClient]) {
-        jClients[iClient] = new JSONObject();
-    }
-
-    jClients[iClient].SetString("auth", auth);
-}
-
-void pkgClear(int iClient) {
-    delete jClients[iClient];
-}
-
-void pkgUpdated(int iClient, Handle hInitiator) {
-    static GlobalForward h;
-    if(!h)
-        h = new GlobalForward("ccp_OnPackageUpdated", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
-
-    Call_StartForward(h);
-    Call_PushCell(iClient);
-    Call_PushCell(jClients[iClient]);
-    Call_PushCell(hInitiator);
-    Call_Finish();
-}
-
-stock char[] GetClientAuthIdEx(int iClient) {
-    char szBuffer[66];
-    if(!GetClientAuthId(iClient, AuthId_Steam2, szBuffer, sizeof(szBuffer))) {
-        szBuffer = NULL_STRING;
-    }
-
-    return szBuffer;
+    return index;
 }

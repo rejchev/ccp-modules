@@ -8,13 +8,14 @@
 
 #include <ccprocessor>
 #include <ccprocessor_pkg>
+#include <ccprocessor_chls>
 
 public Plugin myinfo = 
 {
 	name = "[CCP] Admin channel",
 	author = "nyood",
 	description = "...",
-	version = "1.0.8",
+	version = "1.1.0",
 	url = "https://discord.gg/cFZ97Mzrjy"
 };
 
@@ -26,11 +27,6 @@ JSONObject jMessager;
 int counter;
 
 bool g_bLate;
-
-char syncNameColor[MAXPLAYERS+1][STATUS_LENGTH];
-char syncChatTag[MAXPLAYERS+1][PREFIX_LENGTH];
-char syncChatTagColor[MAXPLAYERS+1][STATUS_LENGTH];
-char syncMessageColor[MAXPLAYERS+1][STATUS_LENGTH];
 
 static const char ROOT[] = "z";
 
@@ -45,8 +41,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart() {
     LoadTranslations("admin-channel.phrases");
-
-    CreateTimer(5.0, PseudoBuild, _, TIMER_REPEAT);
 }
 
 public void OnMapStart() {
@@ -61,11 +55,9 @@ public void OnMapStart() {
     if(g_bLate) {
         g_bLate = false;
 
-        for(int i; i <= MaxClients; i++) {
-            if(!i || (IsClientInGame(i) && !IsFakeClient(i) && IsClientAuthorized(i))) {
-                ccp_OnPackageAvailable(i, ccp_GetPackage(i));
-            }
-        }
+        for(int i; i <= MaxClients; i++)
+            if(ccp_HasPackage(i))
+                ccp_OnPackageAvailable(i);
     }
 
     counter = 0;
@@ -74,29 +66,13 @@ public void OnMapStart() {
     jMessager = new JSONObject();
 }
 
-public void ccp_OnPackageAvailable(int iClient, Handle jsonObj) {
-    static const char cloud[]           = "cloud";
-    static char config[MESSAGE_LENGTH]  = "configs/ccprocessor/admins-channel/settings.json";
+public void ccp_OnPackageAvailable(int iClient) {
+    static char config[MESSAGE_LENGTH]  
+        = "configs/ccprocessor/admins-channel/settings.json";
 
-    JSONObject objPackage = asJSONO(jsonObj);
-
-    if(!objPackage || !objPackage.HasKey("auth") || iClient) {
+    if(iClient)
         return;
-    }
-
-    if(jConfig) {
-        delete jConfig;
-    }
-
-    // Loaded from cloud
-    if(objPackage.HasKey(pkgKey) && objPackage.HasKey(cloud) && objPackage.GetBool(cloud)) {
-        if(!iClient) {
-            jConfig = asJSONO(objPackage.Get(pkgKey));    
-        }
-
-        return;
-    }
-
+    
     // Load from local
     if(config[0] == 'c') {
         BuildPath(Path_SM, config, sizeof(config), config);
@@ -107,13 +83,26 @@ public void ccp_OnPackageAvailable(int iClient, Handle jsonObj) {
     }
 
     jConfig = JSONObject.FromFile(config, 0);
-    objPackage.Set(pkgKey, jConfig);
+
+    if(!ccp_SetArtifact(iClient, pkgKey, jConfig, CALL_IGNORE)) {
+        SetFailState("Something went wrong: ...");
+    }
 }
 
-public void ccp_OnPackageRemove(int iClient, Handle jsonObj) {
-    if(!iClient) {
-        delete (asJSONO(jConfig));
-    }
+public void ccp_OnPackageUpdate_Post(Handle ctx, any level) {
+    JSONObject obj = asJSONO(ctx);
+    
+    if(!obj.GetBool("isArtifact") || GetClientOfUserId(obj.GetInt("client")))
+        return;
+    
+    char szBuffer[PREFIX_LENGTH];
+    obj.GetString("field", szBuffer, sizeof(szBuffer));
+
+    if(strcmp(szBuffer, "channel_mgr") || level != CALL_DEFAULT)
+        return;
+    
+    jConfig.GetString("identificator", szBuffer, sizeof(szBuffer));
+    ccp_AddChannel(szBuffer);
 }
 
 public Action OnClientSayCommand(int iClient, const char[] cmd, const char[] args) {
@@ -188,34 +177,6 @@ public Action OnClientSayCommand(int iClient, const char[] cmd, const char[] arg
 }
 
 char nextMessage[MESSAGE_LENGTH];
-
-Action PseudoBuild(Handle hTimer) {
-    static int rootFlag;
-    if(!rootFlag) {
-        rootFlag = ReadFlagString(ROOT);
-    }
-
-    char szBuffer[4];
-
-    static int accessFlag;
-    if(jConfig) {
-        jConfig.GetString("accessFlag", szBuffer, sizeof(szBuffer));
-
-        accessFlag = ReadFlagString(szBuffer);
-    }
-
-    ArrayList arr = new ArrayList(MESSAGE_LENGTH, 0);
-    for(int i = 1, a; i <= MaxClients; i++) {
-        if(IsClientInGame(i)) {
-            a = GetUserFlagBits(i);
-            if((a & accessFlag) || (a & rootFlag)) {
-                stock_RebuildMsg(arr, -1, i<<3|GetClientTeam(i)<<1|view_as<int>(IsPlayerAlive(i)), i, "STA", NULL_STRING, szBuffer, szBuffer, szBuffer);
-            }
-        }
-    }
-
-    delete arr;
-}
 
 public Processing cc_proc_OnNewMessage(const int[] props, int propsCount, ArrayList params) {
     static const char parentChannel[] = "TM";
@@ -348,39 +309,27 @@ public Processing cc_proc_OnRebuildString(const int[] props, int part, ArrayList
                 FormatEx(value, size, "%T", value, props[2]);
             }
 
-            // Delegating values from the main message thread
-            if(part == BIND_PREFIX) 
-                FormatEx(value, size, "%s", syncChatTag[senderId]);
+            JSONObject jArtifact;
+            JSONObject jSync;
 
-            if(jConfig.GetBool("delegate")) {
-                if(part == BIND_PREFIX_CO) 
-                    FormatEx(value, size, "%s", syncChatTagColor[senderId]);
+            if(ccp_HasArtifact(0, "synchronizer")) {
+                jArtifact = asJSONO(ccp_GetArtifact(0, "synchronizer"));
 
-                else if(part == BIND_NAME_CO)
-                    FormatEx(value, size, "%s", syncNameColor[senderId]);
+                if(jArtifact.HasKey(szIndent))
+                    jSync = asJSONO(jArtifact.Get(szIndent));
+                
+                delete jArtifact;
 
-                else if(part == BIND_MSG_CO)
-                    FormatEx(value, size, "%s", syncMessageColor[senderId]);
+                // Delegating values from the main message thread
+                if(jSync && jSync.HasKey(szBinds[part]))
+                    if(part == BIND_PREFIX || jConfig.GetBool("delegate")) 
+                        jSync.GetString(szBinds[part], value, size);
+
+                delete jSync;
             }
         }
     }
 
     delete jValues;
     return Proc_Change;
-}
-
-public Processing cc_proc_OnRebuildString_Post(const int[] props, int part, ArrayList params, int level, const char[] value) {
-    char ident[64];
-    params.GetString(0, ident, sizeof(ident));
-
-    if(!strcmp(ident, "STA")) {
-        switch(part) {
-            case BIND_PREFIX_CO:    FormatEx(syncChatTagColor[SENDER_INDEX(props[1])], sizeof(syncChatTagColor[]), "%s", value);
-            case BIND_PREFIX:       FormatEx(syncChatTag[SENDER_INDEX(props[1])], sizeof(syncChatTag[]), "%s", value);
-            case BIND_NAME_CO:      FormatEx(syncNameColor[SENDER_INDEX(props[1])], sizeof(syncNameColor[]), "%s", value);
-            case BIND_MSG_CO:       FormatEx(syncMessageColor[SENDER_INDEX(props[1])], sizeof(syncMessageColor[]), "%s", value);
-        }
-    }
-
-    return Proc_Continue;
 }
