@@ -104,6 +104,7 @@ public void OnThinkPost(int ent) {
             }
         }
 
+        delete arr;
         delete channels;
     }
 }
