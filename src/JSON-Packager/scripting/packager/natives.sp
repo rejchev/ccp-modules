@@ -44,7 +44,7 @@ public any Native_SetArtifact(Handle h, int a) {
     int iClient = GetNativeCell(1);
 
     if(!ccp_HasPackage(iClient))
-        return ThrowNativeError(-1, "Client package is null");
+        return false;
 
     static char artifact[PREFIX_LENGTH];
     GetNativeString(2, artifact, sizeof(artifact));
@@ -57,7 +57,7 @@ public any Native_Remove(Handle h, int a) {
     int iClient = GetNativeCell(1);
 
     if(!ccp_HasPackage(iClient))
-        return ThrowNativeError(-1, "Client package is null");
+        return false;
 
     static char artifact[64];
     GetNativeString(2, artifact, sizeof(artifact));
@@ -69,7 +69,7 @@ public any Native_GetArtifact(Handle h, int a) {
     int iClient = GetNativeCell(1);
 
     if(!ccp_HasPackage(iClient))
-        return ThrowNativeError(-1, "Client package is null");
+        return 0;
 
     static char artifact[64];
     GetNativeString(2, artifact, sizeof(artifact));
@@ -89,7 +89,7 @@ public any Native_HasArtifact(Handle h, int a) {
     int iClient = GetNativeCell(1);
 
     if(!ccp_HasPackage(iClient))
-        return ThrowNativeError(-1, "Client package is null");
+        return false;
 
     static char artifact[64];
     GetNativeString(2, artifact, sizeof(artifact));
