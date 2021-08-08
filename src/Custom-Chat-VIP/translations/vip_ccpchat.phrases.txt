@@ -73,4 +73,38 @@
         "en"            "{R}Invalid ABBR {G}'{1}', {R}please repeat:"
     }
 
+    "something_wrong"
+    {
+        "#format"       "{1:s}"
+        "ru"            "{W}Ошибка процесса выполнения: {1}{W}. Пожалуйста, сообщите администратору."
+        "en"            "{W}Execution process error: {1}{W}. Please inform the administrator."
+    }
+
+    "wrong_artifact"
+    {
+        "ru"            "{G}Артефакт клиента отсутствует"
+        "en"            "{G}Client artifact is missing"
+    }
+
+    "wrong_internal"
+    {
+        "ru"            "{G}Артефакт сервера отсутствует"
+        "en"            "{G}Server artifact is missing"
+    }
+
+    "wrong_group"
+    {
+        "#format"       "{1:s}"
+
+        "ru"            "{G}Группа '{W}{1}{G}' отсутствует"
+        "en"            "{G}Group '{W}{1}{G}' is missing"
+    }
+
+    "wrong_items"
+    {
+        "#format"       "{1:s}"
+
+        "ru"            "{G}Список вещей '{W}{1}{G}' пуст"
+        "en"            "{G}Items list of '{W}{1}{G}' is empty"
+    }
 }

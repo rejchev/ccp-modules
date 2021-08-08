@@ -294,7 +294,7 @@ Menu FeatureMenu(int iClient, const char[] szFeature)
 
     JSONObject pkg;
     if((pkg = asJSONO(ccp_GetArtifact(0, pkgKey))) == null) {
-        FormatEx(szBuffer, sizeof(szBuffer), "%T", "wrong_iternal", iClient);
+        FormatEx(szBuffer, sizeof(szBuffer), "%T", "wrong_internal", iClient);
         PrintToChat(iClient, "%T", "something_wrong", iClient, szBuffer);
         
         delete model;
@@ -313,7 +313,8 @@ Menu FeatureMenu(int iClient, const char[] szFeature)
 
     JSONArray items;
     if(!group.HasKey(szBuffer) || (items = asJSONA(group.Get(szBinds[iBind]))) == null) {
-        FormatEx(szBuffer, sizeof(szBuffer), "%T", "wrong_items", iClient, szBinds[iBind]);
+        FormatEx(szBuffer, sizeof(szBuffer), "%T", szBinds[iBind], iClient);
+        Format(szBuffer, sizeof(szBuffer), "%T", "wrong_items", iClient, szBuffer);
         PrintToChat(iClient, "%T", "something_wrong", iClient, szBuffer);
 
         delete model;
