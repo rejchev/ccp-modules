@@ -58,7 +58,7 @@ public void OnMapStart() {
                 ccp_OnPackageAvailable(i);
     }
 
-    nextSyncTick = 0;
+    nextSyncTick = 1000;
 
     SDKHook(GetPlayerResourceEntity(), SDKHook_ThinkPost, OnThinkPost);
 }
@@ -74,7 +74,7 @@ public void OnThinkPost(int ent) {
 
     static char szBuffer[4];
 
-    if(currentTick <= nextSyncTick || !nextSyncTick) {
+    if(currentTick >= nextSyncTick || !nextSyncTick) {
         JSONObject obj;
         if(!ccp_HasArtifact(0, pkgKey))
             return;
@@ -88,14 +88,14 @@ public void OnThinkPost(int ent) {
         JSONArray channels;
         if(!ccp_HasArtifact(0, "channel_mgr"))
             return;
-        
+
         channels = asJSONA(ccp_GetChannelList());
 
         ArrayList arr = new ArrayList(MAX_LENGTH, 0);
         static char channel[PREFIX_LENGTH];
 
         for(int i = 1, a; i <= MaxClients; i++) {
-            if(IsClientInGame(i) && ccp_HasPackage(i)) {
+            if(IsClientInGame(i)) {
                 a = i<<3|GetClientTeam(i)<<1|view_as<int>(IsPlayerAlive(i));
                 for(int j; j < channels.Length; j++) {
                     channels.GetString(j, channel, sizeof(channel));
@@ -107,7 +107,6 @@ public void OnThinkPost(int ent) {
         delete channels;
     }
 }
-
 
 public void ccp_OnPackageAvailable(int iClient) {
     static char config[MESSAGE_LENGTH]  
@@ -162,7 +161,7 @@ public Processing cc_proc_OnRebuildString_Post(const int[] props, int part, Arra
     obj.Set(szBuffer, ch);
     delete ch;
 
-    ccp_SetArtifact(SENDER_INDEX(props[1]), pkgKey, obj, CALL_DEFAULT);
+    ccp_SetArtifact(SENDER_INDEX(props[1]), pkgKey, obj, CALL_IGNORE);
     delete obj;
 
     return Proc_Continue;
