@@ -12,7 +12,7 @@ public Plugin myinfo =
 	name = "[CCP] Custom Chat <VIP>",
 	author = "nyood",
 	description = "...",
-	version = "2.0.6a",
+	version = "2.0.7",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -45,7 +45,7 @@ public void OnPluginStart()
         VIP_OnVIPLoaded();
 
     if(g_bLate) {
-        ccp_OnPackageAvailable(0, ccp_GetPackage(0));
+        ccp_OnPackageAvailable(0);
         cc_config_parsed();
 
         for(int i = 1; i <= MaxClients; i++) {
@@ -99,29 +99,23 @@ public void OnMapStart()
     manageConVars(false);
 }
 
-public void ccp_OnPackageAvailable(int iClient, Handle objClient) {
-    if(!objClient) {
+public void ccp_OnPackageAvailable(int iClient) {
+    if(iClient)
         return;
-    }
+    
+    static char szConfig[PLATFORM_MAX_PATH] = "data/vip/modules/chat.json";
 
-    JSONObject pkg = asJSONO(objClient);
+    if(szConfig[0] == 'd')
+        BuildPath(Path_SM, szConfig, sizeof(szConfig), szConfig);
+    
+    if(!FileExists(szConfig))
+        SetFailState("Where is my config??: %s", szConfig);
+    
+    JSONObject objFile = JSONObject.FromFile(szConfig, 0);
 
-    if(!iClient) {
-        static char szConfig[PLATFORM_MAX_PATH] = "data/vip/modules/chat.json";
+    ccp_SetArtifact(iClient, pkgKey, objFile, CALL_IGNORE);
 
-        if(szConfig[0] == 'd')
-            BuildPath(Path_SM, szConfig, sizeof(szConfig), szConfig);
-        
-        if(!FileExists(szConfig))
-            SetFailState("Where is my config??: %s", szConfig);
-        
-        JSONObject objFile = JSONObject.FromFile(szConfig, 0);
-
-        //LogMessage("Pkg(%x) && file(%x)", pkg, objFile);
-        pkg.Set(pkgKey, objFile);
-
-        delete objFile;
-    }
+    delete objFile;
 }
 
 public void cc_config_parsed()
@@ -143,7 +137,7 @@ public void VIP_OnVIPLoaded()
 
         coFeatures[part] = new Cookie(szFeature, NULL_STRING, CookieAccess_Private);
 
-        VIP_RegisterFeature(szFeature, INT, SELECTABLE, OnSelected_Feature, OnDisplay_Feature);
+        VIP_RegisterFeature(szFeature, INT, SELECTABLE, OnSelected_Feature, OnDisplay_Feature, OnDraw_Feature);
     }
 }
 
@@ -158,16 +152,9 @@ public void OnPluginEnd()
 
 public bool OnSelected_Feature(int iClient, const char[] szFeature)
 {
-    // g_bWaitingCustom[iClient] = false;
     g_iBindNow[iClient] = BIND_MAX;
 
-    Menu hMenu = FeatureMenu(iClient, szFeature);
-    if(!hMenu) {
-        LogError("OnSelected_Feature(%N): Items array or client model is null. Aborted", iClient);
-        return true;
-    }
-
-    hMenu.Display(iClient, MENU_TIME_FOREVER);
+    FeatureMenu(iClient, szFeature).Display(iClient, MENU_TIME_FOREVER);
     return false;
 }
 
@@ -176,13 +163,12 @@ public bool OnDisplay_Feature(int iClient, const char[] szFeature, char[] szDisp
     int iBind = BindFromString(szFeature);
     FormatEx(szDisplay, iMaxLength, "%T [%T]", szFeature, iClient, "empty_value", iClient);
 
-    JSONObject model = getClientModel(iClient);
-    if(!model) {
-        LogError("OnDisplay_Feature(%N): Something went wrong, client model is null..", iClient);
+    if(!ccp_HasArtifact(iClient, pkgKey))
         return true;
-    }
 
-    if(IsPartValid(model, iBind) && model.GetString(szBinds[iBind], szDisplay, iMaxLength))
+    JSONObject artifact = asJSONO(ccp_GetArtifact(iClient, pkgKey));
+
+    if(IsPartValid(artifact, iBind) && artifact.GetString(szBinds[iBind], szDisplay, iMaxLength))
     {
         if(TranslationPhraseExists(szDisplay)) {
             Format(szDisplay, iMaxLength, "%T", szDisplay, iClient);
@@ -193,23 +179,51 @@ public bool OnDisplay_Feature(int iClient, const char[] szFeature, char[] szDisp
         Format(szDisplay, iMaxLength, "%T [%s]", szFeature, iClient, szDisplay);
     }
 
-    delete model;
+    delete artifact;
 
     return true;
 }
 
+public int OnDraw_Feature(int iClient, const char[] szFeature, int iStyle) {
+    char szBuffer[MESSAGE_LENGTH];
+    VIP_GetClientVIPGroup(iClient, szBuffer, sizeof(szBuffer));
+
+    JSONObject artifact = asJSONO(ccp_GetArtifact(0, pkgKey));
+
+    int iDrawType = ITEMDRAW_DEFAULT;
+
+    if(artifact.HasKey(szBuffer) && !artifact.IsNull(szBuffer)) {
+        JSONObject group = asJSONO(artifact.Get(szBuffer));
+        delete artifact;
+
+        if(group.HasKey(szFeature) && !group.IsNull(szFeature)) {
+            JSONArray list = asJSONA(group.Get(szFeature));
+            delete group;
+
+            if(list.Length) {
+                delete list;
+                return iDrawType;
+            }
+
+            delete list;
+        }        
+
+        delete group;
+    }
+
+    delete artifact;
+
+    iDrawType = ITEMDRAW_DISABLED;
+    
+    return iDrawType;
+}
+
 public void VIP_OnVIPClientLoaded(int iClient)
 {
-    char szFeature[64];
     char szGroup[64];
+    char szFeature[64];
     VIP_GetClientVIPGroup(iClient, szGroup, sizeof(szGroup));
 
-    // int idx;
-
-    JSONObject client = asJSONO(ccp_GetPackage(iClient));
-
-    // model
-    // client.Set(pkgKey, new JSONObject());
     JSONObject model = new JSONObject();
 
     for(int i, idx; i < BIND_MAX; i++)
@@ -227,7 +241,7 @@ public void VIP_OnVIPClientLoaded(int iClient)
         GetValueFromCookie(iClient, model, coFeatures[idx], i);
     }
 
-    client.Set(pkgKey, model);
+    ccp_SetArtifact(iClient, pkgKey, model, CALL_DEFAULT);
     delete model;
 }
 
@@ -270,22 +284,46 @@ Menu FeatureMenu(int iClient, const char[] szFeature)
     char szBuffer[MESSAGE_LENGTH], szOption[NAME_LENGTH];
     VIP_GetClientVIPGroup(iClient, szBuffer, sizeof(szBuffer));
     
-    JSONObject  model    =   getClientModel(iClient);
-    JSONObject  pkg      =   (model)                                    ? asJSONO(asJSONO(ccp_GetPackage(0)).Get(pkgKey)) : null;
-    JSONObject  group    =   (pkg && pkg.HasKey(szBuffer))              ? asJSONO(pkg.Get(szBuffer)) : null;
-    JSONArray   items    =   (group && group.HasKey(szBinds[iBind]))    ? asJSONA(group.Get(szBinds[iBind])) : null;
-
-    delete group;
-
-    if(!model || !pkg || !items || !items.Length) {
-        LogError("FeatureMenu(%N): Something went wrong..", iClient);
-
-        delete model;
-        delete pkg;
-        delete items;
+    JSONObject model;
+    if((model = asJSONO(ccp_GetArtifact(iClient, pkgKey))) == null) {
+        FormatEx(szBuffer, sizeof(szBuffer), "%T", "wrong_artifact", iClient);
+        PrintToChat(iClient, "%T", "something_wrong", iClient, szBuffer);
 
         return hMenu;
     }
+
+    JSONObject pkg;
+    if((pkg = asJSONO(ccp_GetArtifact(0, pkgKey))) == null) {
+        FormatEx(szBuffer, sizeof(szBuffer), "%T", "wrong_iternal", iClient);
+        PrintToChat(iClient, "%T", "something_wrong", iClient, szBuffer);
+        
+        delete model;
+        return hMenu;
+    }
+
+    JSONObject group;
+    if(!pkg.HasKey(szBuffer) || (group = asJSONO(pkg.Get(szBuffer))) == null) {
+        Format(szBuffer, sizeof(szBuffer), "%T", "wrong_group", iClient, szBuffer);
+        PrintToChat(iClient, "%T", "something_wrong", iClient, szBuffer);
+
+        delete model;
+        delete pkg;
+        return hMenu;
+    }
+
+    JSONArray items;
+    if(!group.HasKey(szBuffer) || (items = asJSONA(group.Get(szBinds[iBind]))) == null) {
+        FormatEx(szBuffer, sizeof(szBuffer), "%T", "wrong_items", iClient, szBinds[iBind]);
+        PrintToChat(iClient, "%T", "something_wrong", iClient, szBuffer);
+
+        delete model;
+        delete group;
+        delete pkg;
+
+        return hMenu;
+    }
+
+    delete group;
 
     hMenu = new Menu(FeatureMenu_CallBack);
     hMenu.SetTitle("%T%T \n \n", "feature_title", iClient, szFeature, iClient);
@@ -359,16 +397,11 @@ public int FeatureMenu_CallBack(Menu hMenu, MenuAction action, int iClient, int 
 
             VIP_GetClientVIPGroup(iClient, szOption, sizeof(szOption));
 
-            JSONObject model = getClientModel(iClient);
-            if(!model) {
-                LogError("FeatureMenu_CallBack(%N): Something went wrong, client model is null..", iClient);
+            if(!ccp_HasArtifact(iClient, pkgKey))
                 return;
-            }
 
             // pkg -> pkgKey -> vipGroup -> bindArray
-            JSONObject group = asJSONOEx(szOption, 
-                asJSONOEx(pkgKey, asJSONO(ccp_GetPackage(0)), false)
-            );
+            JSONObject group = asJSONOEx(szOption, asJSONO(ccp_GetArtifact(0, pkgKey)));
 
             JSONArray items = asJSONA(group.Get(szBinds[part]));
             delete group;
@@ -383,14 +416,16 @@ public int FeatureMenu_CallBack(Menu hMenu, MenuAction action, int iClient, int 
                 return;
             } 
 
+            JSONObject artifact = asJSONO(ccp_GetArtifact(iClient, pkgKey));
+
             if(!strcmp(szOption, "disable")) {
-                model.SetNull(szBinds[part]);
+                artifact.SetNull(szBinds[part]);
                 szOption = NULL_STRING;
             }
-            else model.SetString(szBinds[part], szOption);
+            else artifact.SetString(szBinds[part], szOption);
 
-            asJSONO(ccp_GetPackage(iClient)).Set(pkgKey, model);
-            delete model;
+            ccp_SetArtifact(iClient, pkgKey, artifact, CALL_DEFAULT);
+            delete artifact;
             
             UpdateCookie(iClient, part, szOption);
 
@@ -425,17 +460,17 @@ public Action OnClientSayCommand(int iClient, const char[] command, const char[]
             return Plugin_Handled;
         }
 
-        JSONObject model = getClientModel(iClient);
-        UpdateCookie(iClient, g_iBindNow[iClient], szBuffer);
-
-        if(!model) {
+        if(!ccp_HasArtifact(iClient, pkgKey)) {
             g_iBindNow[iClient] = BIND_MAX;
-            LogError("OnClientSayCommand(%N): Something went wrong, client model is null..", iClient);
             return Plugin_Handled;
         }
+
+        JSONObject model = asJSONO(ccp_GetArtifact(iClient, pkgKey));
         
+        UpdateCookie(iClient, g_iBindNow[iClient], szBuffer);
+
         model.SetString(szBinds[g_iBindNow[iClient]], szBuffer);
-        asJSONO(ccp_GetPackage(iClient)).Set(pkgKey, model);
+        ccp_SetArtifact(iClient, pkgKey, model, CALL_DEFAULT);
         delete model;
 
         PrintToChat(iClient, "%T", "ccp_custom_success", iClient);
@@ -460,7 +495,7 @@ public Processing  cc_proc_OnRebuildString(const int[] props, int part, ArrayLis
         return Proc_Continue;
     }
 
-    objModel = asJSONO(asJSONO(ccp_GetPackage(0)).Get(pkgKey));
+    objModel = asJSONO(ccp_GetArtifact(0, pkgKey));
     if(!objModel.HasKey("channels")) {
         delete objModel;
         return Proc_Continue;
@@ -471,11 +506,11 @@ public Processing  cc_proc_OnRebuildString(const int[] props, int part, ArrayLis
 
     char szIndent[64];
     params.GetString(0, szIndent, sizeof(szIndent));
-    if(!InChannels(channels, szIndent)) {
+    if(FindChannelInChannels_json(channels, szIndent) == -1) {
         return Proc_Continue;
     }
 
-    objModel = getClientModel(SENDER_INDEX(props[1]));
+    objModel = asJSONO(ccp_GetArtifact(SENDER_INDEX(props[1]), pkgKey));
     if(!objModel || !IsPartValid(objModel, part)) {
         delete objModel;
         return Proc_Continue;
@@ -532,21 +567,4 @@ stock JSONObject asJSONOEx(const char[] key, JSONObject obj, bool dlt = true) {
     if(dlt) delete obj;
 
     return out;
-}
-
-stock bool InChannels(JSONArray channels, const char[] channel) {
-    static char szChannel[64];
-    static bool bIn;
-
-    bIn = false;
-    for(int i; i < channels.Length; i++) {
-        channels.GetString(i, szChannel, sizeof(szChannel));
-        if(!strcmp(szChannel, channel)) {
-            bIn = true
-            break;
-        }
-    }
-
-    delete channels;
-    return bIn;
 }
