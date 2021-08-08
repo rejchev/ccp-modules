@@ -12,7 +12,7 @@ public Plugin myinfo =
 	name = "[CCP] Custom Chat",
 	author = "nullent?",
 	description = "...",
-	version = "3.3.5",
+	version = "3.3.6",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -20,7 +20,7 @@ int LEVEL[4];
 Cookie coHandle;
 bool IsMenuDisabled;
 
-static const char objKey[] = "ccm";
+static const char pkgKey[] = "ccm";
 
 bool g_bLate;
 
@@ -87,43 +87,38 @@ public void OnMapStart() {
 
     if(g_bLate) {
         g_bLate = false;
-        Handle obj;
+
         for(int i; i <= MaxClients; i++) {
-            if((obj = ccp_GetPackage(i)) != null) {
-                ccp_OnPackageAvailable(i, obj);
+            if(ccp_HasPackage(i)) {
+                ccp_OnPackageAvailable(i);
             }
         }
     }
 }
 
-public void ccp_OnPackageAvailable(int iClient, Handle objClient) {
-    JSONObject pkg = asJSONO(objClient);
+public void ccp_OnPackageAvailable(int iClient) {
+    static char szBuffer[MESSAGE_LENGTH] = "configs/ccprocessor/customchat/ccm.json";
 
+    JSON packet;
     if(!iClient) {
-        static char szBuffer[MESSAGE_LENGTH] = "configs/ccprocessor/customchat/ccm.json";
-        if(szBuffer[0] == 'c') {
+        
+        if(szBuffer[0] == 'c')
             BuildPath(Path_SM, szBuffer, sizeof(szBuffer), szBuffer);
-        } else if(!FileExists(szBuffer)) {
+
+        else if(!FileExists(szBuffer))
             SetFailState("Where is my config: %s", szBuffer);
-        }
-
-        JSONArray jsonInput = JSONArray.FromFile(szBuffer, 0);
-        pkg.Set(objKey, jsonInput);
-        delete jsonInput;
-    } else {
-        if(!pkg.HasKey("auth")) {
-            char szBuffer[64];
-            GetClientAuthId(iClient, AuthId_Engine, szBuffer, sizeof(szBuffer));
-            pkg.SetString("auth", szBuffer);
-        }
-
-        GetValueFromCookie(iClient, pkg);
     }
+
+    packet = !iClient ? view_as<JSON>(JSONArray.FromFile(szBuffer, 0)) : GetValueFromCookie(iClient);
+
+    ccp_SetArtifact(iClient, pkgKey, packet, (!iClient) ? CALL_IGNORE : CALL_DEFAULT);
+
+    delete packet;
 }
 
 public void OnClientPostAdminCheck(int iClient) {
-    JSONObject pkg = asJSONO(ccp_GetPackage(iClient));
-    if(!pkg) {
+    JSONObject pkg;
+    if(!(pkg = asJSONO(ccp_GetPackage(iClient)))) {
         return;
     }
 
@@ -133,81 +128,94 @@ public void OnClientPostAdminCheck(int iClient) {
     if(!pkg.HasKey("adminId"))
         pkg.SetInt("adminId", view_as<int>(GetUserAdmin(iClient)));
 
-    if(!pkg.HasKey(objKey)) {
-        GetValueFromCookie(iClient, pkg);
+    ccp_SetPackage(iClient, pkg, CALL_DEFAULT);
+
+    if(!pkg.HasKey(pkgKey)) {
+        ccp_OnPackageAvailable(iClient);
     }
+
+    delete pkg;
 }
 
-void GetValueFromCookie(int iClient, JSONObject pkg) {
+JSON GetValueFromCookie(int iClient) {
+    JSONObject client = asJSONO(ccp_GetPackage(iClient));
+
     char szValue[MESSAGE_LENGTH];
     coHandle.Get(iClient, szValue, sizeof(szValue));
     
+    JSONObject jsonModel
+
     if(szValue[0]) {
-        JSONObject jsonModel = FindInObjects(szValue);
+        jsonModel = FindInObjects(szValue);
 
-        if(jsonModel && HasAccess(pkg, jsonModel)) {
-            pkg.Set(objKey, jsonModel);
-        }
-
-        delete jsonModel;
+        if(!jsonModel || !HasAccess(client, jsonModel))
+            delete jsonModel;
     }
+
+    delete client;
+    return jsonModel;
 }
 
-void setTemplate(int iClient, JSONObject pkg, int index = -1) {    
-    JSONArray jsonArray = asJSONA(asJSONO(ccp_GetPackage(0)).Get(objKey));
+JSONObject GetTemplate(int iClient, int index = -1) {    
+    if(!ccp_HasArtifact(0, pkgKey))
+        SetFailState("Artifact: %s is gone away?", pkgKey);
     
-    if(!jsonArray) {
-        return;
-    } 
-
-    if(jsonArray.Length) {
-        char szValue[MESSAGE_LENGTH];
-        JSONObject obj;
-        if(index != -1) {
-            obj = asJSONO(jsonArray.Get(index));
-            obj.GetString("name", szValue, sizeof(szValue));
-
-            if(pkg.Set(objKey, obj)){
-                coHandle.Set(iClient, szValue);
-            }
-        } else {
-            for(int i, b, c; i < jsonArray.Length; i++) {
-                obj = asJSONO(jsonArray.Get(i));
-                obj.GetString("name", szValue, sizeof(szValue));
-
-                c = obj.GetInt("priority");
-                if(c > b && HasAccess(pkg, obj)) {
-                    b = c;
-                    if(pkg.Set(objKey, obj)) {
-                        coHandle.Set(iClient, szValue);
-                    }
-                }
-
-                delete obj;
-            }
-        }
-        
-        delete obj;
+    JSONArray templates;
+    if((templates = asJSONA(ccp_GetArtifact(0, pkgKey))) == null || !templates.Length) {
+        delete templates;
+        return null;
     }
 
-    delete jsonArray;
+    JSONObject client;
+    JSONObject buffer;
+    JSONObject template;
+
+    if(index != -1) 
+        template = asJSONO(templates.Get(index));
+    
+    else {
+        client = asJSONO(ccp_GetPackage(iClient));
+
+        for(int i, b, c; i < templates.Length; i++) {
+            buffer = asJSONO(templates.Get(i));
+
+            c = buffer.GetInt("priority");
+            if(c > b && HasAccess(client, buffer)) {
+                delete template;
+                template = asJSONO(templates.Get(i));
+            }
+
+            delete buffer;
+        }
+    }
+
+    delete client;
+    delete templates;
+
+    return template;
 }
 
 public Action Cmd_Prefix(int iClient, int args) {
-    if(iClient && IsClientInGame(iClient) && !IsFakeClient(iClient))
-    {
-        JSONObject objClient = asJSONO(ccp_GetPackage(iClient));
-        if(!objClient || !objClient.HasKey("auth")) {
+    if(iClient && IsClientInGame(iClient) && ccp_HasPackage(iClient)) {
+        
+        if(!ccp_IsVerified(iClient)) {
             PrintToChat(iClient, "%T", "auth_failed", iClient);
             return Plugin_Handled;
         }
 
         if(IsMenuDisabled) {
-            if(!objClient.HasKey(objKey)) {
-                setTemplate(iClient, objClient);
+            if(!ccp_HasArtifact(iClient, pkgKey)) {
+                JSONObject buffer = GetTemplate(iClient);
+                ccp_SetArtifact(iClient, pkgKey, buffer, CALL_DEFAULT);
+
+                char szValue[PREFIX_LENGTH];
+                buffer.GetString("name", szValue, sizeof(szValue));
+                coHandle.Set(iClient, szValue);
+
+                delete buffer;
             } else {
-                objClient.Remove(objKey);
-                coHandle.Set(iClient, NULL_STRING);
+                if(ccp_RemoveArtifact(iClient, pkgKey, CALL_IGNORE))
+                    coHandle.Set(iClient, NULL_STRING);
             }
         } else {
             menuTemplates(iClient);
@@ -225,12 +233,12 @@ void menuTemplates(int iClient) {
     char szBuffer[256];
 
     JSONObject objClient = asJSONO(ccp_GetPackage(iClient));
-    JSONArray objArray = asJSONA(asJSONO(ccp_GetPackage(0)).Get(objKey));
+    JSONArray objArray = asJSONA(ccp_GetArtifact(0, pkgKey));
     JSONObject obj;
     int drawType = ITEMDRAW_DEFAULT;
     char szValue[64];
-    if(objClient.HasKey(objKey) && !objClient.IsNull(objKey)) {
-        obj = asJSONO(objClient.Get(objKey));
+    if(objClient.HasKey(pkgKey) && !objClient.IsNull(pkgKey)) {
+        obj = asJSONO(objClient.Get(pkgKey));
         obj.GetString("name", szValue, sizeof(szValue));
         delete obj;
     } else {
@@ -256,6 +264,7 @@ void menuTemplates(int iClient) {
     }
 
     delete objArray;
+    delete objClient;
 
     hMenu.Display(iClient, MENU_TIME_FOREVER);
 }
@@ -267,15 +276,21 @@ public int menuCallBack(Menu hMenu, MenuAction action, int iClient, int param) {
             char item[64];
             hMenu.GetItem(param, item, sizeof(item));
 
-            JSONObject objClient = asJSONO(ccp_GetPackage(iClient));
-
             int index = item[0];
             if(index == 'd') {
-                objClient.Remove(objKey);
-                coHandle.Set(iClient, NULL_STRING);
+                if(ccp_RemoveArtifact(iClient, pkgKey, CALL_DEFAULT))
+                    coHandle.Set(iClient, NULL_STRING); 
             } else {
                 index -= 1;
-                setTemplate(iClient, objClient, index);
+
+                JSONObject artifact = GetTemplate(iClient, index);
+                ccp_SetArtifact(iClient, pkgKey, artifact, CALL_DEFAULT);
+
+                char szValue[PREFIX_LENGTH];
+                artifact.GetString("name", szValue, sizeof(szValue));
+                coHandle.Set(iClient, szValue);
+
+                delete artifact;
             }
             
             menuTemplates(iClient);
@@ -291,17 +306,14 @@ public Processing  cc_proc_OnRebuildString(const int[] props, int part, ArrayLis
     char szIndent[64];
     params.GetString(0, szIndent, sizeof(szIndent));
     
-    if(!InChannels(channels, sizeof(channels), szIndent) || !SENDER_INDEX(props[1])) {
+    if(FindChannelInChannels(channels, sizeof(channels), szIndent) == -1 || !SENDER_INDEX(props[1])) {
         return Proc_Continue;
     }
 
-    senderModel = asJSONO(ccp_GetPackage(SENDER_INDEX(props[1])));
-    if(!senderModel || !senderModel.HasKey(objKey) || senderModel.IsNull(objKey)) {
-        senderModel = null;
+    if(!ccp_HasArtifact(SENDER_INDEX(props[1]), pkgKey))
         return Proc_Continue;
-    }
 
-    senderModel = asJSONO(senderModel.Get(objKey));
+    senderModel = asJSONO(ccp_GetArtifact(SENDER_INDEX(props[1]), pkgKey));
     
     int index = indexPart(part);
     if(index == -1 || LEVEL[index] < level || !senderModel.HasKey(szBinds[part])) {
@@ -388,10 +400,9 @@ int indexPart(int part) {
 }
 
 JSONObject FindInObjects(const char[] szName) {
-    JSONArray jsonItems = asJSONA(asJSONO(ccp_GetPackage(0)).Get(objKey));
-    if(!jsonItems) {
+    JSONArray jsonItems;
+    if((jsonItems = asJSONA(ccp_GetArtifact(0, pkgKey))) == null)
         return null;
-    }
 
     JSONObject obj;
     if(jsonItems.Length) {
@@ -411,14 +422,4 @@ JSONObject FindInObjects(const char[] szName) {
     
     delete jsonItems;
     return obj;
-}
-
-stock bool InChannels(const char[][] channels, int count, const char[] channel) {
-    for(int i; i < count; i++) {
-        if(!strcmp(channels[i], channel)) {
-            return true;
-        }
-    }
-
-    return false;
 }
