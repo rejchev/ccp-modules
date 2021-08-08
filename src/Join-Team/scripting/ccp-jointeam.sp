@@ -10,13 +10,14 @@
 
 #include <ccprocessor>
 #include <ccprocessor_pkg>
+#include <ccprocessor_chls>
 
 public Plugin myinfo = 
 {
 	name = "[CCP] Join team",
 	author = "nullent?",
 	description = "...",
-	version = "1.0.8",
+	version = "1.0.9",
 	url = "https://discord.gg/cFZ97Mzrjy"
 };
 
@@ -61,11 +62,9 @@ public void OnMapStart() {
     if(g_bLate) {
         g_bLate = false;
 
-        for(int i; i <= MaxClients; i++) {
-            if(!i || (IsClientInGame(i) && !IsFakeClient(i) && IsClientAuthorized(i))) {
-                ccp_OnPackageAvailable(i, ccp_GetPackage(i));
-            }
-        }
+        for(int i; i <= MaxClients; i++)
+            if(ccp_HasPackage(i))
+                ccp_OnPackageAvailable(i);
     }
 
     counter = 0;
@@ -74,28 +73,26 @@ public void OnMapStart() {
     jMessanger = new JSONObject();
 }
 
-public void ccp_OnPackageAvailable(int iClient, Handle jsonObj) {
-    static const char cloud[]           = "cloud";
+public void ccp_OnPackageAvailable(int iClient) {
+    // static const char cloud[]           = "cloud";
     static char config[MESSAGE_LENGTH]  = "configs/ccprocessor/join-team/settings.json";
 
-    JSONObject objPackage = asJSONO(jsonObj);
-
-    if(!objPackage || !objPackage.HasKey("auth") || iClient) {
+    if(iClient)
         return;
-    }
+    
 
     if(jConfig) {
         delete jConfig;
     }
 
     // Loaded from cloud
-    if(objPackage.HasKey(pkgKey) && objPackage.HasKey(cloud) && objPackage.GetBool(cloud)) {
-        if(!iClient) {
-            jConfig = asJSONO(objPackage.Get(pkgKey));    
-        }
+    // if(objPackage.HasKey(pkgKey) && objPackage.HasKey(cloud) && objPackage.GetBool(cloud)) {
+    //     if(!iClient) {
+    //         jConfig = asJSONO(objPackage.Get(pkgKey));    
+    //     }
 
-        return;
-    }
+    //     return;
+    // }
 
     // Load from local
     if(config[0] == 'c') {
@@ -107,12 +104,27 @@ public void ccp_OnPackageAvailable(int iClient, Handle jsonObj) {
     }
 
     jConfig = JSONObject.FromFile(config, 0);
-    objPackage.Set(pkgKey, jConfig);
+
+    ccp_SetArtifact(iClient, pkgKey, jConfig, CALL_IGNORE);
 }
 
-public void ccp_OnPackageRemove(int iClient, Handle jsonObj) {
-    if(!iClient) {
-        delete (asJSONO(jConfig));
+public void ccp_OnPackageUpdate_Post(Handle ctx, any level) {
+    JSONObject obj = asJSONO(ctx);
+    
+    if(!obj.GetBool("isArtifact") || GetClientOfUserId(obj.GetInt("client")))
+        return;
+    
+    char szBuffer[PREFIX_LENGTH];
+    obj.GetString("field", szBuffer, sizeof(szBuffer));
+
+    if(strcmp(szBuffer, "channel_mgr") || level != CALL_DEFAULT)
+        return;
+    
+    if(jConfig) {
+        jConfig.GetString("identificator", szBuffer, sizeof(szBuffer));
+
+        if(ccp_FindChannel(szBuffer) == -1)
+            ccp_AddChannel(szBuffer);
     }
 }
 
