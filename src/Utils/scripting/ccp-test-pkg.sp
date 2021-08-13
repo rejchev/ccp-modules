@@ -5,7 +5,6 @@
 #define DEBUG "[Packager-Test]"
 
 #include <ccprocessor>
-#include <ccprocessor_pkg>
 
 public Plugin myinfo = 
 {

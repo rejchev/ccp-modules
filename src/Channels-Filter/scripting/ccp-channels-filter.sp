@@ -7,8 +7,6 @@
 #endif
 
 #include <ccprocessor>
-#include <ccprocessor_pkg>
-#include <ccprocessor_chls>
 
 public Plugin myinfo = 
 {

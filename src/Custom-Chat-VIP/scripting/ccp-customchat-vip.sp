@@ -5,7 +5,6 @@
 #include <vip_core>
 #include <ccprocessor>
 #include <clientprefs>
-#include <ccprocessor_pkg>
 
 public Plugin myinfo = 
 {

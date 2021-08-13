@@ -4,7 +4,6 @@
 
 #include <ccprocessor>
 #include <shop>
-#include <ccprocessor_pkg>
 
 #define SZ(%0) %0, sizeof(%0)
 

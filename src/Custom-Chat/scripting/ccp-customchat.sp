@@ -3,7 +3,6 @@
 #define INCLUDE_RIPJSON
 
 #include <ccprocessor>
-#include <ccprocessor_pkg>
 
 #include <clientprefs>
 
