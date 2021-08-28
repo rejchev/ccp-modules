@@ -2,10 +2,7 @@
 {
 	"vip1"      // Example
 	{
-		"vip_chat_prefixco"			"1"
-		"vip_chat_prefix"			"1"
-		"vip_chat_nameco"			"1"
-		"vip_chat_msgco"			"1"
+		"ccp_chat"	"1"
 	}
 
 }

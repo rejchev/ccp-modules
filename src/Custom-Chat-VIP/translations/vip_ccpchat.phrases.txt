@@ -38,8 +38,20 @@
 
     "feature_title"
     {
-        "ru"            "Список доступных значений \n \nФункция: "
-        "en"            "List of available values \n \nFunction: "
+        "ru"            "CChatProcessor |"
+        "en"            "CChatProcessor |"
+    }
+
+    "parts_ofMsg_title_tag"
+    {
+        "ru"            "CChatProcessor |"
+        "en"            "CChatProcessor |"
+    }
+
+    "parts_ofMsg_title"
+    {
+        "ru"            "Custom chat"
+        "en"            "Custom chat"
     }
 
     // "disable_this"

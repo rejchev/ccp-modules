@@ -1,30 +1,30 @@
 #pragma newdecls required
 
 #define INCLUDE_RIPJSON
+#define INCLUDE_MODULE_STORAGE
 
 #include <vip_core>
 #include <ccprocessor>
-#include <clientprefs>
 
 public Plugin myinfo = 
 {
 	name = "[CCP] Custom Chat <VIP>",
 	author = "nyood",
 	description = "...",
-	version = "2.0.7",
+	version = "2.1.0",
 	url = "discord.gg/ChTyPUG"
 };
 
 ArrayList g_mPalette;
 
-int level[4];
-Cookie coFeatures[4];
+int level[BIND_MAX];
 
 int g_iBindNow[MAXPLAYERS+1];
 
 bool g_bLate;
 
 static const char pkgKey[] = "vip_chat";
+static const char FEATURE[] = "ccp_chat";
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 { 
@@ -62,10 +62,7 @@ void manageConVars(bool bCreate = true) {
     char szBuffer[128];
 
     for(int i; i < BIND_MAX; i++) {
-        if(IsValidPart(i) == -1)
-            continue;
-
-        FormatBind("ccp_vip_", i, 'l', szBuffer, sizeof(szBuffer)/2);
+        FormatBind(FEATURE, i, 'l', szBuffer, sizeof(szBuffer)/2);
         if(bCreate){
             Format(szBuffer[strlen(szBuffer)+1], sizeof(szBuffer), "Priority level for %s", szBinds[i]);
             CreateConVar(szBuffer, "1", szBuffer[strlen(szBuffer)+1], _, true, 1.0).AddChangeHook(onChange);
@@ -85,7 +82,7 @@ public void onChange(ConVar convar, const char[] oldVal, const char[] newVal)
     convar.GetName(szBuffer, sizeof(szBuffer));
 
     int part = BindFromString(szBuffer);
-    if(part == BIND_MAX || (part = IsValidPart(part)) == -1)
+    if(part == BIND_MAX)
         return;
     
     level[part] = convar.IntValue;
@@ -124,222 +121,144 @@ public void cc_config_parsed()
 
 public void VIP_OnVIPLoaded()
 {
-    char szFeature[64];
-    int part;
-
-    for(int i; i < BIND_MAX; i++)
-    {
-        if((part = IsValidPart(i)) == -1)
-            continue;
-        
-        FormatBind("vip_chat_", i, 'l', szFeature, sizeof(szFeature));
-
-        coFeatures[part] = new Cookie(szFeature, NULL_STRING, CookieAccess_Private);
-
-        VIP_RegisterFeature(szFeature, INT, SELECTABLE, OnSelected_Feature, OnDisplay_Feature, OnDraw_Feature);
-    }
+    if(!VIP_IsValidFeature(FEATURE))
+        VIP_RegisterFeature(FEATURE, VIP_NULL, SELECTABLE, OnSelected_Feature);
 }
 
 public void OnPluginEnd()
 {
     if(!CanTestFeatures() 
-    || GetFeatureStatus(FeatureType_Native, "VIP_UnregisterFeature") != FeatureStatus_Available)
+    || GetFeatureStatus(FeatureType_Native, "VIP_UnregisterMe") != FeatureStatus_Available)
         return;
 
     VIP_UnregisterMe();
 }
 
-public bool OnSelected_Feature(int iClient, const char[] szFeature)
-{
-    g_iBindNow[iClient] = BIND_MAX;
-
-    FeatureMenu(iClient, szFeature).Display(iClient, MENU_TIME_FOREVER);
+public bool OnSelected_Feature(int iClient, const char[] szFeature) {
+    partsOfMsgsMenu(iClient).Display(iClient, MENU_TIME_FOREVER);
     return false;
-}
-
-public bool OnDisplay_Feature(int iClient, const char[] szFeature, char[] szDisplay, int iMaxLength)
-{
-    int iBind = BindFromString(szFeature);
-    FormatEx(szDisplay, iMaxLength, "%T [%T]", szFeature, iClient, "empty_value", iClient);
-
-    if(!ccp_HasArtifact(iClient, pkgKey))
-        return true;
-
-    JSONObject artifact = asJSONO(ccp_GetArtifact(iClient, pkgKey));
-
-    if(IsPartValid(artifact, iBind) && artifact.GetString(szBinds[iBind], szDisplay, iMaxLength))
-    {
-        if(TranslationPhraseExists(szDisplay)) {
-            Format(szDisplay, iMaxLength, "%T", szDisplay, iClient);
-        }
-
-        ccp_replaceColors(szDisplay, true);
-
-        Format(szDisplay, iMaxLength, "%T [%s]", szFeature, iClient, szDisplay);
-    }
-
-    delete artifact;
-
-    return true;
-}
-
-public int OnDraw_Feature(int iClient, const char[] szFeature, int iStyle) {
-    char szBuffer[MESSAGE_LENGTH];
-    VIP_GetClientVIPGroup(iClient, szBuffer, sizeof(szBuffer));
-
-    JSONObject artifact = asJSONO(ccp_GetArtifact(0, pkgKey));
-
-    int iDrawType = ITEMDRAW_DEFAULT;
-
-    if(artifact.HasKey(szBuffer) && !artifact.IsNull(szBuffer)) {
-        JSONObject group = asJSONO(artifact.Get(szBuffer));
-        delete artifact;
-
-        if(group.HasKey(szFeature) && !group.IsNull(szFeature)) {
-            JSONArray list = asJSONA(group.Get(szFeature));
-            delete group;
-
-            if(list.Length) {
-                delete list;
-                return iDrawType;
-            }
-
-            delete list;
-        }        
-
-        delete group;
-    }
-
-    delete artifact;
-
-    iDrawType = ITEMDRAW_DISABLED;
-    
-    return iDrawType;
 }
 
 public void VIP_OnVIPClientLoaded(int iClient)
 {
-    char szGroup[64];
-    char szFeature[64];
-    VIP_GetClientVIPGroup(iClient, szGroup, sizeof(szGroup));
+    JSONObject storage;
 
-    JSONObject model = new JSONObject();
+    if((storage = asJSONO(ccp_storage_ReadValue(iClient, pkgKey))) == null)
+        storage = new JSONObject();
 
-    for(int i, idx; i < BIND_MAX; i++)
-    {
-        if((idx = IsValidPart(i)) == -1)
-            continue;
-        
-        FormatBind("vip_chat_", i, 'l', szFeature, sizeof(szFeature));
-
-        if(!VIP_IsClientFeatureUse(iClient, szFeature)){
-            model.SetNull(szBinds[i]);
-            continue;
-        }
-        
-        GetValueFromCookie(iClient, model, coFeatures[idx], i);
-    }
-
-    ccp_SetArtifact(iClient, pkgKey, model, CALL_DEFAULT);
-    delete model;
+    ccp_SetArtifact(iClient, pkgKey, storage, CALL_DEFAULT);
+    delete storage;            
 }
 
-void GetValueFromCookie(int iClient, JSONObject model, Cookie coHandle, const int part) {
-    char szValue[MESSAGE_LENGTH];
-
-    if(coHandle)
-    {
-        GetClientCookie(iClient, coHandle, szValue, sizeof(szValue));
-        
-        if(part != BIND_PREFIX && g_mPalette.FindString(szValue) == -1) {
-            szValue = NULL_STRING;
-        }
-    }
-
-    if(szValue[0])
-        model.SetString(szBinds[part], szValue);    
-}
-
-void UpdateCookie(int iClient, int iIdx, const char[] newValue)
-{
-    iIdx = IsValidPart(iIdx);
-    if(iIdx == -1)
-        return;
-    
-    SetClientCookie(iClient, coFeatures[iIdx], newValue);
-}
-
-Menu FeatureMenu(int iClient, const char[] szFeature)
-{
-    Menu hMenu;
-
+Menu partsOfMsgsMenu(int iClient) {
     g_iBindNow[iClient] = BIND_MAX;
 
-    int iBind = BindFromString(szFeature);
-    if(iBind == BIND_MAX) {
-        return hMenu;
-    }
+    Menu menu;
 
-    char szBuffer[MESSAGE_LENGTH], szOption[NAME_LENGTH];
+    char szBuffer[MESSAGE_LENGTH];
     VIP_GetClientVIPGroup(iClient, szBuffer, sizeof(szBuffer));
-    
-    JSONObject model;
-    if((model = asJSONO(ccp_GetArtifact(iClient, pkgKey))) == null) {
-        FormatEx(szBuffer, sizeof(szBuffer), "%T", "wrong_artifact", iClient);
-        PrintToChat(iClient, "%T", "something_wrong", iClient, szBuffer);
 
-        return hMenu;
-    }
+    JSONObject artifact = asJSONO(ccp_GetArtifact(0, pkgKey));
+    JSONObject group = asJSONO(artifact.Get(szBuffer));
 
-    JSONObject pkg;
-    if((pkg = asJSONO(ccp_GetArtifact(0, pkgKey))) == null) {
-        FormatEx(szBuffer, sizeof(szBuffer), "%T", "wrong_internal", iClient);
-        PrintToChat(iClient, "%T", "something_wrong", iClient, szBuffer);
-        
-        delete model;
-        return hMenu;
-    }
+    delete artifact;
 
-    JSONObject group;
-    if(!pkg.HasKey(szBuffer) || (group = asJSONO(pkg.Get(szBuffer))) == null) {
-        Format(szBuffer, sizeof(szBuffer), "%T", "wrong_group", iClient, szBuffer);
-        PrintToChat(iClient, "%T", "something_wrong", iClient, szBuffer);
-
-        delete model;
-        delete pkg;
-        return hMenu;
-    }
-
-    JSONArray items;
-    if(!group.HasKey(szBuffer) || (items = asJSONA(group.Get(szBinds[iBind]))) == null) {
-        FormatEx(szBuffer, sizeof(szBuffer), "%T", szBinds[iBind], iClient);
-        Format(szBuffer, sizeof(szBuffer), "%T", "wrong_items", iClient, szBuffer);
-        PrintToChat(iClient, "%T", "something_wrong", iClient, szBuffer);
-
-        delete model;
-        delete group;
-        delete pkg;
-
-        return hMenu;
-    }
-
+    JSONObjectKeys keys = group.Keys();
     delete group;
 
-    hMenu = new Menu(FeatureMenu_CallBack);
-    hMenu.SetTitle("%T%T \n \n", "feature_title", iClient, szFeature, iClient);
+    menu = new Menu(partsOfMsgsMenu_CallBack);
+    menu.SetTitle("%T %T \n \n", "parts_ofMsg_title_tag", iClient, "parts_ofMsg_title", iClient);
 
-    char szValue[MESSAGE_LENGTH];
-    if(!IsPartValid(model, iBind) || !model.GetString(szBinds[iBind], szValue, sizeof(szValue))) {
+    group = asJSONO(ccp_GetArtifact(iClient, pkgKey));
+    
+    char szValue[MESSAGE_LENGTH], out[MESSAGE_LENGTH];
+    while(keys.ReadKey(szBuffer, sizeof(szBuffer))) {
         szValue = NULL_STRING;
+
+        if(group.HasKey(szBuffer))
+            group.GetString(szBuffer, szValue, sizeof(szValue));
+
+        if(!szValue[0])
+            FormatEx(szValue, sizeof(szValue), "%T", "empty_value", iClient);
+        
+        if(TranslationPhraseExists(szValue))
+            Format(szValue, sizeof(szValue), "%T", szValue, iClient);
+
+        FormatEx(out, sizeof(out), "%c%T [%s]", BindFromString(szBuffer) + 1, szBuffer, iClient, szValue);
+
+        menu.AddItem(out, out[1]);
     }
 
-    for(int i, a, iDrawType; i < items.Length; i++)
+    menu.ExitButton = true;
+    menu.ExitBackButton = true;
+
+    if(!menu.ItemCount)
+        delete menu;
+
+    delete keys;
+    delete group;
+
+    return menu;
+}
+
+public int partsOfMsgsMenu_CallBack(Menu hMenu, MenuAction action, int iClient, int iOpt2)
+{
+    switch(action)
+    {
+        case MenuAction_End: delete hMenu;
+        case MenuAction_Cancel:
+        {
+            if(iOpt2 == MenuCancel_ExitBack)
+            {
+                VIP_SendClientVIPMenu(iClient, false);
+            }
+        }
+        case MenuAction_Select:
+        {
+            char szOption[MESSAGE_LENGTH];
+            hMenu.GetItem(iOpt2, szOption, sizeof(szOption));
+
+            int part = szOption[0] - 1;
+            if(part == BIND_MAX)
+                return;
+            
+            FeatureMenu(iClient, part).Display(iClient, MENU_TIME_FOREVER);
+        }
+    }
+}
+
+Menu FeatureMenu(int iClient, const int msgPart)
+{
+    g_iBindNow[iClient] = BIND_MAX;
+
+    Menu hMenu;
+
+    char szBuffer[MESSAGE_LENGTH];
+    VIP_GetClientVIPGroup(iClient, szBuffer, sizeof(szBuffer));
+
+    JSON items = getItemsList(szBuffer, szBinds[msgPart]);
+
+    if(!items)
+        return null;
+    
+    char szOption[MESSAGE_LENGTH], szValue[MESSAGE_LENGTH];
+    JSONObject client = asJSONO(ccp_GetArtifact(iClient, pkgKey));
+
+    if(client.HasKey(szBinds[msgPart]))
+        client.GetString(szBinds[msgPart], szValue, sizeof(szValue));
+
+    delete client;
+
+    hMenu = new Menu(FeatureMenu_CallBack);
+    hMenu.SetTitle("%T %T \n \n", "feature_title", iClient, szBinds[msgPart], iClient);
+
+    for(int i, a, iDrawType; i < asJSONA(items).Length; i++)
     {
         szOption = NULL_STRING;
         szBuffer = NULL_STRING;
         a = -1;
 
-        items.GetString(i, szBuffer, sizeof(szBuffer));
+        asJSONA(items).GetString(i, szBuffer, sizeof(szBuffer));
         
         if(StrContains(szBuffer, "disable", false) != -1) {
             iDrawType = (szValue[0]) ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED;
@@ -351,7 +270,7 @@ Menu FeatureMenu(int iClient, const char[] szFeature)
             iDrawType = (!strcmp(szBuffer, szValue)) ? ITEMDRAW_DISABLED : ITEMDRAW_DEFAULT;
         }
 
-        Format(szBuffer, sizeof(szBuffer), "%c%c%T", iBind, i+1, szBuffer, iClient);
+        Format(szBuffer, sizeof(szBuffer), "%c%c%T", msgPart+1, i+1, szBuffer, iClient);
 
         ccp_replaceColors(szBuffer[2], true);
 
@@ -368,8 +287,6 @@ Menu FeatureMenu(int iClient, const char[] szFeature)
         delete hMenu;
     }
 
-    delete model;
-    delete pkg;
     delete items;
 
     return hMenu; 
@@ -384,7 +301,7 @@ public int FeatureMenu_CallBack(Menu hMenu, MenuAction action, int iClient, int 
         {
             if(iOpt2 == MenuCancel_ExitBack)
             {
-                VIP_SendClientVIPMenu(iClient, false);
+                partsOfMsgsMenu(iClient).Display(iClient, MENU_TIME_FOREVER);
             }
         }
         case MenuAction_Select:
@@ -392,19 +309,12 @@ public int FeatureMenu_CallBack(Menu hMenu, MenuAction action, int iClient, int 
             char szOption[NAME_LENGTH];
             hMenu.GetItem(iOpt2, szOption, sizeof(szOption));
 
-            int part = szOption[0];
+            int part = szOption[0] - 1;
             int idx = szOption[1] - 1;
 
             VIP_GetClientVIPGroup(iClient, szOption, sizeof(szOption));
 
-            if(!ccp_HasArtifact(iClient, pkgKey))
-                return;
-
-            // pkg -> pkgKey -> vipGroup -> bindArray
-            JSONObject group = asJSONOEx(szOption, asJSONO(ccp_GetArtifact(0, pkgKey)));
-
-            JSONArray items = asJSONA(group.Get(szBinds[part]));
-            delete group;
+            JSONArray items = asJSONA(getItemsList(szOption, szBinds[part]));
 
             items.GetString(idx, szOption, sizeof(szOption));
             delete items;
@@ -419,19 +329,21 @@ public int FeatureMenu_CallBack(Menu hMenu, MenuAction action, int iClient, int 
             JSONObject artifact = asJSONO(ccp_GetArtifact(iClient, pkgKey));
 
             if(!strcmp(szOption, "disable")) {
-                artifact.SetNull(szBinds[part]);
+                artifact.Remove(szBinds[part]);
                 szOption = NULL_STRING;
             }
             else artifact.SetString(szBinds[part], szOption);
 
-            ccp_SetArtifact(iClient, pkgKey, artifact, CALL_DEFAULT);
-            delete artifact;
+            if(ccp_SetArtifact(iClient, pkgKey, artifact, CALL_DEFAULT)) {
+                delete artifact;
+
+                artifact = asJSONO(ccp_GetArtifact(iClient, pkgKey));
+                ccp_storage_WriteValue(iClient, pkgKey, artifact);
+            }
             
-            UpdateCookie(iClient, part, szOption);
+            delete artifact;
 
-            FormatBind("vip_chat_", part, 'l', szOption, sizeof(szOption));
-
-            FeatureMenu(iClient, szOption).Display(iClient, MENU_TIME_FOREVER);
+            FeatureMenu(iClient, part).Display(iClient, MENU_TIME_FOREVER);
         }
     }
 }
@@ -467,19 +379,19 @@ public Action OnClientSayCommand(int iClient, const char[] command, const char[]
 
         JSONObject model = asJSONO(ccp_GetArtifact(iClient, pkgKey));
         
-        UpdateCookie(iClient, g_iBindNow[iClient], szBuffer);
-
         model.SetString(szBinds[g_iBindNow[iClient]], szBuffer);
-        ccp_SetArtifact(iClient, pkgKey, model, CALL_DEFAULT);
+        if(ccp_SetArtifact(iClient, pkgKey, model, CALL_DEFAULT)) {
+            delete model;
+
+            model = asJSONO(ccp_GetArtifact(iClient, pkgKey));
+            ccp_storage_WriteValue(iClient, pkgKey, model);
+        }
+
         delete model;
 
         PrintToChat(iClient, "%T", "ccp_custom_success", iClient);
 
-        FormatBind("vip_chat_", g_iBindNow[iClient], 'l', szBuffer, sizeof(szBuffer));
-
-        FeatureMenu(iClient, szBuffer).Display(iClient, MENU_TIME_FOREVER);
-
-        g_iBindNow[iClient] = BIND_MAX; /// ???
+        FeatureMenu(iClient, g_iBindNow[iClient]).Display(iClient, MENU_TIME_FOREVER);
 
         return Plugin_Handled;
     }
@@ -487,13 +399,12 @@ public Action OnClientSayCommand(int iClient, const char[] command, const char[]
     return Plugin_Continue;
 }
 
-JSONObject objModel;
-
 public Processing  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &pLevel, char[] value, int size) {
-    int idx = IsValidPart(part);
-    if(idx == -1 || !SENDER_INDEX(props[1]) || pLevel > level[idx]) {
+    if(!SENDER_INDEX(props[1]) || pLevel > level[part]) {
         return Proc_Continue;
     }
+
+    JSONObject objModel;
 
     objModel = asJSONO(ccp_GetArtifact(0, pkgKey));
     if(!objModel.HasKey("channels")) {
@@ -510,8 +421,10 @@ public Processing  cc_proc_OnRebuildString(const int[] props, int part, ArrayLis
         return Proc_Continue;
     }
 
+    delete channels;
+
     objModel = asJSONO(ccp_GetArtifact(SENDER_INDEX(props[1]), pkgKey));
-    if(!objModel || !IsPartValid(objModel, part)) {
+    if(!objModel || !objModel.HasKey(szBinds[part])) {
         delete objModel;
         return Proc_Continue;
     }
@@ -526,45 +439,34 @@ public Processing  cc_proc_OnRebuildString(const int[] props, int part, ArrayLis
         Format(szValue, sizeof(szValue), "%T", szValue, props[2]);
     }
 
-    pLevel = level[idx];
+    pLevel = level[part];
     FormatEx(value, size, szValue);
 
     delete objModel;
     return Proc_Change;
 }
 
-stock int IsValidPart(const int part)
-{
-    static const int ValidParts[] = {BIND_PREFIX_CO, BIND_PREFIX, BIND_NAME_CO, BIND_MSG_CO};
+stock JSON getItemsList(const char[] group, const char[] msgPart) {
+    JSON first;
+    JSON second;
 
-    for(int i; i < sizeof(ValidParts); i++)
-        if(ValidParts[i] == part)
-            return i;
+    first = asJSON(ccp_GetArtifact(0, pkgKey));
 
-    return -1;
-}
+    if(!asJSONO(first).HasKey(group)) {
+        delete first;
+        return first;
+    }
 
-stock JSONObject getClientModel(int iClient) {
-    JSONObject obj;
-    obj = asJSONO(ccp_GetPackage(iClient));
+    second = asJSON(asJSONO(first).Get(group));
+    delete first;
 
-    if(!obj || !obj.HasKey(pkgKey) || !obj.HasKey("auth"))
-        return null;
-    
-    obj = asJSONO(obj.Get(pkgKey));
-    return obj;
-}
+    if(!asJSONO(second).HasKey(msgPart)) {
+        delete second;
+        return second;
+    }
 
-stock bool IsPartValid(JSONObject model, int part) {
-    return model.HasKey(szBinds[part]) && !model.IsNull(szBinds[part]);
-}
+    first = asJSON(asJSONO(second).Get(msgPart));
+    delete second;
 
-stock JSONObject asJSONOEx(const char[] key, JSONObject obj, bool dlt = true) {
-    JSONObject out;
-    
-    out = asJSONO(obj.Get(key));
-
-    if(dlt) delete obj;
-
-    return out;
+    return first;
 }

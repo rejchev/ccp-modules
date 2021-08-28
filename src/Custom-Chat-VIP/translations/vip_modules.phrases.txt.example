@@ -1,26 +1,8 @@
 "Phrases"
 {
-	"vip_chat_nameco"
+	"ccp_chat"
 	{
-		"ru"		"Цвет никнейма"
-		"en"		"Chat Name Color"
-	}
-
-	"vip_chat_msgco"
-	{
-		"ru"		"Цвет сообщения"
-		"en"		"Chat Msg Color"
-	}
-
-	"vip_chat_prefix"
-	{
-		"ru"		"Префикс"
-		"en"		"Chat Tag"
-	}
-
-	"vip_chat_prefixco"
-	{
-		"ru"		"Цвет префикса"
-		"en"		"Chat Tag Color"
+		"ru"		"Функции чата"
+		"en"		"Chat Functions"
 	}
 }
