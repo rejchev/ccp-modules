@@ -1,22 +1,21 @@
 #pragma newdecls required
 
 #define INCLUDE_RIPJSON
+#define INCLUDE_MODULE_STORAGE
+#define INCLUDE_MODULE_PACKAGER
 
 #include <ccprocessor>
-
-#include <clientprefs>
 
 public Plugin myinfo = 
 {
 	name = "[CCP] Custom Chat",
 	author = "nullent?",
 	description = "...",
-	version = "3.3.6",
+	version = "3.3.7",
 	url = "discord.gg/ChTyPUG"
 };
 
 int LEVEL[4];
-Cookie coHandle;
 bool IsMenuDisabled;
 
 static const char pkgKey[] = "ccm";
@@ -54,7 +53,6 @@ void manageConVars(bool bCreate = true) {
     }
     
     if(bCreate) {
-        coHandle = new Cookie("ccm_prefix", NULL_STRING, CookieAccess_Private);
         
         CreateConVar("ccm_disable_menu", "0", "Disable menu", _, true, 0.0, true, 1.0).AddChangeHook(disableMenu);
         AutoExecConfig(true, "ccp_ccmessage", "ccprocessor");
@@ -108,7 +106,7 @@ public void ccp_OnPackageAvailable(int iClient) {
             SetFailState("Where is my config: %s", szBuffer);
     }
 
-    packet = !iClient ? view_as<JSON>(JSONArray.FromFile(szBuffer, 0)) : GetValueFromCookie(iClient);
+    packet = !iClient ? asJSON(JSONArray.FromFile(szBuffer, 0)) : asJSON(ccp_storage_ReadValue(iClient, pkgKey));
 
     ccp_SetArtifact(iClient, pkgKey, packet, (!iClient) ? CALL_IGNORE : CALL_DEFAULT);
 
@@ -134,25 +132,6 @@ public void OnClientPostAdminCheck(int iClient) {
     }
 
     delete pkg;
-}
-
-JSON GetValueFromCookie(int iClient) {
-    JSONObject client = asJSONO(ccp_GetPackage(iClient));
-
-    char szValue[MESSAGE_LENGTH];
-    coHandle.Get(iClient, szValue, sizeof(szValue));
-    
-    JSONObject jsonModel
-
-    if(szValue[0]) {
-        jsonModel = FindInObjects(szValue);
-
-        if(!jsonModel || !HasAccess(client, jsonModel))
-            delete jsonModel;
-    }
-
-    delete client;
-    return jsonModel;
 }
 
 JSONObject GetTemplate(int iClient, int index = -1) {    
@@ -205,16 +184,17 @@ public Action Cmd_Prefix(int iClient, int args) {
         if(IsMenuDisabled) {
             if(!ccp_HasArtifact(iClient, pkgKey)) {
                 JSONObject buffer = GetTemplate(iClient);
-                ccp_SetArtifact(iClient, pkgKey, buffer, CALL_DEFAULT);
+                if(ccp_SetArtifact(iClient, pkgKey, buffer, CALL_DEFAULT)) {
+                    delete buffer;
 
-                char szValue[PREFIX_LENGTH];
-                buffer.GetString("name", szValue, sizeof(szValue));
-                coHandle.Set(iClient, szValue);
+                    buffer = asJSONO(ccp_GetArtifact(iClient, pkgKey));
+                    ccp_storage_WriteValue(iClient, pkgKey, buffer);
+                }
 
                 delete buffer;
             } else {
                 if(ccp_RemoveArtifact(iClient, pkgKey, CALL_IGNORE))
-                    coHandle.Set(iClient, NULL_STRING);
+                    ccp_storage_RemoveValue(iClient, pkgKey);
             }
         } else {
             menuTemplates(iClient);
@@ -278,16 +258,17 @@ public int menuCallBack(Menu hMenu, MenuAction action, int iClient, int param) {
             int index = item[0];
             if(index == 'd') {
                 if(ccp_RemoveArtifact(iClient, pkgKey, CALL_DEFAULT))
-                    coHandle.Set(iClient, NULL_STRING); 
+                    ccp_storage_RemoveValue(iClient, pkgKey);
             } else {
                 index -= 1;
 
                 JSONObject artifact = GetTemplate(iClient, index);
-                ccp_SetArtifact(iClient, pkgKey, artifact, CALL_DEFAULT);
+                if(ccp_SetArtifact(iClient, pkgKey, artifact, CALL_DEFAULT)) {
+                    delete artifact;
 
-                char szValue[PREFIX_LENGTH];
-                artifact.GetString("name", szValue, sizeof(szValue));
-                coHandle.Set(iClient, szValue);
+                    artifact = asJSONO(ccp_GetArtifact(iClient, pkgKey));
+                    ccp_storage_WriteValue(iClient, pkgKey, artifact);
+                }
 
                 delete artifact;
             }
@@ -396,29 +377,4 @@ int indexPart(int part) {
             return i-1;
     
     return -1;
-}
-
-JSONObject FindInObjects(const char[] szName) {
-    JSONArray jsonItems;
-    if((jsonItems = asJSONA(ccp_GetArtifact(0, pkgKey))) == null)
-        return null;
-
-    JSONObject obj;
-    if(jsonItems.Length) {
-        char szValue[MESSAGE_LENGTH];
-
-        for(int i; i < jsonItems.Length; i++) {
-            obj = asJSONO(jsonItems.Get(i));
-            obj.GetString("name", szValue, sizeof(szValue));
-
-            if(StrEqual(szValue, szName, false)) {
-                break;
-            }
-
-            delete obj;
-        }
-    }
-    
-    delete jsonItems;
-    return obj;
 }

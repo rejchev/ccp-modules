@@ -3,6 +3,7 @@
 #pragma newdecls required
 
 #define INCLUDE_RIPJSON
+#define INCLUDE_MODULE_PACKAGER
 
 #if defined INCLUDE_DEBUG
     #define DEBUG "[Join-Team]"

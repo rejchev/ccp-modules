@@ -2,6 +2,7 @@
 
 #define INCLUDE_RIPJSON
 #define INCLUDE_MODULE_STORAGE
+#define INCLUDE_MODULE_PACKAGER
 
 #include <vip_core>
 #include <ccprocessor>
