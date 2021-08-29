@@ -1,12 +1,18 @@
 #!/bin/bash
 
 SOURCES=$1
+ALL_MODULES=$SOURCES/AllInOne
+
 SOURCES_SM=$2
 INCLUDES_SM=$SOURCES_SM'/include'
 ERROR=1
 DISABLED='disabled'
 
 cd $SOURCES
+
+if ! -d $ALL_MODULES; then
+    mkdir $ALL_MODULES
+fi
 
 derictories=($(ls -d */))
 
@@ -57,4 +63,6 @@ for dir in "${derictories[@]}"; do
             exit $ERROR
         fi
     done
+
+    cp -Rf $module_path/* $ALL_MODULES
 done
