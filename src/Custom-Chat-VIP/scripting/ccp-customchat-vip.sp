@@ -12,7 +12,7 @@ public Plugin myinfo =
 	name = "[CCP] Custom Chat <VIP>",
 	author = "nyood",
 	description = "...",
-	version = "2.1.0",
+	version = "2.1.1",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -45,8 +45,8 @@ public void OnPluginStart()
         VIP_OnVIPLoaded();
 
     if(g_bLate) {
-        ccp_OnPackageAvailable(0);
         cc_config_parsed();
+        ccp_OnPackageAvailable(0);
 
         for(int i = 1; i <= MaxClients; i++) {
             OnClientPutInServer(i);
@@ -122,8 +122,8 @@ public void cc_config_parsed()
 
 public void VIP_OnVIPLoaded()
 {
-    if(!VIP_IsValidFeature(FEATURE))
-        VIP_RegisterFeature(FEATURE, VIP_NULL, SELECTABLE, OnSelected_Feature);
+    // OnPluginEnd();
+    VIP_RegisterFeature(FEATURE, BOOL, SELECTABLE, OnSelected_Feature);
 }
 
 public void OnPluginEnd()
@@ -419,6 +419,7 @@ public Processing  cc_proc_OnRebuildString(const int[] props, int part, ArrayLis
     char szIndent[64];
     params.GetString(0, szIndent, sizeof(szIndent));
     if(FindChannelInChannels_json(channels, szIndent) == -1) {
+        delete channels;
         return Proc_Continue;
     }
 
