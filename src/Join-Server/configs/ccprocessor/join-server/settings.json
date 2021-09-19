@@ -1,0 +1,36 @@
+{
+    "identificator":        "TM_JS",
+
+    "useLog":               false,
+
+    "processing":           true,
+    "hideMessages":         false,
+
+    "priority":             1,
+
+    "{PROTOTYPE}":          "js_template",
+    "{STATUS}":             "js_status",
+    "{STATUSCO}":           "js_status_co",
+    "{TEAM}": [
+                            "team_unknown",
+                            "team_auto",
+                            "team_red",
+                            "team_blue"
+    ],
+
+    "{TEAMCO}": [
+                            "team_unknown_color",
+                            "team_auto_color",
+                            "team_red_color",
+                            "team_blue_color"
+    ],
+
+    "{PREFIX}":             "js_prefix",
+    "{PREFIXCO}":           "js_prefix_co",
+    "{NAMECO}":             "js_name_co",
+    "{MSGCO}":              "js_msg_co",
+    "{MSG}": [
+                            "js_msg_connect",
+                            "js_msg_disconnect"
+    ]
+}
