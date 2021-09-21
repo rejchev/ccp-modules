@@ -1,0 +1,82 @@
+"Phrases"
+{
+    "js_template"
+    {
+        "ru"                "{PREFIXCO}{PREFIX} {STATUSCO}{STATUS} {NAMECO}{NAME} {MSGCO}{MSG}"
+        "en"                "{PREFIXCO}{PREFIX} {STATUSCO}{STATUS} {NAMECO}{NAME} {MSGCO}{MSG}"
+    }
+
+    "js_msg_connect"
+    {
+        // {1} is address - use it if u need
+        "#format"           "{1:s}"
+
+        "ru"                "подключился к серверу"
+        "en"                "connected to the server"
+    }
+
+    "js_msg_disconnect"
+    {
+        // {1} is reason - use it if u need
+        "#format"           "{1:s}"
+
+        "ru"                "отключился от сервера {PI}({G}{1}{PI})"
+        "en"                "disconnected from the server {PI}({G}{1}{PI})"
+    }
+
+    // "js_prefix"
+    // {
+    //     // {1} is a network ID
+    //     "#format"           "{1:s}"
+        
+    //     "ru"                "N:{1}"
+    //     "en"                "N:{1}"
+    // }
+
+    "js_status"
+    {
+        // {1} is a bot/player
+        // {2} is a network ID
+        "#format"           "{1:s},{2:s}"
+
+        "ru"                "{1}:{2}"
+        "en"                "{1}:{2}"
+    }
+
+    "js_status_co"
+    {
+        "ru"                "{PI}"
+        "en"                "{PI}"
+    }
+
+    // "js_prefix_co"
+    // {
+    //     "ru"                "{GO}"
+    //     "en"                "{GO}"
+    // }
+
+    "js_name_co"
+    {
+        "ru"                "{GO}"
+        "en"                "{GO}"
+    }
+
+    "js_msg_co"
+    {
+        "ru"                "{W}"
+        "en"                "{W}"
+    }
+
+    "js_bot"
+    {
+        "ru"                "БОТ"
+        "en"                "BOT"
+    }
+
+    "js_player"
+    {
+        "ru"                "Игрок"
+        "en"                "Player"
+    }
+
+}
