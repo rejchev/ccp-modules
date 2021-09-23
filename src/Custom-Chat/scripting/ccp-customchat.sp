@@ -11,7 +11,7 @@ public Plugin myinfo =
 	name = "[CCP] Custom Chat",
 	author = "nullent?",
 	description = "...",
-	version = "3.3.7",
+	version = "3.3.8",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -96,7 +96,7 @@ public void OnMapStart() {
 public void ccp_OnPackageAvailable(int iClient) {
     static char szBuffer[MESSAGE_LENGTH] = "configs/ccprocessor/customchat/ccm.json";
 
-    JSON packet;
+    JSONObject packet;
     if(!iClient) {
         
         if(szBuffer[0] == 'c')
@@ -106,9 +106,13 @@ public void ccp_OnPackageAvailable(int iClient) {
             SetFailState("Where is my config: %s", szBuffer);
     }
 
-    packet = !iClient ? asJSON(JSONArray.FromFile(szBuffer, 0)) : asJSON(ccp_storage_ReadValue(iClient, pkgKey));
+    packet = !iClient ? JSONObject.FromFile(szBuffer, 0) : asJSONO(ccp_storage_ReadValue(iClient, pkgKey));
 
-    ccp_SetArtifact(iClient, pkgKey, packet, (!iClient) ? CALL_IGNORE : CALL_DEFAULT);
+    if(iClient && !packet)
+        packet = GetTemplate(iClient);
+
+    if(packet)
+        ccp_SetArtifact(iClient, pkgKey, packet, (!iClient) ? CALL_IGNORE : CALL_DEFAULT);
 
     delete packet;
 }
@@ -125,24 +129,24 @@ public void OnClientPostAdminCheck(int iClient) {
     if(!pkg.HasKey("adminId"))
         pkg.SetInt("adminId", view_as<int>(GetUserAdmin(iClient)));
 
-    ccp_SetPackage(iClient, pkg, CALL_DEFAULT);
-
-    if(!pkg.HasKey(pkgKey)) {
+    if(ccp_SetPackage(iClient, pkg, CALL_DEFAULT))
         ccp_OnPackageAvailable(iClient);
-    }
 
     delete pkg;
 }
 
 JSONObject GetTemplate(int iClient, int index = -1) {    
-    if(!ccp_HasArtifact(0, pkgKey))
-        SetFailState("Artifact: %s is gone away?", pkgKey);
-    
+    JSONObject artifact;
+    artifact = asJSONO(ccp_GetArtifact(0, pkgKey));
+
     JSONArray templates;
-    if((templates = asJSONA(ccp_GetArtifact(0, pkgKey))) == null || !templates.Length) {
-        delete templates;
-        return null;
+    if(!artifact.HasKey("items")) {
+        delete artifact;
+        return artifact;
     }
+
+    templates = asJSONA(artifact.Get("items"));
+    delete artifact;
 
     JSONObject client;
     JSONObject buffer;
@@ -211,18 +215,28 @@ void menuTemplates(int iClient) {
 
     char szBuffer[256];
 
-    JSONObject objClient = asJSONO(ccp_GetPackage(iClient));
-    JSONArray objArray = asJSONA(ccp_GetArtifact(0, pkgKey));
-    JSONObject obj;
-    int drawType = ITEMDRAW_DEFAULT;
+    JSONObject obj = asJSONO(ccp_GetArtifact(0, pkgKey));
+
+    if(!obj.HasKey("items")) {
+        delete obj;
+        return;
+    }
+
+    JSONArray objArray = asJSONA(obj.Get("items"));
+    delete obj;
+
     char szValue[64];
-    if(objClient.HasKey(pkgKey) && !objClient.IsNull(pkgKey)) {
-        obj = asJSONO(objClient.Get(pkgKey));
+    int drawType = ITEMDRAW_DEFAULT;
+
+    if(ccp_HasArtifact(iClient, pkgKey)) {
+        obj = asJSONO(ccp_GetArtifact(iClient, pkgKey));
         obj.GetString("name", szValue, sizeof(szValue));
         delete obj;
     } else {
         drawType = ITEMDRAW_DISABLED;
     }
+
+    JSONObject objClient = asJSONO(ccp_GetPackage(iClient));
 
     FormatEx(szBuffer, sizeof(szBuffer), "d%T \n \n", "remove", iClient);
     hMenu.AddItem(szBuffer, szBuffer[1], drawType);
@@ -244,6 +258,7 @@ void menuTemplates(int iClient) {
 
     delete objArray;
     delete objClient;
+    delete obj;
 
     hMenu.Display(iClient, MENU_TIME_FOREVER);
 }
@@ -281,14 +296,22 @@ public int menuCallBack(Menu hMenu, MenuAction action, int iClient, int param) {
 JSONObject senderModel;
 
 public Processing  cc_proc_OnRebuildString(const int[] props, int part, ArrayList params, int &level, char[] value, int size) {
-    static char channels[][] = {"ST1", "STA", "STP"};
+    JSONArray channels;
+
+    senderModel = asJSONO(ccp_GetArtifact(0, pkgKey));
+    channels = asJSONA(senderModel.Get("channels"));
+
+    delete senderModel;
 
     char szIndent[64];
     params.GetString(0, szIndent, sizeof(szIndent));
     
-    if(FindChannelInChannels(channels, sizeof(channels), szIndent) == -1 || !SENDER_INDEX(props[1])) {
+    if(FindChannelInChannels_json(channels, szIndent) == -1 || !SENDER_INDEX(props[1])) {
+        delete channels;
         return Proc_Continue;
     }
+
+    delete channels;
 
     if(!ccp_HasArtifact(SENDER_INDEX(props[1]), pkgKey))
         return Proc_Continue;

@@ -1,41 +1,46 @@
-[
-    {
-        "name":          "only_for_u",
+{
+    "channels": ["STA", "STP", "ST1", "RT"],
 
-        "type":         1,
-        "value":        "STEAM_1:1:12323131",
+    "items": 
+    [
+        {
+            "name":          "only_for_u",
 
-        "priority":     3,
+            "type":         1,
+            "value":        "STEAM_1:1:12323131",
 
-        "{PREFIXCO}":   "{V}",
-        "{PREFIX}":     "ex_prefix",
-        "{NAMECO}":     "{W}",
-        "{MSGCO}":      "{LG}"
-    },
-    {
-        "name":          "only_for_root",
+            "priority":     3,
 
-        "type":         2,
-        "value":        "z",
+            "{PREFIXCO}":   "{V}",
+            "{PREFIX}":     "ex_prefix",
+            "{NAMECO}":     "{W}",
+            "{MSGCO}":      "{LG}"
+        },
+        {
+            "name":          "only_for_root",
 
-        "priority":     2,
+            "type":         2,
+            "value":        "z",
 
-        "{PREFIXCO}":   "{PI}",
-        "{PREFIX}":     "ex_root",
-        "{NAMECO}":     "{G}",
-        "{MSGCO}":      "{W}"
-    },
-    {
-        "name":          "admin_group",
+            "priority":     2,
 
-        "type":         3,
-        "value":        "Admin",
+            "{PREFIXCO}":   "{PI}",
+            "{PREFIX}":     "ex_root",
+            "{NAMECO}":     "{G}",
+            "{MSGCO}":      "{W}"
+        },
+        {
+            "name":          "admin_group",
 
-        "priority":     1,
+            "type":         3,
+            "value":        "Admin",
 
-        "{PREFIXCO}":   "{B}",
-        "{PREFIX}":     "ex_admin",
-        "{NAMECO}":     "{G}",
-        "{MSGCO}":      "{W}"
-    }
-]
+            "priority":     1,
+
+            "{PREFIXCO}":   "{B}",
+            "{PREFIX}":     "ex_admin",
+            "{NAMECO}":     "{G}",
+            "{MSGCO}":      "{W}"
+        }
+    ]
+}
