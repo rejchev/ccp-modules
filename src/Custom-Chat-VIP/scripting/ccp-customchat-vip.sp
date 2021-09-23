@@ -10,9 +10,9 @@
 public Plugin myinfo = 
 {
 	name = "[CCP] Custom Chat <VIP>",
-	author = "nyood",
+	author = "rej.chev?",
 	description = "...",
-	version = "2.1.1",
+	version = "2.1.1.1",
 	url = "discord.gg/ChTyPUG"
 };
 
@@ -184,6 +184,8 @@ Menu partsOfMsgsMenu(int iClient) {
         
         if(TranslationPhraseExists(szValue))
             Format(szValue, sizeof(szValue), "%T", szValue, iClient);
+
+        ccp_replaceColors(szValue, true);
 
         FormatEx(out, sizeof(out), "%c%T [%s]", BindFromString(szBuffer) + 1, szBuffer, iClient, szValue);
 
