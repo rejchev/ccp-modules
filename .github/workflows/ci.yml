@@ -10,9 +10,9 @@ jobs:
       fail-fast: false
       matrix:
         sm-version:   [ '1.11.x'  ]
-        json-version: [ 'v-1.6.3'   ]
-        ccp-version:  [ 'v-3.6.3'   ]
-        pack-version: [ 'v-2.1.0'   ] 
+        json-version: [ 'v-1.6.3' ]
+        ccp-version:  [ 'main'    ]
+        pack-version: [ 'v-2.1.0' ] 
         vip-version:  [ 'v3.0.4R' ]
         shop-version: [ '3.0E8'   ]
 
