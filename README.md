@@ -16,7 +16,7 @@
 
 ## Requirements:
 1. [Color Chat Processor](https://github.com/rejchev/ccprocessor)
-2. Sourcemod 1.10:
+2. Sourcemod 1.11:
     - [Windows](http://sourcemod.net/latest.php?os=windows&version=1.11)
     - [Linux](http://sourcemod.net/latest.php?os=linux&version=1.11)
     
