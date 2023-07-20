@@ -82,6 +82,7 @@ jobs:
       - name: Build
         working-directory: src
         run: |
+          ls -R ./include
           for file in *.sp;
           do
             filename="${file%.*}"
