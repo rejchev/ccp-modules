@@ -1,0 +1,125 @@
+name: CI
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        sm-version:   [ '1.11.x'  ]
+        json-version: [ '1.6.1'   ]
+        ccp-version:  [ '3.6.3'   ]
+        pack-version: [ '2.1.0'   ] 
+        vip-version:  [ 'v3.0.4R' ]
+        shop-version: [ '3.0E8'   ]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Working Directory
+        run: |
+          mkdir -p sourcemod/plugins
+          mkdir -p sourcemod/scripting
+
+          cp -r -f src/* sourcemod/scripting/
+
+      - name: Setup SourcePawn
+        uses: rumblefrog/setup-sp@master
+        with:
+          version: ${{ matrix.sm-version }}
+
+      - name: Checkout Jansson
+        uses: actions/checkout@v3
+        with:
+          repository: rejchev/sm-jansson
+          ref: ${{ matrix.json-version }}
+          path: jansson
+          submodules: recursive
+
+      - name: Checkout CCProcessor
+        uses: actions/checkout@v3
+        with:
+          repository: rejchev/ccprocessor
+          ref: ${{ matrix.ccp-version }}
+          path: ccprocessor
+          submodules: recursive
+      
+      - name: Checkout Packager
+        uses: actions/checkout@v3
+        with:
+          repository: rej-clown/packager
+          ref: ${{ matrix.pack-version }}
+          path: packager
+          submodules: recursive    
+      
+      - name: Checkout VIP Core
+        uses: actions/checkout@v3
+        with:
+          repository: R1KO/VIP-Core
+          ref: ${{ matrix.vip-version }}
+          path: vip
+          submodules: recursive
+
+      - name: Checkout Shop Core
+        uses: actions/checkout@v3
+        with:
+          repository: hlmod/Shop-Core
+          ref: ${{ matrix.shop-version }}
+          path: shop
+          submodules: recursive
+
+      - name: Setup Sources
+        run: |
+          cp -r -f packager/include src/
+          cp -r -f ccprocessor/src/include src/
+          cp -r -f jansson/pawn/scripting/include src/
+          cp -r -f vip/addons/sourcemod/scripting/include src/
+          cp -r -f shop/addons/sourcemod/scripting/include src/
+          
+      - name: Build
+        working-directory: src
+        run: |
+          for file in *.sp;
+          do
+            filename="${file%.*}"
+
+            echo "Compiling $filename..."
+            spcomp $file -O2 -v2 -iinclude -o ../sourcemod/plugins/$filename.smx
+          done
+
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with: 
+          name: ccp-modules-${{ matrix.sm-version }}
+          path: sourcemod
+
+  release:
+    name: Release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ccp-version: [ '3.6.3' ]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Package artifact
+        run: 
+          7z a ccp-modules-${{ matrix.ccp-version }}.${{ github.run_number }}.zip ./ccp-modules-${{ matrix.ccp-version }}/*
+      
+      - name: Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: '*.zip'
+          tag: ${{ github.ref }}
+          file_glob: true

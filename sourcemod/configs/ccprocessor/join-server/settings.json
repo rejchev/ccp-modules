@@ -1,0 +1,22 @@
+{
+    "identificator":        "TM_JS",
+
+    "useLog":               true,
+
+    "processing":           true,
+    "hideMessages":         false,
+
+    "priority":             1,
+
+    "{PROTOTYPE}":          "js_template",
+    "{STATUS}":             "js_status",
+    "{STATUSCO}":           "js_status_co",
+    "{PREFIX}":             null,
+    "{PREFIXCO}":           null,
+    "{NAMECO}":             "js_name_co",
+    "{MSGCO}":              "js_msg_co",
+    "{MSG}": [
+                            "js_msg_connect",
+                            "js_msg_disconnect"
+    ]
+}

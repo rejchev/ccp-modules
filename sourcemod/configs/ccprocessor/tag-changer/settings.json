@@ -1,0 +1,12 @@
+{
+    "channels": [
+        "TM", "TM1", "TM_JS"
+    ],
+
+    "level": 1,
+
+    "tags": {
+        "[SM]": "",
+        "[SSM]": "[Example]"
+    }
+}
