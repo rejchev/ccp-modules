@@ -73,11 +73,11 @@ jobs:
 
       - name: Setup Sources
         run: |
-          cp -r -f packager/include src/
-          cp -r -f ccprocessor/src/include src/
-          cp -r -f jansson/pawn/scripting/include src/
-          cp -r -f vip/addons/sourcemod/scripting/include src/
-          cp -r -f shop/addons/sourcemod/scripting/include src/
+          cp -r -f packager/include/* src/include/
+          cp -r -f ccprocessor/src/include/* src/include/
+          cp -r -f jansson/pawn/scripting/include/* src/include/
+          cp -r -f vip/addons/sourcemod/scripting/include/* src/include/
+          cp -r -f shop/addons/sourcemod/scripting/include/* src/include/
           
       - name: Build
         working-directory: src
