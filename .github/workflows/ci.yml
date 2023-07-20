@@ -10,9 +10,9 @@ jobs:
       fail-fast: false
       matrix:
         sm-version:   [ '1.11.x'  ]
-        json-version: [ '1.6.1'   ]
-        ccp-version:  [ '3.6.3'   ]
-        pack-version: [ '2.1.0'   ] 
+        json-version: [ 'v-1.6.3'   ]
+        ccp-version:  [ 'v-3.6.3'   ]
+        pack-version: [ 'v-2.1.0'   ] 
         vip-version:  [ 'v3.0.4R' ]
         shop-version: [ '3.0E8'   ]
 
@@ -104,7 +104,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ccp-version: [ '3.6.3' ]
+        sm-version: [ '1.11.x' ]
+        version: [ '3.6.3' ]
 
     steps:
       - uses: actions/checkout@v3
@@ -114,7 +115,7 @@ jobs:
 
       - name: Package artifact
         run: 
-          7z a ccp-modules-${{ matrix.ccp-version }}.${{ github.run_number }}.zip ./ccp-modules-${{ matrix.ccp-version }}/*
+          7z a ccp-modules-${{ matrix.version }}.${{ github.run_number }}.zip ./ccp-modules-${{ matrix.sm-version }}/*
       
       - name: Release
         uses: svenstaro/upload-release-action@v2
